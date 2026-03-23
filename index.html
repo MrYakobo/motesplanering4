@@ -1,0 +1,1979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mötesplanering 4</title>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; font-size: 14px; background: #f4f5f7; color: #1a1a2e; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+nav { display: flex; align-items: center; background: #1a1a2e; color: #fff; padding: 0 16px; height: 44px; gap: 4px; flex-shrink: 0; }
+nav .brand { font-weight: 700; font-size: 15px; margin-right: 16px; color: #a78bfa; }
+nav button { background: none; border: none; color: #ccc; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+nav button:hover { background: #2d2d4e; color: #fff; }
+nav button.active { background: #4f46e5; color: #fff; }
+nav .spacer { flex: 1; }
+nav .logout { color: #f87171; }
+.workspace { display: flex; flex: 1; overflow: hidden; }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: #fff; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
+.toolbar h2 { font-size: 15px; font-weight: 600; flex: 1; }
+.toolbar input[type=search] { border: 1px solid #d1d5db; border-radius: 6px; padding: 5px 10px; font-size: 13px; width: 200px; outline: none; }
+.toolbar input[type=search]:focus { border-color: #4f46e5; }
+.toolbar select { border: 1px solid #d1d5db; border-radius: 6px; padding: 5px 8px; font-size: 13px; outline: none; }
+.btn { background: #4f46e5; color: #fff; border: none; border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+.btn:hover { background: #4338ca; }
+.btn-ghost { background: none; border: 1px solid #d1d5db; color: #374151; border-radius: 6px; padding: 5px 12px; font-size: 13px; cursor: pointer; }
+.btn-ghost:hover { background: #f3f4f6; }
+.btn-danger { background: #ef4444; color: #fff; border: none; border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+.btn-danger:hover { background: #dc2626; }
+.stats-bar { display: flex; gap: 16px; padding: 8px 16px; background: #fff; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
+.stat { font-size: 12px; color: #6b7280; }
+.stat strong { color: #1a1a2e; }
+.table-wrap { flex: 1; overflow: auto; }
+.add-bar { padding: 6px 16px; background: #fff; border-top: 1px solid #e5e7eb; flex-shrink: 0; }
+.add-bar button { background: none; border: none; color: #4f46e5; cursor: pointer; font-size: 13px; padding: 4px 0; }
+.add-bar button:hover { text-decoration: underline; }
+table { width: 100%; border-collapse: collapse; }
+thead th { position: sticky; top: 0; background: #f9fafb; border-bottom: 2px solid #e5e7eb; padding: 9px 14px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; user-select: none; white-space: nowrap; }
+thead th:hover { background: #f3f4f6; }
+thead th .si { margin-left: 4px; opacity: .4; }
+thead th.sorted .si { opacity: 1; color: #4f46e5; }
+tbody tr { border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background .1s; }
+tbody tr:hover { background: #f0f0ff; }
+tbody tr.selected { background: #ede9fe; }
+tbody td { padding: 9px 14px; }
+.monster tbody td { padding: 5px 6px; }
+.monster thead th { min-width: 120px; padding: 7px 6px; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+.badge-sunday  { background: #dbeafe; color: #1d4ed8; }
+.badge-weekday { background: #d1fae5; color: #065f46; }
+.badge-special { background: #fef3c7; color: #92400e; }
+.badge-yes { background: #d1fae5; color: #065f46; }
+.badge-no  { background: #f3f4f6; color: #6b7280; }
+</style>
+<style>
+/* SIDEBAR */
+.sidebar { width: 360px; background: #fff; border-left: 1px solid #e5e7eb; display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0; }
+.sidebar-header { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e5e7eb; gap: 8px; flex-shrink: 0; }
+.sidebar-header h3 { flex: 1; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-close { background: none; border: none; cursor: pointer; color: #9ca3af; font-size: 20px; line-height: 1; }
+.sidebar-close:hover { color: #374151; }
+.sidebar-body { flex: 1; overflow-y: auto; padding: 16px; }
+.field-group { margin-bottom: 14px; }
+.field-group label { display: block; font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+.field-group input, .field-group textarea, .field-group select { width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: 7px 10px; font-size: 13px; font-family: inherit; outline: none; resize: vertical; }
+.field-group input:focus, .field-group textarea:focus, .field-group select:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px #ede9fe; }
+.checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 4px 0; }
+.sidebar-footer { padding: 12px 16px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px; flex-shrink: 0; }
+.sb-section { margin-top: 18px; padding-top: 14px; border-top: 1px solid #f0f0f0; }
+.sb-section h4 { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 10px; }
+.mini-list { list-style: none; }
+.mini-list li { padding: 6px 0; border-bottom: 1px solid #f9fafb; font-size: 13px; display: flex; justify-content: space-between; gap: 8px; }
+.mini-list li:last-child { border: none; }
+.mini-list .who { color: #6b7280; }
+.empty-sidebar { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #9ca3af; gap: 10px; text-align: center; padding: 24px; }
+
+/* MONSTER TABLE */
+.monster table { width: auto; min-width: 100%; }
+.monster thead th.th-event { min-width: 180px; position: sticky; left: 0; z-index: 2; background: #f9fafb; }
+.monster tbody td.td-event { position: sticky; left: 0; background: #fff; z-index: 1; font-weight: 500; white-space: nowrap; }
+.monster tbody tr.selected td.td-event { background: #ede9fe; }
+.monster tbody tr:hover td.td-event { background: #f0f0ff; }
+.cell-pick { width: 100%; border: 1px solid #e5e7eb; border-radius: 5px; padding: 4px 6px; font-size: 12px; background: #fff; outline: none; cursor: pointer; color: #374151; }
+.cell-pick:focus { border-color: #4f46e5; box-shadow: 0 0 0 2px #ede9fe; }
+.cell-pick.unset { color: #9ca3af; background: #fafafa; }
+.th-task-label { font-size: 11px; }
+.th-task-type { font-size: 10px; font-weight: 400; color: #9ca3af; text-transform: none; letter-spacing: 0; margin-top: 2px; }
+.view-toggle { display: flex; gap: 2px; background: #f3f4f6; border-radius: 6px; padding: 2px; }
+.view-toggle button { background: none; border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; color: #6b7280; }
+.view-toggle button.active { background: #fff; color: #1a1a2e; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+.schedule-badge { background: #f59e0b; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 0; border-radius: 99px; margin-left: 4px; display: inline-block; width: 22px; text-align: center; }
+
+/* CHECKBOX POPOVER for multi-person cells */
+.pop-cell { position: relative; }
+.pop-label { padding: 4px 6px; border: 1px solid #e5e7eb; border-radius: 5px; font-size: 12px; cursor: pointer; background: #fff; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.pop-label:hover { border-color: #4f46e5; }
+.pop-label.unset { color: #9ca3af; background: #fafafa; }
+.pop-panel { display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 20; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12); padding: 0; min-width: 220px; max-height: 280px; display: none; flex-direction: column; }
+.pop-panel.open { display: flex; }
+.pop-search { border: none; border-bottom: 1px solid #e5e7eb; padding: 8px 10px; font-size: 13px; outline: none; border-radius: 8px 8px 0 0; flex-shrink: 0; }
+.pop-search:focus { box-shadow: inset 0 -2px 0 #4f46e5; }
+.pop-list { overflow-y: auto; padding: 4px 8px; flex: 1; }
+.pop-panel label { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 4px; cursor: pointer; font-size: 13px; color: #374151; }
+.pop-panel label:hover { background: #f3f4f6; }
+.pop-panel input[type=checkbox] { accent-color: #4f46e5; }
+.pop-add { border: none; border-top: 1px solid #e5e7eb; background: none; padding: 8px 10px; font-size: 12px; color: #4f46e5; cursor: pointer; text-align: left; flex-shrink: 0; border-radius: 0 0 8px 8px; }
+.pop-add:hover { background: #f0f0ff; }
+
+/* SLIDES TAB */
+.slides-wrap { flex: 1; overflow-y: auto; padding: 24px; background: #1a1a2e; display: flex; flex-direction: column; align-items: center; }
+.slide-nav { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.slide-nav button { background: rgba(255,255,255,.1); border: none; color: #fff; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.slide-nav button:hover { background: rgba(255,255,255,.2); }
+.slide-nav span { color: #a78bfa; font-weight: 600; font-size: 15px; }
+.slide-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.3); padding: 36px 40px; max-width: 700px; width: 100%; color: #e2e8f0; }
+.slide-card h2 { font-size: 22px; font-weight: 700; color: #a78bfa; margin-bottom: 24px; letter-spacing: .02em; }
+.slide-day { margin-bottom: 18px; }
+.slide-day-name { font-size: 14px; font-weight: 700; color: #f8fafc; margin-bottom: 6px; }
+.slide-day-name span { font-weight: 400; color: #64748b; margin-left: 6px; }
+.slide-event-row { display: flex; align-items: baseline; gap: 10px; padding: 4px 0 4px 16px; font-size: 14px; }
+.slide-event-time { color: #a78bfa; font-weight: 600; min-width: 44px; }
+.slide-event-title { color: #e2e8f0; }
+.slide-event-desc { color: #64748b; font-size: 13px; }
+.slide-event-link { color: #818cf8; font-size: 12px; text-decoration: none; margin-left: 6px; }
+.slide-event-link:hover { text-decoration: underline; }
+.slide-promos { display: flex; gap: 10px; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.08); flex-wrap: wrap; }
+.slide-promo-img { width: 120px; height: 68px; border-radius: 8px; background: #334155; object-fit: cover; }
+.slide-promo-placeholder { width: 120px; height: 68px; border-radius: 8px; background: #334155; display: flex; align-items: center; justify-content: center; color: #475569; font-size: 11px; }
+
+/* GENERATE MODAL */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,.2); width: 640px; max-height: 85vh; display: flex; flex-direction: column; }
+.modal-header { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e5e7eb; }
+.modal-header h3 { flex: 1; font-size: 16px; font-weight: 600; }
+.modal-body { flex: 1; overflow-y: auto; padding: 20px; }
+.modal-footer { padding: 14px 20px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px; justify-content: flex-end; }
+.gen-day { margin-bottom: 16px; }
+.gen-day-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.gen-day-header strong { font-size: 13px; color: #1a1a2e; min-width: 50px; }
+.gen-row { display: flex; align-items: center; gap: 6px; padding: 4px 0 4px 16px; font-size: 13px; }
+.gen-row select { border: 1px solid #d1d5db; border-radius: 5px; padding: 3px 6px; font-size: 12px; outline: none; }
+.gen-row input { border: 1px solid #d1d5db; border-radius: 5px; padding: 3px 6px; font-size: 12px; outline: none; width: 60px; }
+.gen-row input.gen-title { width: 180px; }
+.gen-row .gen-rm { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 14px; }
+.gen-row .gen-rm:hover { color: #ef4444; }
+.gen-add { background: none; border: none; color: #4f46e5; cursor: pointer; font-size: 12px; padding: 2px 0; margin-left: 16px; }
+.gen-add:hover { text-decoration: underline; }
+.gen-range { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; font-size: 13px; }
+.gen-range label { font-weight: 600; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.gen-range input { border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 10px; font-size: 13px; outline: none; }
+.gen-preview { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-top: 12px; max-height: 200px; overflow-y: auto; font-size: 12px; }
+.gen-preview-row { padding: 3px 0; display: flex; gap: 8px; }
+.gen-preview-row .gp-date { color: #6b7280; min-width: 80px; }
+.gen-preview-row .gp-time { color: #4f46e5; min-width: 44px; }
+.gen-preview-row .gp-title { color: #1a1a2e; }
+.gen-count { font-size: 12px; color: #6b7280; margin-top: 8px; }
+
+/* WARNING CELLS */
+.cell-warn { outline: 2px solid #f59e0b; outline-offset: -2px; border-radius: 5px; background: #fffbeb; }
+.cell-pick.cell-warn { border-color: #f59e0b; background: #fffbeb; }
+.pop-label.cell-warn { border-color: #f59e0b; background: #fffbeb; }
+.warn-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; margin-right: 4px; }
+.warn-count { font-size: 12px; color: #f59e0b; font-weight: 600; }
+
+/* CATEGORY TASKS CONFIG */
+.cat-config { padding: 16px; }
+.cat-config h4 { font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 12px; }
+.cat-section { margin-bottom: 16px; }
+.cat-section-label { font-size: 13px; font-weight: 600; color: #1a1a2e; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.cat-task-list { padding-left: 4px; }
+.cat-task-list label { display: flex; align-items: center; gap: 8px; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 13px; color: #374151; }
+.cat-task-list label:hover { background: #f3f4f6; }
+.cat-task-list input[type=checkbox] { accent-color: #4f46e5; }
+
+/* DIRTY SAVE BUTTON */
+.btn-save { background: #d1d5db; color: #6b7280; border: none; border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: default; transition: all .15s; }
+.btn-save.dirty { background: #4f46e5; color: #fff; cursor: pointer; animation: pulse-save .4s ease; }
+.btn-save.dirty:hover { background: #4338ca; }
+@keyframes pulse-save { 0%{transform:scale(1)} 50%{transform:scale(1.05)} 100%{transform:scale(1)} }
+
+/* CONTEXT MENU */
+.ctx-menu { position: fixed; z-index: 200; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.15); padding: 4px; min-width: 160px; }
+.ctx-menu button { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 7px 12px; font-size: 13px; color: #374151; cursor: pointer; border-radius: 4px; text-align: left; }
+.ctx-menu button:hover { background: #f3f4f6; }
+.ctx-menu button.ctx-danger { color: #ef4444; }
+.ctx-menu button.ctx-danger:hover { background: #fef2f2; }
+.lucide-icon { display: inline-block; vertical-align: middle; }
+.team-gear { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 2px; border-radius: 3px; display: flex; align-items: center; }
+.team-gear:hover { color: #4f46e5; background: #ede9fe; }
+.pop-add-area { flex-shrink: 0; }
+.td-actions { width: 40px; text-align: center; padding: 0 4px; }
+.actions-btn { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 4px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; }
+.actions-btn:hover { color: #374151; background: #f3f4f6; }
+tbody tr.current-week { background: #f0fdf4; }
+tbody tr.current-week:hover { background: #dcfce7; }
+tbody tr.current-week.selected { background: #d9f0e6; }
+.monster tbody tr.current-week td.td-event { background: #f0fdf4; }
+.monster tbody tr.current-week:hover td.td-event { background: #dcfce7; }
+.monster tbody tr.current-week.selected td.td-event { background: #d9f0e6; }
+
+/* CALENDAR VIEW */
+.cal-scroll { height: 100%; overflow-y: auto; }
+.cal-month-section { display: flex; flex-direction: column; }
+.cal-month-label { background: #f9fafb; padding: 8px 12px; font-size: 15px; font-weight: 700; color: #374151; position: sticky; top: 0; z-index: 3; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
+.cal-month-label span { font-weight: 400; color: #9ca3af; margin-left: 4px; }
+.cal-grid { display: grid; grid-template-columns: 36px repeat(7, 1fr); gap: 1px; background: #e5e7eb; flex: 1; }
+.cal-header { position: sticky; top: 37px; z-index: 2; background: #f9fafb; padding: 8px 6px; font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; text-align: center; }
+.cal-wk { background: #f9fafb; display: flex; align-items: flex-start; justify-content: center; padding-top: 6px; font-size: 11px; font-weight: 600; color: #9ca3af; }
+.cal-cell { background: #fff; min-height: 100px; padding: 4px 6px; font-size: 12px; vertical-align: top; }
+.cal-cell.outside { background: #fafafa; color: #d1d5db; }
+.cal-cell.today { outline: 2px solid #4f46e5; outline-offset: -2px; z-index: 1; }
+.cal-cell.current-week-cell { background: #f0fdf4; }
+.cal-cell.drag-over { background: #ede9fe; outline: 2px dashed #4f46e5; outline-offset: -2px; }
+.cal-day-num { font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 2px; }
+.cal-cell.outside .cal-day-num { color: #d1d5db; }
+.cal-ev { padding: 2px 4px; margin-bottom: 1px; border-radius: 3px; font-size: 11px; cursor: grab; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; }
+.cal-ev:hover { filter: brightness(0.92); }
+.cal-ev.dragging { opacity: 0.4; }
+.cal-ev-sunday { background: #dbeafe; color: #1d4ed8; }
+.cal-ev-weekday { background: #d1fae5; color: #065f46; }
+.cal-ev-special { background: #fef3c7; color: #92400e; }
+.cal-more { font-size: 10px; color: #6b7280; cursor: pointer; padding: 1px 4px; }
+.cal-more:hover { color: #4f46e5; }
+.cal-nav { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+.cal-nav .cal-title { flex: 1; font-size: 18px; }
+.cal-nav .cal-title b { font-weight: 700; }
+.cal-nav .cal-title span { font-weight: 400; color: #6b7280; }
+.cal-nav button { background: none; border: 1px solid #d1d5db; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; color: #374151; }
+.cal-nav button:hover { background: #f3f4f6; }
+/* WEEK VIEW */
+.week-scroll { height: 100%; overflow-y: auto; }
+.week-container { display: flex; flex-direction: column; }
+.week-section { min-height: 100%; display: flex; flex-direction: column; border-bottom: 1px solid #e5e7eb; }
+.week-section-header { position: sticky; top: 0; z-index: 2; background: #f9fafb; padding: 8px 12px; font-size: 14px; font-weight: 700; color: #374151; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.week-section-header span { font-weight: 400; color: #9ca3af; font-size: 12px; }
+.week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e5e7eb; flex: 1; }
+.week-day-headers { display: contents; }
+.week-day-hdr { background: #f9fafb; padding: 4px 6px; font-size: 10px; font-weight: 600; color: #9ca3af; text-transform: uppercase; text-align: center; }
+.week-col { background: #fff; min-height: 80px; padding: 6px; }
+.week-col.today { outline: 2px solid #4f46e5; outline-offset: -2px; }
+.week-col.drag-over { background: #ede9fe; outline: 2px dashed #4f46e5; outline-offset: -2px; }
+.week-col-header { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; margin-bottom: 4px; }
+.week-col-header .week-date { display: inline; font-size: 14px; color: #374151; text-transform: none; font-weight: 700; margin-left: 4px; }
+.week-col-header.today-hdr { color: #4f46e5; }
+.week-col-header.today-hdr .week-date { color: #4f46e5; }
+.week-ev { padding: 6px 8px; margin-bottom: 4px; border-radius: 5px; font-size: 12px; cursor: grab; }
+.week-ev:hover { filter: brightness(0.92); }
+.week-ev.dragging { opacity: 0.4; }
+.week-ev-time { font-weight: 600; font-size: 11px; }
+.week-ev-title { margin-top: 2px; }
+/* YEAR VIEW */
+.year-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 16px; }
+.year-month { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; }
+.year-month-title { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; text-align: center; }
+.year-mini-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; font-size: 10px; text-align: center; }
+.year-mini-hdr { color: #9ca3af; font-weight: 600; padding: 2px 0; }
+.year-mini-day { padding: 4px 0 6px; color: #6b7280; border-radius: 3px; cursor: default; position: relative; }
+.year-mini-day.outside { color: #d1d5db; }
+.year-mini-day.today { background: #4f46e5; color: #fff; font-weight: 700; }
+.year-mini-day.has-events { font-weight: 700; color: #1a1a2e; cursor: pointer; }
+.year-mini-day.has-events::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: #4f46e5; }
+.year-mini-day.has-events:hover { background: #ede9fe; }
+.year-mini-day:not(.outside):hover { background: #f3f4f6; }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="brand">Mötesplanering 4</span>
+  <button onclick="switchTab('contacts')" id="tab-contacts">Contacts</button>
+  <button onclick="switchTab('tasks')"    id="tab-tasks">Tasks</button>
+  <button onclick="switchTab('teams')"    id="tab-teams">Teams</button>
+  <button onclick="switchTab('events')"   id="tab-events" class="active">Events</button>
+  <button onclick="switchTab('slides')"   id="tab-slides">Slides</button>
+  <span class="spacer"></span>
+  <button class="logout">Logout</button>
+</nav>
+
+<div class="workspace">
+  <div class="main">
+    <div class="toolbar" id="toolbar">
+      <h2 id="section-title">Events</h2>
+      <select id="year-select" onchange="setYear(this.value)" style="display:none"></select>
+      <input type="search" id="search-input" placeholder="Search…" oninput="applyFilters()">
+      <select id="filter-select" onchange="applyFilters()" style="display:none"></select>
+      <div class="view-toggle" id="view-toggle" style="display:none">
+        <button id="vt-list" onclick="setView('list')" class="active">List</button>
+        <button id="vt-calendar" onclick="setView('calendar')">Month</button>
+        <button id="vt-week" onclick="setView('week')">Week</button>
+        <button id="vt-year" onclick="setView('year')">Year</button>
+        <button id="vt-monster" onclick="setView('monster')">Schedule <span id="schedule-badge"></span></button>
+      </div>
+      <button class="btn" id="btn-new" onclick="newRecord()" style="display:none">+ New</button>
+      <button class="btn-ghost" id="btn-generate" onclick="openGenModal()" style="display:none">⚡ Generate</button>
+    </div>
+    <div class="stats-bar" id="stats-bar"></div>
+    <div class="table-wrap" id="table-area">
+      <table><thead id="table-head"></thead><tbody id="table-body"></tbody></table>
+    </div>
+    <div class="add-bar" id="add-bar"><button onclick="newRecord()" id="add-bar-btn">+ Ny event</button></div>
+    <div class="slides-wrap" id="slides-area" style="display:none"></div>
+  </div>
+  <div class="sidebar" id="sidebar">
+    <div id="sidebar-content" style="display:flex;flex-direction:column;height:100%">
+      <div class="empty-sidebar">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <p style="font-size:13px">Select a row to view details</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Generate Events Modal -->
+<div class="modal-overlay" id="gen-modal">
+  <div class="modal" style="width:900px;max-width:95vw">
+    <div class="modal-header">
+      <h3>Generera återkommande händelser</h3>
+      <button class="sidebar-close" onclick="closeGenModal()">×</button>
+    </div>
+    <div style="display:flex;flex:1;overflow:hidden">
+      <div class="modal-body" id="gen-body" style="flex:1;border-right:1px solid #e5e7eb"></div>
+      <div class="modal-body" id="gen-preview-area" style="width:300px;flex-shrink:0;background:#f9fafb;overflow-y:auto">
+        <p class="gen-count">Ändra mönster eller datum för förhandsgranskning</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeGenModal()">Avbryt</button>
+      <button class="btn" onclick="executeGenerate()">Generera</button>
+    </div>
+  </div>
+</div>
+
+<!-- Propagate Changes Modal -->
+<div class="modal-overlay" id="propagate-modal">
+  <div class="modal" style="width:440px">
+    <div class="modal-header">
+      <h3>Uppdatera liknande händelser?</h3>
+      <button class="sidebar-close" onclick="executePropagation(false)">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="prop-msg" style="font-size:13px;color:#374151;margin-bottom:14px"></p>
+      <div id="prop-fields" class="cat-task-list" style="margin-bottom:8px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="executePropagation(false)">Bara detta event</button>
+      <button class="btn" onclick="executePropagation(true)">Uppdatera alla</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal (monster view) -->
+<div class="modal-overlay" id="detail-modal" onclick="if(event.target===this)closeDetailModal()">
+  <div class="modal" style="width:420px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column">
+    <div id="detail-modal-content" style="display:flex;flex-direction:column;overflow:hidden;flex:1"></div>
+  </div>
+</div>
+
+<!-- Context Menu -->
+<div class="ctx-menu" id="ctx-menu" style="display:none"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+function localDate(d) { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${dd}`; }
+let db = {};
+let schedules = {};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentTab = 'events';
+let selectedId = null;
+let sortCol = null;
+let sortDir = 1;
+let filtered = [];
+let currentView = 'list';
+let selectedYear = new Date().getFullYear();
+const assignments = {};
+
+// ── TAB CONFIG ────────────────────────────────────────────────────────────────
+const tabConfig = {
+  events: {
+    label:'Events',
+    cols:[
+      {key:'date',      label:'Date',      render:(v,r)=>`<span style="font-size:12px;white-space:nowrap">${v} ${r.time||''}</span>`},
+      {key:'weekday',   label:'Day',       render:(v,r)=>{const d=new Date(r.date+'T00:00:00');const wd=['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'][d.getDay()];const cls=d.getDay()===0?'sunday':'weekday';return `<span class="badge badge-${cls}" style="font-size:11px">${wd}</span>`}},
+      {key:'title',     label:'Title',     render:(v,r)=>r.title},
+      {key:'description',label:'Description',render:(v,r)=>r.description||'<span style="color:#9ca3af">—</span>'},
+      {key:'infoLink',  label:'Info link',  render:(v,r)=>r.infoLink?`<a href="${r.infoLink}" target="_blank" onclick="event.stopPropagation()" style="color:#4f46e5;font-size:12px">${r.infoLink.replace(/^https?:\/\//,'').slice(0,30)}</a>`:'<span style="color:#9ca3af">—</span>'},
+    ],
+    filter:null,
+    stats:d=>{
+      const warns = d.reduce((n,ev) => {
+        const req = ev.expectedTasks || [];
+        return n + req.filter(tid => !assignments[ev.id]?.[tid]).length;
+      }, 0);
+      const warnHtml = warns > 0 ? ` <span class="stat warn-count">⚠ ${warns} saknas</span>` : '';
+      updateScheduleBadge(warns);
+      const warnStat = currentView === 'monster' && warns > 0 ? ` <span class="stat warn-count">⚠ ${warns} saknas</span>` : '';
+      return `<span class="stat">Total: <strong>${d.length}</strong></span>${warnStat}`;
+    },
+  },
+  contacts: {
+    label:'Contacts',
+    cols:[
+      {key:'name', label:'Name', render:v=>v},
+      {key:'email',label:'Email',render:v=>`<a href="mailto:${v}" onclick="event.stopPropagation()">${v}</a>`},
+      {key:'phone',label:'Phone',render:v=>v||'<span style="color:#9ca3af">—</span>'},
+    ],
+    filter:null,
+    stats:d=>`<span class="stat">Total contacts: <strong>${d.length}</strong></span>`,
+  },
+  tasks: {
+    label:'Tasks',
+    cols:[
+      {key:'name',    label:'Name',           render:v=>v},
+      {key:'teamTask',label:'Team task',       render:v=>`<span class="badge badge-${v?'yes':'no'}">${v?'Yes':'No'}</span>`},
+      {key:'mailbot', label:'Mailbot',         render:v=>`<span class="badge badge-${v?'yes':'no'}">${v?'Yes':'No'}</span>`},
+      {key:'phrase',  label:'Reminder phrase', render:v=>v?`"${v}"` :'<span style="color:#9ca3af">—</span>'},
+    ],
+    filter:null,
+    stats:d=>`<span class="stat">Total tasks: <strong>${d.length}</strong></span>
+      <span class="stat">Mailbot enabled: <strong>${d.filter(t=>t.mailbot).length}</strong></span>`,
+  },
+  teams: {
+    label:'Teams',
+    cols:[
+      {key:'taskId', label:'Task',   render:v=>db.tasks?.find(t=>t.id===v)?.name||v},
+      {key:'number', label:'Team #', render:v=>v},
+      {key:'members',label:'Members',render:v=>v.map(id=>db.contacts?.find(c=>c.id===id)?.name).join(', ')||'<span style="color:#9ca3af">—</span>'},
+    ],
+    filter:null,
+    stats:d=>`<span class="stat">Total teams: <strong>${d.length}</strong></span>`,
+  },
+  slides: {
+    label:'Slides',
+    cols:[],
+    filter:null,
+    stats:()=>'',
+  },
+};
+
+// ── CORE RENDER ───────────────────────────────────────────────────────────────
+function switchTab(tab, skipHash) {
+  currentTab = tab; selectedId = null; sortCol = null; sortDir = 1;
+  document.querySelectorAll('nav button[id^=tab-]').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('section-title').textContent = tabConfig[tab].label;
+  document.getElementById('search-input').value = '';
+
+  const isSlides = tab === 'slides';
+  const isEvents = tab === 'events';
+  document.getElementById('table-area').style.display = isSlides ? 'none' : '';
+  document.getElementById('add-bar').style.display = isSlides ? 'none' : '';
+  document.getElementById('slides-area').style.display = isSlides ? '' : 'none';
+  document.getElementById('search-input').style.display = isSlides ? 'none' : '';
+  document.getElementById('btn-generate').style.display = isEvents ? '' : 'none';
+  document.getElementById('view-toggle').style.display = isEvents ? '' : 'none';
+  document.getElementById('stats-bar').style.display = isSlides ? 'none' : '';
+  if (!isEvents) currentView = 'list';
+  document.getElementById('sidebar').style.display = '';
+
+  if (isSlides) { renderSlides(); renderSidebar(null); if (!skipHash) updateHash(); return; }
+  renderFilter();
+  renderYearPicker();
+  applyFilters();
+  renderSidebar(null);
+  if (!skipHash) updateHash();
+}
+
+function setView(v) {
+  currentView = v;
+  calScrollInit = false;
+  ['list','calendar','week','year','monster'].forEach(k => {
+    const el = document.getElementById('vt-'+k);
+    if (el) el.classList.toggle('active', v===k);
+  });
+  document.querySelector('.table-wrap').classList.toggle('monster', v==='monster');
+  const calViews = ['monster','calendar','week','year'];
+  document.getElementById('sidebar').style.display = calViews.includes(v) ? 'none' : '';
+  if (v !== 'list') { selectedId = null; renderSidebar(null); }
+  renderTable();
+  updateHash();
+}
+
+function updateScheduleBadge(count) {
+  const el = document.getElementById('schedule-badge');
+  if (!el) return;
+  el.className = 'schedule-badge';
+  if (count > 0) {
+    el.textContent = count > 99 ? '99+' : count;
+    el.style.background = '#f59e0b';
+  } else {
+    el.textContent = '✓';
+    el.style.background = '#10b981';
+  }
+}
+
+function renderFilter() {
+  const sel = document.getElementById('filter-select');
+  const cfg = tabConfig[currentTab].filter;
+  if (!cfg) { sel.style.display='none'; return; }
+  sel.style.display='';
+  sel.innerHTML = cfg.options.map(o=>`<option>${o}</option>`).join('');
+}
+
+function renderYearPicker() {
+  const ySel = document.getElementById('year-select');
+  if (currentTab !== 'events') { ySel.style.display = 'none'; return; }
+  const years = [...new Set((db.events||[]).map(e => e.date.slice(0,4)))].sort();
+  if (years.length === 0) { ySel.style.display = 'none'; return; }
+  // if current selectedYear has no events, snap to nearest available year
+  if (!years.includes(String(selectedYear))) {
+    selectedYear = parseInt(years[years.length - 1]);
+  }
+  ySel.style.display = '';
+  ySel.innerHTML = years.map(y => `<option value="${y}" ${String(selectedYear)===y?'selected':''}>${y}</option>`).join('');
+}
+
+function setYear(y) {
+  selectedYear = parseInt(y);
+  applyFilters();
+}
+
+function applyFilters() {
+  if (currentTab === 'slides') return;
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const sel = document.getElementById('filter-select');
+  const fv = sel.style.display!=='none' ? sel.value : 'All';
+  const cfg = tabConfig[currentTab];
+  let data = [...(db[currentTab]||[])];
+  // year filter for events
+  if (currentTab === 'events') {
+    data = data.filter(r => r.date.startsWith(String(selectedYear)));
+  }
+  if (fv!=='All') data = data.filter(r=>String(r[cfg.filter.key]).toLowerCase()===fv.toLowerCase());
+  if (q) data = data.filter(r=>{
+    if (currentTab === 'events') {
+      return r.title.toLowerCase().includes(q) || r.date.includes(q) || (r.time||'').includes(q);
+    }
+    return cfg.cols.some(c=>String(r[c.key]).toLowerCase().includes(q));
+  });
+  if (sortCol!==null) data.sort((a,b)=>{
+    let av=a[sortCol],bv=b[sortCol];
+    if (sortCol==='date' && currentTab==='events') { av=a.date+(a.time||''); bv=b.date+(b.time||''); }
+    return (av<bv?-1:av>bv?1:0)*sortDir;
+  });
+  filtered = data;
+  renderTable();
+  document.getElementById('stats-bar').innerHTML = cfg.stats(data);
+}
+
+function getCurrentWeekRange() {
+  const now = new Date();
+  const mon = getMondayOfWeek(now, 0);
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  return { from: localDate(mon), to: localDate(sun) };
+}
+
+function isCurrentWeek(dateStr) {
+  const w = getCurrentWeekRange();
+  return dateStr >= w.from && dateStr <= w.to;
+}
+
+function renderTable() {
+  // hide/show calendar container and add bar
+  const calC = document.getElementById('cal-container');
+  const tbl = document.querySelector('.table-wrap table');
+  const calViews = ['calendar','week','year'];
+  const addBar = document.getElementById('add-bar');
+  if (addBar) addBar.style.display = (currentTab === 'slides' || (currentTab === 'events' && calViews.includes(currentView))) ? 'none' : '';
+  if (currentTab === 'events' && calViews.includes(currentView)) {
+    if (tbl) tbl.style.display = 'none';
+    if (currentView === 'calendar') renderCalendar();
+    else if (currentView === 'week') renderWeekView();
+    else if (currentView === 'year') renderYearView();
+    return;
+  } else {
+    if (calC) calC.style.display = 'none';
+    if (tbl) tbl.style.display = '';
+  }
+  if (currentTab === 'events' && currentView === 'monster') { renderMonster(); return; }
+  const cfg = tabConfig[currentTab];
+  document.getElementById('table-head').innerHTML = '<tr>'+cfg.cols.map(c=>
+    `<th onclick="sortBy('${c.key}')" class="${sortCol===c.key?'sorted':''}">
+      ${c.label}<span class="si">${sortCol===c.key?(sortDir===1?'↑':'↓'):'↕'}</span>
+    </th>`
+  ).join('')+'<th style="width:40px"></th></tr>';
+  document.getElementById('table-body').innerHTML = filtered.map(row => {
+    const weekCls = currentTab === 'events' && isCurrentWeek(row.date) ? ' current-week' : '';
+    return `<tr onclick="selectRow(${row.id})" class="${selectedId===row.id?'selected':''}${weekCls}">
+      ${cfg.cols.map(c=>`<td>${c.render(row[c.key],row)}</td>`).join('')}
+      <td class="td-actions" onclick="event.stopPropagation()"><button class="actions-btn" onclick="showCtxMenu(event,${row.id},'${currentTab}')"><i data-lucide="ellipsis" style="width:16px;height:16px"></i></button></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="${cfg.cols.length+1}" style="padding:24px;text-align:center;color:#9ca3af">No results</td></tr>`;
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  const addBtn = document.getElementById('add-bar-btn');
+  if (addBtn) addBtn.textContent = '+ Ny ' + tabConfig[currentTab].label.slice(0,-1).toLowerCase();
+}
+
+function sortBy(key) {
+  if (sortCol===key) sortDir*=-1; else { sortCol=key; sortDir=1; }
+  applyFilters();
+}
+
+function selectRow(id) {
+  selectedId = id;
+  warningConfigOpen = false;
+  if (currentTab === 'events' && currentView === 'monster') {
+    openDetailModal(id);
+    renderTable();
+  } else {
+    renderTable();
+    renderSidebar(db[currentTab].find(r=>r.id===id));
+  }
+  updateHash();
+}
+
+function openDetailModal(id) {
+  const ev = db.events.find(e=>e.id===id);
+  if (!ev) return;
+  const modal = document.getElementById('detail-modal');
+  document.getElementById('detail-modal-content').innerHTML = sidebarEvent(ev);
+  modal.classList.add('open');
+  initSidebarTracking();
+}
+
+function closeDetailModal() {
+  document.getElementById('detail-modal').classList.remove('open');
+  selectedId = null;
+  renderTable();
+  updateHash();
+}
+
+// ── CONTEXT MENU ──────────────────────────────────────────────────────────────
+function showCtxMenu(e, id, tab) {
+  e.preventDefault();
+  e.stopPropagation();
+  tab = tab || currentTab;
+  const menu = document.getElementById('ctx-menu');
+  let items = `<button onclick="selectRow(${id});hideCtxMenu()"><i data-lucide="pencil" style="width:14px;height:14px"></i> Redigera</button>`;
+  if (tab === 'events') {
+    items += `<button onclick="duplicateEvent(${id});hideCtxMenu()"><i data-lucide="copy" style="width:14px;height:14px"></i> Duplicera</button>`;
+  }
+  items += `<button class="ctx-danger" onclick="deleteRecord(${id},'${tab}');hideCtxMenu()"><i data-lucide="trash-2" style="width:14px;height:14px"></i> Ta bort</button>`;
+  menu.innerHTML = items;
+  menu.style.display = 'block';
+  menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+  menu.style.top = Math.min(e.clientY, window.innerHeight - 120) + 'px';
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+}
+
+function deleteRecord(id, tab) {
+  if (tab === 'events') { deleteEvent(id); return; }
+  if (!db[tab]) return;
+  db[tab] = db[tab].filter(r=>r.id!==id);
+  if (selectedId === id) { selectedId = null; renderSidebar(null); }
+  persist(tab);
+  applyFilters();
+}
+
+function hideCtxMenu() {
+  document.getElementById('ctx-menu').style.display = 'none';
+}
+
+function duplicateEvent(id) {
+  const src = db.events.find(e=>e.id===id);
+  if (!src) return;
+  const maxId = db.events.reduce((m,e) => Math.max(m,e.id), 0) + 1;
+  const copy = JSON.parse(JSON.stringify(src));
+  copy.id = maxId;
+  copy.volunteers = 0;
+  db.events.push(copy);
+  assignments[copy.id] = {};
+  persist('events');
+  applyFilters();
+  selectRow(copy.id);
+}
+
+document.addEventListener('click', () => hideCtxMenu());
+document.addEventListener('contextmenu', e => {
+  if (!e.target.closest('.ctx-menu')) hideCtxMenu();
+});
+
+// ── MONSTER TABLE ─────────────────────────────────────────────────────────────
+function renderMonster() {
+  const tasks = db.tasks;
+  document.getElementById('table-head').innerHTML = '<tr>'
+    + `<th class="th-event" onclick="sortBy('date')">Date / Event<span class="si">${sortCol==='date'?(sortDir===1?'↑':'↓'):'↕'}</span></th>`
+    + tasks.map(t=>`<th><div class="th-task-label">${t.name}</div><div class="th-task-type">${t.teamTask?'<i data-lucide="users" style="width:10px;height:10px;vertical-align:middle"></i> team':'<i data-lucide="user" style="width:10px;height:10px;vertical-align:middle"></i> person'}</div></th>`).join('')
+    + '</tr>';
+
+  const visibleEvents = filtered.filter(ev => (ev.expectedTasks||[]).length > 0);
+
+  document.getElementById('table-body').innerHTML = visibleEvents.map(ev => {
+    const reqTasks = ev.expectedTasks || [];
+    const weekCls = isCurrentWeek(ev.date) ? ' current-week' : '';
+    const cells = tasks.map(task => {
+      const asgn = assignments[ev.id]?.[task.id];
+      const isRequired = reqTasks.includes(task.id);
+      const isMissing = isRequired && !asgn;
+      const warnCls = isMissing ? ' cell-warn' : '';
+      if (task.teamTask) {
+        const teams = db.teams.filter(t=>t.taskId===task.id);
+        const selTeam = asgn ? teams.find(t=>t.id===asgn.id) : null;
+        const label = selTeam ? `Team ${selTeam.number}` : '—';
+        const uid = `tpop_${ev.id}_${task.id}`;
+        return `<td onclick="event.stopPropagation()"><div class="pop-cell">
+          <div class="pop-label ${!selTeam?'unset':''}${warnCls}" id="lbl_${uid}" onclick="openTeamPop('${uid}',${ev.id},${task.id})">${label}</div>
+          <div class="pop-panel" id="pan_${uid}"></div>
+        </div></td>`;
+      } else {
+        const ids = asgn?.ids || [];
+        const label = ids.length===0 ? '—' : ids.map(id=>db.contacts.find(c=>c.id===id)?.name.split(' ')[0]).join(', ');
+        const uid = `pop_${ev.id}_${task.id}`;
+        return `<td onclick="event.stopPropagation()"><div class="pop-cell">
+          <div class="pop-label ${ids.length===0?'unset':''}${warnCls}" id="lbl_${uid}" onclick="openPop('${uid}',${ev.id},${task.id})">${label}</div>
+          <div class="pop-panel" id="pan_${uid}"></div>
+        </div></td>`;
+      }
+    }).join('');
+    const missingTasks = reqTasks.filter(tid => !assignments[ev.id]?.[tid]);
+    const warnCount = missingTasks.length;
+    const missingNames = missingTasks.map(tid => db.tasks.find(t=>t.id===tid)?.name).filter(Boolean).join(', ');
+    const warnBadge = warnCount > 0 ? ` <span class="warn-count" title="Saknas: ${missingNames}">⚠ ${warnCount}</span>` : '';
+    return `<tr onclick="selectRow(${ev.id})" oncontextmenu="showCtxMenu(event,${ev.id},'events')" class="${selectedId===ev.id?'selected':''}${weekCls}">
+      <td class="td-event">${ev.date} ${ev.time||''}<br><span style="font-size:12px;color:#6b7280">${ev.title}</span>${warnBadge}</td>${cells}</tr>`;
+  }).join('') || `<tr><td colspan="${tasks.length+1}" style="padding:24px;text-align:center;color:#9ca3af">No results</td></tr>`;
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+}
+
+// ── CALENDAR VIEW ─────────────────────────────────────────────────────────────
+let calMonth = new Date().getMonth();
+let calYear = new Date().getFullYear();
+let calWeekOffset = 0;
+let dragEventId = null;
+let calScrollInit = false;
+
+function getCalContainer() {
+  const wrap = document.querySelector('.table-wrap');
+  let c = document.getElementById('cal-container');
+  if (!c) { c = document.createElement('div'); c.id = 'cal-container'; wrap.appendChild(c); }
+  c.style.display = '';
+  c.style.height = '100%';
+  wrap.querySelector('table').style.display = 'none';
+  return c;
+}
+
+function evBadge(ev, extraCls) {
+  const cat = (ev.category || 'weekday').toLowerCase();
+  return `<div class="${extraCls || 'cal-ev'} cal-ev-${cat}" draggable="true" data-ev-id="${ev.id}"
+    onclick="event.stopPropagation();openDetailModal(${ev.id})"
+    title="${ev.time || ''} ${ev.title}">${ev.time || ''} ${ev.title}</div>`;
+}
+
+function groupByDate(events) {
+  const m = {};
+  events.forEach(ev => { if (!m[ev.date]) m[ev.date] = []; m[ev.date].push(ev); });
+  return m;
+}
+
+function moveEventToDate(evId, newDate) {
+  const ev = db.events.find(e => e.id === evId);
+  if (!ev || ev.date === newDate) return;
+  ev.date = newDate;
+  persist('events');
+  // preserve scroll position across re-render
+  const scrollEl = document.getElementById('cal-scroll-area') || document.getElementById('week-scroll-area');
+  const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+  applyFilters();
+  const el = document.getElementById('cal-scroll-area') || document.getElementById('week-scroll-area');
+  if (el) el.scrollTop = scrollTop;
+}
+
+function initDragDrop(container) {
+  container.addEventListener('dragstart', e => {
+    const el = e.target.closest('[data-ev-id]');
+    if (!el) return;
+    dragEventId = parseInt(el.dataset.evId);
+    el.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragEventId);
+  });
+  container.addEventListener('dragend', e => {
+    const el = e.target.closest('[data-ev-id]');
+    if (el) el.classList.remove('dragging');
+    dragEventId = null;
+    container.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+  });
+  container.addEventListener('dragover', e => {
+    const cell = e.target.closest('[data-drop-date]');
+    if (!cell) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    container.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+    cell.classList.add('drag-over');
+  });
+  container.addEventListener('dragleave', e => {
+    const cell = e.target.closest('[data-drop-date]');
+    if (cell && !cell.contains(e.relatedTarget)) cell.classList.remove('drag-over');
+  });
+  container.addEventListener('drop', e => {
+    e.preventDefault();
+    const cell = e.target.closest('[data-drop-date]');
+    if (!cell || !dragEventId) return;
+    cell.classList.remove('drag-over');
+    moveEventToDate(dragEventId, cell.dataset.dropDate);
+    dragEventId = null;
+  });
+}
+
+function renderCalendar() {
+  const yr = selectedYear;
+  const monthNames = ['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
+  const shortMonths = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  const dayHeaders = ['mån','tis','ons','tor','fre','lör','sön'];
+
+  const byDate = groupByDate(filtered);
+  const todayStr = localDate(new Date());
+  const curWeek = getCurrentWeekRange();
+  const MAX_VIS = 3;
+
+  document.getElementById('table-head').innerHTML = '';
+  document.getElementById('table-body').innerHTML = '';
+
+  const headerRow = `<div class="cal-header" style="font-size:10px">v.</div>` + dayHeaders.map(d => `<div class="cal-header">${d}</div>`).join('');
+
+  let html = `<div class="cal-scroll" id="cal-scroll-area">`;
+
+  for (let m = 0; m < 12; m++) {
+    const first = new Date(yr, m, 1);
+    const last = new Date(yr, m + 1, 0);
+    const startDay = (first.getDay() + 6) % 7;
+
+    // Build weeks for this month
+    const startDate = new Date(first);
+    startDate.setDate(1 - startDay);
+    // figure out how many weeks we need (until we pass the last day)
+    const weeks = [];
+    const wd = new Date(startDate);
+    while (true) {
+      weeks.push(new Date(wd));
+      wd.setDate(wd.getDate() + 7);
+      if (wd > last && wd.getDay() === 1) break;
+      if (weeks.length >= 6) break;
+    }
+
+    html += `<div class="cal-month-section">`;
+    html += `<div class="cal-month-label">${monthNames[m]} <span>${yr}</span></div>`;
+    html += `<div class="cal-grid">${headerRow}`;
+
+    weeks.forEach(weekMon => {
+      const wn = getWeekNumber(weekMon);
+      html += `<div class="cal-wk">${wn}</div>`;
+      for (let i = 0; i < 7; i++) {
+        const day = new Date(weekMon);
+        day.setDate(weekMon.getDate() + i);
+        const ds = localDate(day);
+        const outside = day.getMonth() !== m;
+        const isToday = ds === todayStr;
+        const inCurWeek = ds >= curWeek.from && ds <= curWeek.to;
+        let cls = 'cal-cell';
+        if (outside) cls += ' outside';
+        if (isToday) cls += ' today';
+        if (inCurWeek && !outside) cls += ' current-week-cell';
+
+        const evs = byDate[ds] || [];
+        const visible = evs.slice(0, MAX_VIS);
+        const extra = evs.length - MAX_VIS;
+
+        const dayLabel = day.getDate() === 1 && !outside ? `1 ${shortMonths[day.getMonth()]}` : `${day.getDate()}`;
+        let inner = `<div class="cal-day-num">${dayLabel}</div>`;
+        visible.forEach(ev => { inner += evBadge(ev); });
+        if (extra > 0) inner += `<div class="cal-more" onclick="event.stopPropagation();calShowAll('${ds}')">+${extra} till</div>`;
+        html += `<div class="${cls}" data-drop-date="${ds}" onclick="if(!event.target.closest('[data-ev-id],.cal-more'))newEventOnDate('${ds}')">${inner}</div>`;
+      }
+    });
+
+    html += '</div></div>';
+  }
+
+  html += '</div>';
+  const c = getCalContainer();
+  c.innerHTML = html;
+  initDragDrop(c);
+
+  if (!calScrollInit) {
+    calScrollInit = true;
+    requestAnimationFrame(() => {
+      const scrollArea = document.getElementById('cal-scroll-area');
+      if (!scrollArea) return;
+      const todayCell = scrollArea.querySelector('.cal-cell.today');
+      if (todayCell) {
+        todayCell.scrollIntoView({ block: 'center', behavior: 'instant' });
+      }
+    });
+  }
+}
+
+function renderWeekView() {
+  const yr = selectedYear;
+  const dayLabels = ['mån','tis','ons','tor','fre','lör','sön'];
+  const monthNames = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  const todayStr = localDate(new Date());
+  const byDate = groupByDate(filtered);
+
+  // Build all weeks for the year
+  const janFirst = new Date(yr, 0, 1);
+  const startMon = new Date(janFirst);
+  startMon.setDate(janFirst.getDate() - ((janFirst.getDay() + 6) % 7));
+  const decLast = new Date(yr, 11, 31);
+  const endSun = new Date(decLast);
+  endSun.setDate(decLast.getDate() + (7 - ((decLast.getDay() + 6) % 7)) % 7);
+
+  document.getElementById('table-head').innerHTML = '';
+  document.getElementById('table-body').innerHTML = '';
+
+  let html = `<div class="week-scroll" id="week-scroll-area"><div class="week-container">`;
+
+  const d = new Date(startMon);
+  while (d <= endSun) {
+    const wn = getWeekNumber(d);
+    const monDate = localDate(d);
+    const sunD = new Date(d); sunD.setDate(d.getDate() + 6);
+    const sunDate = localDate(sunD);
+    const monMonth = monthNames[d.getMonth()];
+    const sunMonth = monthNames[sunD.getMonth()];
+    const range = monMonth === sunMonth
+      ? `${d.getDate()}–${sunD.getDate()} ${monMonth}`
+      : `${d.getDate()} ${monMonth} – ${sunD.getDate()} ${sunMonth}`;
+
+    html += `<div class="week-section" data-week-date="${localDate(d)}"><div class="week-section-header">Vecka ${wn} <span>${range}</span></div>`;
+    html += `<div class="week-grid">`;
+
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(d);
+      day.setDate(d.getDate() + i);
+      const ds = localDate(day);
+      const isToday = ds === todayStr;
+      let cls = 'week-col';
+      if (isToday) cls += ' today';
+
+      const evs = byDate[ds] || [];
+      let inner = `<div class="week-col-header${isToday?' today-hdr':''}">
+        ${dayLabels[i]}<span class="week-date">${day.getDate()}</span>
+      </div>`;
+      evs.forEach(ev => {
+        const cat = (ev.category || 'weekday').toLowerCase();
+        inner += `<div class="week-ev cal-ev-${cat}" draggable="true" data-ev-id="${ev.id}"
+          onclick="event.stopPropagation();openDetailModal(${ev.id})">
+          <div class="week-ev-time">${ev.time || ''}</div>
+          <div class="week-ev-title">${ev.title}</div>
+        </div>`;
+      });
+      html += `<div class="${cls}" data-drop-date="${ds}" onclick="if(!event.target.closest('[data-ev-id]'))newEventOnDate('${ds}')">${inner}</div>`;
+    }
+
+    html += `</div></div>`;
+    d.setDate(d.getDate() + 7);
+  }
+
+  html += '</div></div>';
+  const c = getCalContainer();
+  c.innerHTML = html;
+  initDragDrop(c);
+
+  // Scroll to current week
+  if (!calScrollInit) {
+    calScrollInit = true;
+    requestAnimationFrame(() => {
+      const scrollArea = document.getElementById('week-scroll-area');
+      if (!scrollArea) return;
+      const todayCol = scrollArea.querySelector('.week-col.today');
+      if (todayCol) todayCol.scrollIntoView({ block: 'center', behavior: 'instant' });
+    });
+  }
+}
+
+function renderYearView() {
+  const monthNames = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  const dayHeaders = ['m','t','o','t','f','l','s'];
+  const todayStr = localDate(new Date());
+  const yr = selectedYear;
+
+  // collect all event dates for this year
+  const eventDates = new Set(filtered.map(e => e.date));
+
+  document.getElementById('table-head').innerHTML = '';
+  document.getElementById('table-body').innerHTML = '';
+
+  let html = `<div class="year-grid">`;
+  for (let m = 0; m < 12; m++) {
+    const first = new Date(yr, m, 1);
+    const startDay = (first.getDay() + 6) % 7;
+    const daysInMonth = new Date(yr, m + 1, 0).getDate();
+
+    html += `<div class="year-month"><div class="year-month-title">${monthNames[m]} ${yr}</div><div class="year-mini-grid">`;
+    html += dayHeaders.map(d => `<div class="year-mini-hdr">${d}</div>`).join('');
+
+    // leading blanks
+    for (let i = 0; i < startDay; i++) html += `<div class="year-mini-day outside"></div>`;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const ds = `${yr}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const isToday = ds === todayStr;
+      const hasEv = eventDates.has(ds);
+      let cls = 'year-mini-day';
+      if (isToday) cls += ' today';
+      if (hasEv) cls += ' has-events';
+      html += `<div class="${cls}" onclick="goToWeek('${ds}')" style="cursor:pointer">${d}</div>`;
+    }
+    // trailing blanks
+    const total = startDay + daysInMonth;
+    const trailing = (7 - total % 7) % 7;
+    for (let i = 0; i < trailing; i++) html += `<div class="year-mini-day outside"></div>`;
+
+    html += '</div></div>';
+  }
+  html += '</div>';
+  const c = getCalContainer();
+  c.innerHTML = html;
+}
+
+function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderTable(); }
+function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderTable(); }
+function calToday() { const n = new Date(); calMonth = n.getMonth(); calYear = n.getFullYear(); renderTable(); }
+function calShowAll(dateStr) {
+  document.getElementById('search-input').value = dateStr;
+  setView('list');
+  applyFilters();
+}
+function goToWeek(dateStr) {
+  // Find the Monday of the week containing dateStr
+  const d = new Date(dateStr + 'T00:00:00');
+  const mon = new Date(d);
+  mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  const monStr = localDate(mon);
+  calScrollInit = true; // prevent auto-scroll to today
+  setView('week');
+  requestAnimationFrame(() => {
+    const scrollArea = document.getElementById('week-scroll-area');
+    if (!scrollArea) return;
+    const section = scrollArea.querySelector(`[data-week-date="${monStr}"]`);
+    if (section) section.scrollIntoView({ block: 'start', behavior: 'instant' });
+  });
+}
+
+function setTeamAssign(eid, tid, val) {
+  if (!val) delete assignments[eid][tid];
+  else assignments[eid][tid] = {type:'team', id:parseInt(val)};
+  updateVolCount(eid);
+}
+
+function openTeamSidebar(teamId) {
+  const team = db.teams.find(t=>t.id===teamId);
+  if (!team) return;
+  currentTab = 'teams';
+  selectedId = teamId;
+  renderSidebar(team);
+  // switch back to events tab visually but keep sidebar showing team
+  currentTab = 'events';
+}
+
+function togglePerson(eid, tid, cid, checked) {
+  if (!assignments[eid][tid]) assignments[eid][tid] = {type:'contact', ids:[]};
+  const ids = assignments[eid][tid].ids;
+  if (checked && !ids.includes(cid)) ids.push(cid);
+  if (!checked) assignments[eid][tid].ids = ids.filter(i=>i!==cid);
+  if (assignments[eid][tid].ids.length===0) delete assignments[eid][tid];
+  // update label
+  const cur = assignments[eid][tid]?.ids || [];
+  const label = cur.length===0 ? '—' : cur.map(id=>db.contacts.find(c=>c.id===id)?.name.split(' ')[0]).join(', ');
+  const lbl = document.getElementById(`lbl_pop_${eid}_${tid}`);
+  if (lbl) { lbl.textContent = label; lbl.classList.toggle('unset', cur.length===0); }
+  updateVolCount(eid);
+}
+
+function updateVolCount(eid) {
+  db.events.find(e=>e.id===eid).volunteers = Object.keys(assignments[eid]||{}).length;
+  persistAssignments();
+}
+
+function persistAssignments() {
+  db.schedules = assignments;
+  persist('schedules');
+}
+
+let openPopId = null;
+function openTeamPop(uid, eid, tid) {
+  const pan = document.getElementById('pan_'+uid);
+  if (openPopId === uid) { pan.classList.remove('open'); openPopId = null; return; }
+  closePops();
+  const task = db.tasks.find(t=>t.id===tid);
+  const teams = db.teams.filter(t=>t.taskId===tid);
+  const curId = assignments[eid]?.[tid]?.id || null;
+  let html = `<div class="pop-list">`;
+  html += `<label data-name="—" style="color:#9ca3af"><input type="radio" name="tpick_${uid}" value="" ${!curId?'checked':''} onchange="pickTeam('${uid}',${eid},${tid},0)"> —</label>`;
+  html += teams.map(t => {
+    const members = (t.members||[]).map(id=>db.contacts.find(c=>c.id===id)?.name).filter(Boolean).join(', ');
+    const hint = members ? `<span style="font-size:11px;color:#9ca3af;margin-left:4px">${members}</span>` : '';
+    return `<label data-name="team ${t.number}" style="display:flex;align-items:center;gap:6px">
+      <input type="radio" name="tpick_${uid}" value="${t.id}" ${curId===t.id?'checked':''} onchange="pickTeam('${uid}',${eid},${tid},${t.id})" style="accent-color:#4f46e5">
+      <span style="flex:1">Team ${t.number}${hint}</span>
+      <button class="team-gear" onclick="event.stopPropagation();openTeamSidebar(${t.id})" title="Redigera team"><i data-lucide="settings" style="width:12px;height:12px"></i></button>
+    </label>`;
+  }).join('');
+  html += '</div>';
+  pan.innerHTML = html;
+  pan.classList.add('open');
+  openPopId = uid;
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+}
+
+function pickTeam(uid, eid, tid, teamId) {
+  if (!assignments[eid]) assignments[eid] = {};
+  if (!teamId) { delete assignments[eid][tid]; }
+  else { assignments[eid][tid] = {type:'team', id:teamId}; }
+  const lbl = document.getElementById('lbl_'+uid);
+  if (lbl) {
+    const t = teamId ? db.teams.find(t=>t.id===teamId) : null;
+    lbl.textContent = t ? `Team ${t.number}` : '—';
+    lbl.classList.toggle('unset', !teamId);
+  }
+  updateVolCount(eid);
+  closePops();
+}
+
+function openPop(uid, eid, tid) {
+  const pan = document.getElementById('pan_'+uid);
+  if (openPopId === uid) { pan.classList.remove('open'); openPopId = null; return; }
+  closePops();
+  // build contents dynamically
+  const curIds = assignments[eid]?.[tid]?.ids || [];
+  let html = `<input class="pop-search" type="text" placeholder="Sök person…" oninput="filterPopList('${uid}')">`;
+  html += `<div class="pop-list" id="plist_${uid}">`;
+  html += db.contacts.map(c => {
+    const checked = curIds.includes(c.id) ? 'checked' : '';
+    return `<label data-name="${c.name.toLowerCase()}"><input type="checkbox" ${checked} onchange="togglePerson(${eid},${tid},${c.id},this.checked)"> ${c.name}</label>`;
+  }).join('');
+  html += '</div>';
+  html += `<div class="pop-add-area" id="padd_${uid}"><button class="pop-add" onclick="event.stopPropagation();showAddPersonInput('${uid}',${eid},${tid})">+ Lägg till ny person</button></div>`;
+  pan.innerHTML = html;
+  pan.classList.add('open');
+  openPopId = uid;
+  pan.querySelector('.pop-search').focus();
+}
+function filterPopList(uid) {
+  const pan = document.getElementById('pan_'+uid);
+  if (!pan) return;
+  const q = pan.querySelector('.pop-search').value.toLowerCase();
+  pan.querySelectorAll('.pop-list label').forEach(lbl => {
+    lbl.style.display = lbl.dataset.name.includes(q) ? '' : 'none';
+  });
+}
+function showAddPersonInput(uid, eid, tid) {
+  const area = document.getElementById('padd_'+uid);
+  if (!area) return;
+  area.innerHTML = `<div style="display:flex;gap:4px;padding:6px 8px;border-top:1px solid #e5e7eb">
+    <input type="text" id="pinp_${uid}" placeholder="Fullständigt namn" style="flex:1;border:1px solid #d1d5db;border-radius:5px;padding:4px 8px;font-size:12px;outline:none">
+    <button class="btn" style="padding:4px 10px;font-size:12px" onclick="event.stopPropagation();addContactInline('${uid}',${eid},${tid})">Spara</button>
+  </div>`;
+  const inp = document.getElementById('pinp_'+uid);
+  inp.focus();
+  inp.addEventListener('keydown', e => { if (e.key==='Enter') { e.stopPropagation(); addContactInline(uid,eid,tid); } });
+}
+function addContactInline(uid, eid, tid) {
+  const inp = document.getElementById('pinp_'+uid);
+  if (!inp) return;
+  const q = inp.value.trim();
+  if (!q) return;
+  const existing = db.contacts.find(c => c.name.toLowerCase() === q.toLowerCase());
+  if (existing) {
+    if (!assignments[eid]) assignments[eid] = {};
+    if (!assignments[eid][tid]) assignments[eid][tid] = {type:'contact', ids:[]};
+    if (!assignments[eid][tid].ids.includes(existing.id)) assignments[eid][tid].ids.push(existing.id);
+  } else {
+    const maxId = db.contacts.reduce((m,c) => Math.max(m,c.id), 0) + 1;
+    const newC = {id:maxId, name:q, email:'', phone:''};
+    db.contacts.push(newC);
+    persist('contacts');
+    if (!assignments[eid]) assignments[eid] = {};
+    if (!assignments[eid][tid]) assignments[eid][tid] = {type:'contact', ids:[]};
+    assignments[eid][tid].ids.push(newC.id);
+  }
+  const cur = assignments[eid][tid]?.ids || [];
+  const label = cur.length===0 ? '—' : cur.map(id=>db.contacts.find(c=>c.id===id)?.name.split(' ')[0]).join(', ');
+  const lbl = document.getElementById('lbl_'+uid);
+  if (lbl) { lbl.textContent = label; lbl.classList.toggle('unset', cur.length===0); }
+  updateVolCount(eid);
+  openPopId = null;
+  openPop(uid, eid, tid);
+}
+function closePops() {
+  document.querySelectorAll('.pop-panel.open').forEach(p=>p.classList.remove('open'));
+  openPopId = null;
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.pop-cell')) closePops();
+});
+
+// ── SLIDES ────────────────────────────────────────────────────────────────────
+let slideWeekOffset = 0;
+
+function getWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
+function getMondayOfWeek(refDate, offset) {
+  const d = new Date(refDate);
+  const day = d.getDay() || 7;
+  d.setDate(d.getDate() - day + 1 + offset * 7);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function renderSlides() {
+  const area = document.getElementById('slides-area');
+  const today = new Date();
+  const monday = getMondayOfWeek(today, slideWeekOffset);
+  const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+  const weekNum = getWeekNumber(monday);
+
+  const monStr = localDate(monday);
+  const sunStr = localDate(sunday);
+
+  const weekEvents = (db.events||[])
+    .filter(e => e.date >= monStr && e.date <= sunStr)
+    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+
+  // group by date
+  const byDay = {};
+  weekEvents.forEach(e => {
+    if (!byDay[e.date]) byDay[e.date] = [];
+    byDay[e.date].push(e);
+  });
+
+  const dayNames = ['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'];
+
+  let daysHtml = '';
+  if (Object.keys(byDay).length === 0) {
+    daysHtml = '<p style="color:#475569;padding:12px 0">Inga händelser denna vecka</p>';
+  } else {
+    const sortedDates = Object.keys(byDay).sort();
+    daysHtml = sortedDates.map(dateStr => {
+      const d = new Date(dateStr + 'T00:00:00');
+      const dayName = dayNames[d.getDay()];
+      const dayNum = d.getDate();
+      const eventsHtml = byDay[dateStr].map(ev => {
+        let extra = '';
+        if (ev.description) extra += ` <span class="slide-event-desc">${ev.description}</span>`;
+        if (ev.infoLink) extra += ` <a class="slide-event-link" href="${ev.infoLink}" target="_blank">Mer info →</a>`;
+        return `<div class="slide-event-row">
+          <span class="slide-event-time">${ev.time || ''}</span>
+          <span class="slide-event-title">${ev.title}</span>${extra}
+        </div>`;
+      }).join('');
+      return `<div class="slide-day">
+        <div class="slide-day-name">${dayName.charAt(0).toUpperCase()+dayName.slice(1)} <span>${dayNum}</span></div>
+        ${eventsHtml}
+      </div>`;
+    }).join('');
+  }
+
+  // collect promo slides from this week's events
+  const promos = weekEvents.flatMap(e => e.promoSlides || []);
+  const promosHtml = promos.length
+    ? `<div class="slide-promos">${promos.map(url =>
+        `<img class="slide-promo-img" src="${url}" alt="Promo" onerror="this.outerHTML='<div class=\\'slide-promo-placeholder\\'>Bild</div>'">`
+      ).join('')}</div>`
+    : '';
+
+  area.innerHTML = `
+    <div class="slide-nav">
+      <button onclick="slideWeekOffset--;renderSlides()">← Förra</button>
+      <span>Händer i veckan (v${weekNum})</span>
+      <button onclick="slideWeekOffset++;renderSlides()">Nästa →</button>
+    </div>
+    <div class="slide-card">
+      <h2>Händer i veckan (v${weekNum})</h2>
+      ${daysHtml}
+      ${promosHtml}
+    </div>`;
+}
+
+// ── SIDEBAR ───────────────────────────────────────────────────────────────────
+function renderSidebar(record) {
+  const el = document.getElementById('sidebar-content');
+  if (!record) {
+    el.innerHTML = `<div class="empty-sidebar">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      <p style="font-size:13px">Select a row to view details</p></div>`;
+    return;
+  }
+  const builders = { events:sidebarEvent, contacts:sidebarContact, tasks:sidebarTask, teams:sidebarTeam };
+  if (builders[currentTab]) el.innerHTML = builders[currentTab](record);
+  initSidebarTracking();
+}
+
+function getAssignmentLabel(eid, tid) {
+  const a = assignments[eid]?.[tid];
+  if (!a) return '—';
+  if (a.type==='team') {
+    const t = db.teams.find(t=>t.id===a.id);
+    return t ? `Team ${t.number}` : '?';
+  }
+  return (a.ids||[]).map(id=>db.contacts.find(c=>c.id===id)?.name).filter(Boolean).join(', ') || '—';
+}
+
+function sidebarEvent(r) {
+  const isNew = r._isNew;
+  const taskRows = isNew ? '' : db.tasks.map(t =>
+    `<li><span>${t.name}</span><span class="who">${getAssignmentLabel(r.id, t.id)}</span></li>`
+  ).join('');
+  const assigned = isNew ? 0 : Object.keys(assignments[r.id]||{}).length;
+  const promos = r.promoSlides || [];
+  const promoHtml = promos.length
+    ? promos.map((url,i) => `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <input type="text" value="${url}" style="flex:1" placeholder="Image URL" data-promo-idx="${i}">
+        <button class="btn-ghost" onclick="removePromoSlide(${r.id},${i})" style="padding:3px 8px;font-size:11px">✕</button>
+      </div>`).join('')
+    : '<p style="font-size:13px;color:#9ca3af">Inga promo-bilder</p>';
+  const deleteBtn = isNew ? '' : `<button class="btn-danger" onclick="if(confirm('Ta bort denna händelse?'))deleteEvent(${r.id})" style="font-size:12px;padding:5px 10px">Ta bort</button>`;
+  const schemaSection = isNew ? '' : `<div class="sb-section">
+      <h4>Schema (${assigned} tilldelade)</h4>
+      <ul class="mini-list">${taskRows}</ul>
+    </div>`;
+  return `
+  <div class="sidebar-header">
+    <h3>${isNew ? 'Ny händelse' : r.title}</h3>
+    <button class="sidebar-close" onclick="closeEventDetail()">×</button>
+  </div>
+  <div class="sidebar-body" id="sb-body">
+    <div class="field-group"><label>Date</label><input type="date" value="${r.date}" id="sb-date"></div>
+    <div class="field-group"><label>Time</label><input type="time" value="${r.time||''}" id="sb-time"></div>
+    <div class="field-group"><label>Title</label><input type="text" value="${r.title}" id="sb-title"></div>
+    <div class="field-group"><label>Category</label>
+      <select id="sb-category">${['Sunday','Weekday','Special'].map(o=>`<option${o===r.category?' selected':''}>${o}</option>`).join('')}</select>
+    </div>
+    <div class="field-group"><label>Description</label><textarea rows="2" id="sb-desc">${r.description||''}</textarea></div>
+    <div class="field-group"><label>Info link</label><input type="url" value="${r.infoLink||''}" placeholder="https://…" id="sb-infolink"></div>
+    <div class="sb-section">
+      <h4>Promo slides</h4>
+      <div id="sb-promos">${promoHtml}</div>
+      <button class="btn-ghost" onclick="addPromoSlide(${r.id})" style="margin-top:4px;font-size:12px">+ Lägg till bild</button>
+    </div>
+    <div class="sb-section">
+      <h4>Förväntade uppgifter</h4>
+      <div class="cat-task-list">${db.tasks.map(t=>
+        `<label><input type="checkbox" ${(r.expectedTasks||[]).includes(t.id)?'checked':''} data-exp-task="${t.id}"> ${t.name}</label>`
+      ).join('')}</div>
+    </div>
+    ${schemaSection}
+  </div>
+  <div class="sidebar-footer">
+    <button class="btn-save" id="btn-save" onclick="saveEvent(${r.id})" data-is-new="${isNew?'1':''}">Spara</button>
+    <span style="flex:1"></span>
+    ${deleteBtn}
+  </div>`;
+}
+
+function closeEventDetail() {
+  if (currentView === 'monster' || currentView === 'calendar') {
+    closeDetailModal();
+  } else {
+    renderSidebar(null); selectedId = null; renderTable();
+  }
+}
+
+// track sidebar dirty state
+function initSidebarTracking() {
+  const body = document.getElementById('sb-body');
+  if (!body) return;
+  const mark = () => { const b = document.getElementById('btn-save'); if (b) b.classList.add('dirty'); };
+  body.addEventListener('input', mark);
+  body.addEventListener('change', mark);
+}
+
+function sidebarContact(r) {
+  const upcoming = (db.events||[]).filter(e=>e.date>='2026-03-22').slice(0,3);
+  return `
+  <div class="sidebar-header">
+    <h3>${r.name}</h3>
+    <button class="sidebar-close" onclick="renderSidebar(null);selectedId=null;renderTable()">×</button>
+  </div>
+  <div class="sidebar-body" id="sb-body">
+    <div class="field-group"><label>Full name</label><input type="text" value="${r.name}" id="sb-cname"></div>
+    <div class="field-group"><label>Email</label><input type="email" value="${r.email}" id="sb-cemail"></div>
+    <div class="field-group"><label>Phone</label><input type="tel" value="${r.phone}" id="sb-cphone"></div>
+    <div class="sb-section">
+      <h4>Upcoming events</h4>
+      <ul class="mini-list">${upcoming.map(e=>`<li><span>${e.date}</span><span class="who">${e.title}</span></li>`).join('')}</ul>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="btn-save" id="btn-save" onclick="saveContact(${r.id})">Spara</button>
+  </div>`;
+}
+
+function saveContact(id) {
+  const c = db.contacts.find(x=>x.id===id);
+  if (!c) return;
+  c.name = document.getElementById('sb-cname').value;
+  c.email = document.getElementById('sb-cemail').value;
+  c.phone = document.getElementById('sb-cphone').value;
+  persist('contacts');
+  applyFilters();
+  renderSidebar(c);
+}
+
+function sidebarTask(r) {
+  return `
+  <div class="sidebar-header">
+    <h3>${r.name}</h3>
+    <button class="sidebar-close" onclick="renderSidebar(null);selectedId=null;renderTable()">×</button>
+  </div>
+  <div class="sidebar-body" id="sb-body">
+    <div class="field-group"><label>Name</label><input type="text" value="${r.name}" id="sb-tname"></div>
+    <div class="field-group"><label>Options</label>
+      <div class="checkbox-row"><input type="checkbox" id="sb-tteam" ${r.teamTask?'checked':''}><label for="sb-tteam" style="text-transform:none;font-size:13px;color:#374151">Team task</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="sb-tmailbot" ${r.mailbot?'checked':''}><label for="sb-tmailbot" style="text-transform:none;font-size:13px;color:#374151">Mailbot enabled</label></div>
+    </div>
+    <div class="field-group"><label>Reminder phrase</label><input type="text" value="${r.phrase}" id="sb-tphrase"></div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="btn-save" id="btn-save" onclick="saveTask(${r.id})">Spara</button>
+  </div>`;
+}
+
+function saveTask(id) {
+  const t = db.tasks.find(x=>x.id===id);
+  if (!t) return;
+  t.name = document.getElementById('sb-tname').value;
+  t.teamTask = document.getElementById('sb-tteam').checked;
+  t.mailbot = document.getElementById('sb-tmailbot').checked;
+  t.phrase = document.getElementById('sb-tphrase').value;
+  persist('tasks');
+  applyFilters();
+  renderSidebar(t);
+}
+
+function sidebarTeam(r) {
+  const taskName = db.tasks.find(t=>t.id===r.taskId)?.name || '?';
+  const memberNames = r.members.map(id => db.contacts.find(c=>c.id===id)?.name).filter(Boolean);
+  return `
+  <div class="sidebar-header">
+    <h3>${taskName} — Team ${r.number}</h3>
+    <button class="sidebar-close" onclick="renderSidebar(null);selectedId=null;renderTable()">×</button>
+  </div>
+  <div class="sidebar-body" id="sb-body">
+    <div class="field-group"><label>Task</label>
+      <select id="sb-teamtask">${db.tasks.filter(t=>t.teamTask).map(t=>`<option value="${t.id}"${t.id===r.taskId?' selected':''}>${t.name}</option>`).join('')}</select>
+    </div>
+    <div class="field-group"><label>Team #</label><input type="number" value="${r.number}" style="width:80px" id="sb-teamnum"></div>
+    <div class="sb-section">
+      <h4>Medlemmar (${r.members.length})</h4>
+      <div class="sb-member-picker" id="sb-members">
+        <input class="pop-search" type="text" placeholder="Sök person…" oninput="filterSbMembers()" id="sb-member-search" style="width:100%;margin-bottom:6px;border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:13px">
+        <div class="sb-member-list" id="sb-member-list" style="max-height:240px;overflow-y:auto">
+          ${db.contacts.map(c=>`
+            <label data-name="${c.name.toLowerCase()}" style="display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:4px;cursor:pointer;font-size:13px;color:#374151">
+              <input type="checkbox" data-member-id="${c.id}" ${r.members.includes(c.id)?'checked':''} style="accent-color:#4f46e5"> ${c.name}
+            </label>`).join('')}
+        </div>
+        <div id="sb-member-add-area" style="margin-top:6px">
+          <button class="pop-add" onclick="showSbMemberAdd(${r.id})" style="width:100%;border:1px solid #e5e7eb;border-radius:6px">+ Lägg till ny person</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="btn-save" id="btn-save" onclick="saveTeam(${r.id})">Spara</button>
+  </div>`;
+}
+
+function filterSbMembers() {
+  const q = document.getElementById('sb-member-search').value.toLowerCase();
+  document.querySelectorAll('#sb-member-list label').forEach(lbl => {
+    lbl.style.display = lbl.dataset.name.includes(q) ? '' : 'none';
+  });
+}
+
+function showSbMemberAdd(teamId) {
+  const area = document.getElementById('sb-member-add-area');
+  area.innerHTML = `<div style="display:flex;gap:4px">
+    <input type="text" id="sb-member-new-name" placeholder="Fullständigt namn" style="flex:1;border:1px solid #d1d5db;border-radius:5px;padding:5px 8px;font-size:12px;outline:none">
+    <button class="btn" style="padding:5px 10px;font-size:12px" onclick="addSbMember(${teamId})">Spara</button>
+  </div>`;
+  const inp = document.getElementById('sb-member-new-name');
+  inp.focus();
+  inp.addEventListener('keydown', e => { if (e.key==='Enter') addSbMember(teamId); });
+}
+
+function addSbMember(teamId) {
+  const inp = document.getElementById('sb-member-new-name');
+  if (!inp) return;
+  const name = inp.value.trim();
+  if (!name) return;
+  let contact = db.contacts.find(c => c.name.toLowerCase() === name.toLowerCase());
+  if (!contact) {
+    const maxId = db.contacts.reduce((m,c) => Math.max(m,c.id), 0) + 1;
+    contact = {id:maxId, name, email:'', phone:''};
+    db.contacts.push(contact);
+    persist('contacts');
+  }
+  // Check them in and re-render
+  const team = db.teams.find(t=>t.id===teamId);
+  if (team && !team.members.includes(contact.id)) {
+    team.members.push(contact.id);
+  }
+  currentTab = 'teams';
+  renderSidebar(team);
+  // mark dirty
+  const btn = document.getElementById('btn-save');
+  if (btn) btn.classList.add('dirty');
+}
+
+function saveTeam(id) {
+  const t = db.teams.find(x=>x.id===id);
+  if (!t) return;
+  t.taskId = parseInt(document.getElementById('sb-teamtask').value);
+  t.number = parseInt(document.getElementById('sb-teamnum').value);
+  t.members = [...document.querySelectorAll('[data-member-id]')].filter(cb=>cb.checked).map(cb=>parseInt(cb.dataset.memberId));
+  persist('teams');
+  applyFilters();
+  renderSidebar(t);
+}
+
+function newRecord() {
+  if (currentTab === 'slides') return;
+  if (currentTab === 'events') {
+    newEventOnDate(localDate(new Date()));
+    return;
+  }
+  alert('New ' + tabConfig[currentTab].label.slice(0,-1) + ' — wire up to your backend!');
+}
+
+function newEventOnDate(dateStr) {
+  const maxId = db.events.reduce((m,e) => Math.max(m,e.id), 0) + 1;
+  const draft = {id:maxId, title:'', category:'Weekday', date:dateStr, time:'10:00', description:'', volunteers:0, promoSlides:[], infoLink:'', expectedTasks:[], _isNew:true};
+  if (['calendar','week','year','monster'].includes(currentView)) {
+    const modal = document.getElementById('detail-modal');
+    document.getElementById('detail-modal-content').innerHTML = sidebarEvent(draft);
+    modal.classList.add('open');
+    initSidebarTracking();
+    // auto-mark dirty so save is active
+    const btn = document.getElementById('btn-save');
+    if (btn) btn.classList.add('dirty');
+  } else {
+    selectedId = null;
+    const el = document.getElementById('sidebar-content');
+    el.innerHTML = sidebarEvent(draft);
+    initSidebarTracking();
+    const btn = document.getElementById('btn-save');
+    if (btn) btn.classList.add('dirty');
+  }
+}
+
+// ── SAVE EVENT + SMART PROPAGATION ────────────────────────────────────────────
+function saveEvent(id) {
+  const isNew = document.getElementById('btn-save')?.dataset.isNew === '1';
+
+  if (isNew) {
+    // Create new event from form values
+    const ev = {
+      id: id,
+      date: document.getElementById('sb-date').value,
+      time: document.getElementById('sb-time').value,
+      title: document.getElementById('sb-title').value,
+      category: document.getElementById('sb-category').value,
+      description: document.getElementById('sb-desc').value,
+      infoLink: document.getElementById('sb-infolink').value,
+      promoSlides: [...document.querySelectorAll('#sb-promos input[data-promo-idx]')].map(i=>i.value).filter(Boolean),
+      expectedTasks: [...document.querySelectorAll('[data-exp-task]')].filter(cb=>cb.checked).map(cb=>parseInt(cb.dataset.expTask)),
+      volunteers: 0,
+    };
+    db.events.push(ev);
+    assignments[ev.id] = {};
+    persist('events');
+    applyFilters();
+    if (['calendar','week','year','monster'].includes(currentView)) {
+      closeDetailModal();
+    } else {
+      selectedId = ev.id;
+      renderTable();
+      renderSidebar(ev);
+    }
+    return;
+  }
+
+  const ev = db.events.find(e=>e.id===id);
+  if (!ev) return;
+  const oldTitle = ev.title;
+  // snapshot propagatable fields before edit
+  const oldSnap = {title:ev.title, category:ev.category, promoSlides:JSON.stringify(ev.promoSlides||[]), infoLink:ev.infoLink||'', expectedTasks:JSON.stringify(ev.expectedTasks||[])};
+  // read sidebar values
+  ev.date = document.getElementById('sb-date').value;
+  ev.time = document.getElementById('sb-time').value;
+  ev.title = document.getElementById('sb-title').value;
+  ev.category = document.getElementById('sb-category').value;
+  ev.description = document.getElementById('sb-desc').value;
+  ev.infoLink = document.getElementById('sb-infolink').value;
+  ev.promoSlides = [...document.querySelectorAll('#sb-promos input[data-promo-idx]')].map(i=>i.value).filter(Boolean);
+  ev.expectedTasks = [...document.querySelectorAll('[data-exp-task]')].filter(cb=>cb.checked).map(cb=>parseInt(cb.dataset.expTask));
+
+  // check if any propagatable field actually changed
+  const newSnap = {title:ev.title, category:ev.category, promoSlides:JSON.stringify(ev.promoSlides), infoLink:ev.infoLink, expectedTasks:JSON.stringify(ev.expectedTasks)};
+  const propChanged = Object.keys(oldSnap).some(k => oldSnap[k] !== newSnap[k]);
+
+  const futureMatches = db.events.filter(e => e.id !== id && e.title === oldTitle && e.date >= ev.date);
+
+  if (propChanged && futureMatches.length > 0) {
+    showPropagatePopup(ev, futureMatches, oldTitle);
+  } else {
+    persist('events');
+    applyFilters();
+    if (currentView === 'monster') { closeDetailModal(); }
+    else { renderSidebar(ev); }
+  }
+}
+
+function showPropagatePopup(ev, matches, oldTitle) {
+  const count = matches.length;
+  const overlay = document.getElementById('propagate-modal');
+  document.getElementById('prop-msg').innerHTML =
+    `Du ändrade <strong>"${oldTitle}"</strong>. Det finns <strong>${count}</strong> framtida händelse${count>1?'r':''} med samma titel.<br>Vill du uppdatera dem också?`;
+  document.getElementById('prop-fields').innerHTML = `
+    <label><input type="checkbox" checked data-prop="title"> Titel → ${ev.title}</label>
+    <label><input type="checkbox" checked data-prop="category"> Kategori → ${ev.category}</label>
+    <label><input type="checkbox" checked data-prop="infoLink"> Info-länk → ${ev.infoLink || '(tom)'}</label>
+    <label><input type="checkbox" checked data-prop="promoSlides"> Promo-bilder (${(ev.promoSlides||[]).length} st)</label>
+    <label><input type="checkbox" checked data-prop="expectedTasks"> Förväntade uppgifter (${(ev.expectedTasks||[]).length} st)</label>`;
+  overlay._ev = ev;
+  overlay._matches = matches;
+  overlay.classList.add('open');
+}
+
+function executePropagation(apply) {
+  const overlay = document.getElementById('propagate-modal');
+  if (apply) {
+    const ev = overlay._ev;
+    const matches = overlay._matches;
+    const fields = [...document.querySelectorAll('#prop-fields input[data-prop]')]
+      .filter(cb=>cb.checked).map(cb=>cb.dataset.prop);
+    matches.forEach(m => {
+      fields.forEach(f => {
+        if (f === 'promoSlides' || f === 'expectedTasks') {
+          m[f] = JSON.parse(JSON.stringify(ev[f]));
+        } else {
+          m[f] = ev[f];
+        }
+      });
+    });
+  }
+  overlay.classList.remove('open');
+  persist('events');
+  applyFilters();
+  const ev = overlay._ev;
+  if (currentView === 'monster') { closeDetailModal(); }
+  else { renderSidebar(ev); }
+}
+
+function deleteEvent(id) {
+  db.events = db.events.filter(e=>e.id!==id);
+  delete assignments[id];
+  selectedId = null;
+  persist('events');
+  if (currentView === 'monster' || currentView === 'calendar' || currentView === 'week') {
+    closeDetailModal();
+  } else {
+    renderSidebar(null);
+  }
+  applyFilters();
+}
+
+function addPromoSlide(id) {
+  const ev = db.events.find(e=>e.id===id);
+  if (!ev) return;
+  if (!ev.promoSlides) ev.promoSlides = [];
+  ev.promoSlides.push('');
+  renderSidebar(ev);
+}
+
+function removePromoSlide(id, idx) {
+  const ev = db.events.find(e=>e.id===id);
+  if (!ev) return;
+  ev.promoSlides.splice(idx, 1);
+  renderSidebar(ev);
+}
+
+// ── WARNING CONFIG ─────────────────────────────────────────────────────────────
+let warningConfigOpen = false;
+
+function toggleWarningConfig() {
+  warningConfigOpen = !warningConfigOpen;
+  if (warningConfigOpen) {
+    selectedId = null;
+    renderTable();
+    renderWarningConfig();
+  } else {
+    renderSidebar(null);
+  }
+}
+
+function renderWarningConfig() {
+  const el = document.getElementById('sidebar-content');
+  // group events by title to show unique "event types"
+  const titleMap = {};
+  (db.events||[]).forEach(ev => {
+    if (!titleMap[ev.title]) titleMap[ev.title] = {category:ev.category, expectedTasks:ev.expectedTasks||[], count:0};
+    titleMap[ev.title].count++;
+  });
+
+  const html = Object.entries(titleMap).sort((a,b)=>a[0].localeCompare(b[0])).map(([title, info]) => {
+    const taskChecks = db.tasks.map(t =>
+      `<label><input type="checkbox" ${info.expectedTasks.includes(t.id)?'checked':''} onchange="toggleTitleTasks('${title.replace(/'/g,"\\'")}',${t.id},this.checked)"> ${t.name}</label>`
+    ).join('');
+    const catCls = info.category === 'Sunday' ? 'sunday' : info.category === 'Special' ? 'special' : 'weekday';
+    return `<div class="cat-section">
+      <div class="cat-section-label">
+        <span class="badge badge-${catCls}">${title}</span>
+        <span style="font-size:12px;color:#6b7280">${info.expectedTasks.length} uppgifter · ${info.count} händelser</span>
+      </div>
+      <div class="cat-task-list">${taskChecks}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="sidebar-header">
+      <h3>Förväntade uppgifter</h3>
+      <button class="sidebar-close" onclick="toggleWarningConfig()">×</button>
+    </div>
+    <div class="sidebar-body">
+      <p style="font-size:13px;color:#6b7280;margin-bottom:14px">Ändra förväntade uppgifter per händelsetyp. Ändringen gäller alla händelser med samma titel.</p>
+      ${html}
+    </div>`;
+}
+
+function toggleTitleTasks(title, taskId, checked) {
+  db.events.filter(e=>e.title===title).forEach(ev => {
+    if (!ev.expectedTasks) ev.expectedTasks = [];
+    if (checked && !ev.expectedTasks.includes(taskId)) ev.expectedTasks.push(taskId);
+    if (!checked) ev.expectedTasks = ev.expectedTasks.filter(id => id !== taskId);
+  });
+  persist('events');
+  renderWarningConfig();
+  if (currentView === 'monster') renderMonster();
+  applyFilters();
+}
+
+// ── GENERATE RECURRING EVENTS ──────────────────────────────────────────────────
+const dayMap = {Mån:1,Tis:2,Ons:3,Tor:4,Fre:5,Lör:6,Sön:0};
+const dayLabels = ['Mån','Tis','Ons','Tor','Fre','Lör','Sön'];
+let genPatterns = {};
+
+function openGenModal() {
+  // load from db
+  genPatterns = JSON.parse(JSON.stringify(db.recurring_events || {}));
+  renderGenModal();
+  document.getElementById('gen-modal').classList.add('open');
+}
+
+function closeGenModal() {
+  document.getElementById('gen-modal').classList.remove('open');
+}
+
+function renderGenModal() {
+  const body = document.getElementById('gen-body');
+  const today = new Date();
+  const defFrom = document.getElementById('gen-from')?.value || localDate(today);
+  const defTo = document.getElementById('gen-to')?.value || localDate(new Date(today.getFullYear(), today.getMonth()+3, today.getDate()));
+
+  let html = `<div class="gen-range">
+    <div><label>Från</label><br><input type="date" id="gen-from" value="${defFrom}" onchange="previewGen()"></div>
+    <div><label>Till</label><br><input type="date" id="gen-to" value="${defTo}" onchange="previewGen()"></div>
+  </div>`;
+
+  html += dayLabels.map(day => {
+    const entries = genPatterns[day] || [];
+    const rows = entries.map((e, i) => {
+      const filter = e.filter || 'ALL';
+      const time = e.time || '10:00';
+      const title = e.title || '';
+      return `<div class="gen-row">
+        <select onchange="updateGenEntry('${day}',${i},'filter',this.value);previewGen()">
+          <option value="ALL" ${filter==='ALL'?'selected':''}>Varje</option>
+          <option value="ODD" ${filter==='ODD'?'selected':''}>Udda v.</option>
+          <option value="EVEN" ${filter==='EVEN'?'selected':''}>Jämn v.</option>
+        </select>
+        <input type="text" value="${time}" placeholder="HH:MM" style="width:60px" onchange="updateGenEntry('${day}',${i},'time',this.value);previewGen()">
+        <input type="text" class="gen-title" value="${title}" placeholder="Titel" oninput="updateGenEntry('${day}',${i},'title',this.value);previewGen()">
+        <button class="gen-rm" onclick="removeGenEntry('${day}',${i})">✕</button>
+      </div>`;
+    }).join('');
+    return `<div class="gen-day">
+      <div class="gen-day-header"><strong>${day}</strong></div>
+      ${rows}
+      <button class="gen-add" onclick="addGenEntry('${day}')">+ Lägg till</button>
+    </div>`;
+  }).join('');
+
+  body.innerHTML = html;
+  previewGen();
+}
+
+function updateGenEntry(day, idx, field, val) {
+  if (!genPatterns[day]) return;
+  const e = genPatterns[day][idx];
+  if (field==='filter') { e.filter = val === 'ALL' ? undefined : val; if (!e.filter) delete e.filter; }
+  if (field==='time') e.time = val;
+  if (field==='title') e.title = val;
+}
+
+function removeGenEntry(day, idx) {
+  if (!genPatterns[day]) return;
+  genPatterns[day].splice(idx, 1);
+  if (genPatterns[day].length === 0) delete genPatterns[day];
+  renderGenModal();
+}
+
+function addGenEntry(day) {
+  if (!genPatterns[day]) genPatterns[day] = [];
+  genPatterns[day].push({title:'', time:'10:00'});
+  renderGenModal();
+}
+
+function generateEventList() {
+  const from = document.getElementById('gen-from')?.value;
+  const to = document.getElementById('gen-to')?.value;
+  if (!from || !to) return [];
+  const results = [];
+  const d = new Date(from + 'T00:00:00');
+  const end = new Date(to + 'T00:00:00');
+  const jsDayToLabel = [6,0,1,2,3,4,5];
+  const labelFromJs = js => dayLabels[jsDayToLabel[js]];
+
+  while (d <= end) {
+    const dayLabel = labelFromJs(d.getDay());
+    const entries = genPatterns[dayLabel] || [];
+    const wn = getWeekNumber(d);
+    entries.forEach(e => {
+      const filter = e.filter || 'ALL';
+      const title = e.title;
+      if (!title) return;
+      if (filter === 'ODD' && wn % 2 === 0) return;
+      if (filter === 'EVEN' && wn % 2 !== 0) return;
+      results.push({ date: localDate(d), time: e.time, title, category: e.category||'Weekday', expectedTasks: e.expectedTasks||[], promoSlides: e.promoSlides||[], infoLink: e.infoLink||'' });
+    });
+    d.setDate(d.getDate() + 1);
+  }
+  return results;
+}
+
+function previewGen() {
+  const list = generateEventList();
+  const area = document.getElementById('gen-preview-area');
+  if (!area) return;
+  if (list.length === 0) {
+    area.innerHTML = '<p class="gen-count" style="padding:8px">Inga händelser att generera</p>';
+    return;
+  }
+  area.innerHTML = `<p class="gen-count" style="margin-bottom:8px"><strong>${list.length}</strong> händelser</p>
+    <div class="gen-preview" style="max-height:none">${list.map(e =>
+    `<div class="gen-preview-row"><span class="gp-date">${e.date}</span><span class="gp-time">${e.time}</span><span class="gp-title">${e.title}</span></div>`
+  ).join('')}</div>`;
+}
+
+function executeGenerate() {
+  const list = generateEventList();
+  if (list.length === 0) { alert('Inga händelser att generera. Förhandsgranska först.'); return; }
+  let maxId = db.events.reduce((m,e) => Math.max(m,e.id), 0);
+  let added = 0;
+  list.forEach(e => {
+    if (db.events.some(x => x.date===e.date && x.time===e.time && x.title===e.title)) return;
+    maxId++;
+    const ev = {id:maxId, title:e.title, category:e.category, date:e.date, time:e.time, description:'', volunteers:0, promoSlides:JSON.parse(JSON.stringify(e.promoSlides)), infoLink:e.infoLink, expectedTasks:JSON.parse(JSON.stringify(e.expectedTasks))};
+    db.events.push(ev);
+    assignments[ev.id] = {};
+    added++;
+  });
+  db.recurring_events = genPatterns;
+  closeGenModal();
+  persist('events');
+  persist('recurring_events');
+  applyFilters();
+  alert(`${added} händelser genererade!`);
+}
+
+// ── HASH ROUTING ──────────────────────────────────────────────────────────────
+function updateHash() {
+  let hash = '#' + currentTab;
+  if (currentTab === 'events' && currentView === 'monster') hash += '/schedule';
+  if (currentTab === 'events' && currentView === 'calendar') hash += '/calendar';
+  if (currentTab === 'events' && currentView === 'week') hash += '/week';
+  if (currentTab === 'events' && currentView === 'year') hash += '/year';
+  if (selectedId) hash += '/' + selectedId;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}
+
+function applyHash() {
+  const hash = location.hash.replace(/^#/, '');
+  if (!hash) return;
+  const parts = hash.split('/');
+  const tab = parts[0];
+  if (!tabConfig[tab]) return;
+
+  switchTab(tab, true);
+
+  const viewMap = {schedule:'monster', calendar:'calendar', week:'week', year:'year'};
+  if (tab === 'events' && viewMap[parts[1]]) {
+    setView(viewMap[parts[1]]);
+    if (parts[2]) {
+      const id = parseInt(parts[2]);
+      if (id && db.events?.find(e=>e.id===id)) selectRow(id);
+    }
+  } else if (parts[1] && !viewMap[parts[1]]) {
+    const id = parseInt(parts[1]);
+    if (id && db[tab]?.find(r=>r.id===id)) selectRow(id);
+  }
+}
+
+window.addEventListener('hashchange', applyHash);
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+const API = '/api/';
+
+function persist(key) {
+  // save a single collection, or entire db if no key
+  const url = key ? API + key : API;
+  const body = key ? JSON.stringify(db[key]) : JSON.stringify(db);
+  fetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body})
+    .catch(err => console.warn('Persist failed:', err));
+}
+
+function loadAssignments() {
+  const saved = db.schedules || {};
+  db.events.forEach(e => { assignments[e.id] = {}; });
+  // saved format: { eventId: { taskId: {type, id/ids} } }
+  Object.entries(saved).forEach(([eid, tasks]) => {
+    const numEid = parseInt(eid);
+    if (!assignments[numEid]) assignments[numEid] = {};
+    Object.entries(tasks).forEach(([tid, asgn]) => {
+      assignments[numEid][parseInt(tid)] = asgn;
+    });
+  });
+}
+
+fetch(API)
+  .then(r => r.json())
+  .then(data => {
+    db = data;
+    loadAssignments();
+    document.getElementById('view-toggle').style.display = '';
+    document.getElementById('btn-generate').style.display = '';
+    renderFilter();
+    renderYearPicker();
+    applyFilters();
+    applyHash();
+  })
+  .catch(err => {
+    // fallback: try loading data.json directly (for file:// or no server)
+    fetch('data_prod.json').then(r=>r.json()).then(data => {
+      db = data;
+      loadAssignments();
+      document.getElementById('view-toggle').style.display = '';
+      document.getElementById('btn-generate').style.display = '';
+      renderFilter();
+      renderYearPicker();
+      applyFilters();
+      applyHash();
+    }).catch(err2 => {
+      document.getElementById('stats-bar').innerHTML =
+        `<span class="stat" style="color:#ef4444">⚠ Failed to load data — run: node server.js</span>`;
+      console.error(err2);
+    });
+  });
+</script>
+</body>
+</html>
