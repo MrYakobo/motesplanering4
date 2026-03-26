@@ -13,14 +13,29 @@ const MIME = {
   '.json': 'application/json',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
   '.svg': 'image/svg+xml',
 };
+
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', chunk => body += chunk);
     req.on('end', () => resolve(body));
+    req.on('error', reject);
+  });
+}
+
+function readRawBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on('data', chunk => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
     req.on('error', reject);
   });
 }
@@ -105,6 +120,26 @@ const server = http.createServer(async (req, res) => {
     saveDb(db);
     res.writeHead(200, {'Content-Type':'application/json'});
     res.end(JSON.stringify({ok: true}));
+    return;
+  }
+
+  // ── File upload: POST /upload ─────────────────────────────────
+  if (req.method === 'POST' && url.pathname === '/upload') {
+    const ct = req.headers['content-type'] || '';
+    const ext = ct.includes('png') ? '.png' : ct.includes('gif') ? '.gif' : ct.includes('webp') ? '.webp' : ct.includes('svg') ? '.svg' : '.jpg';
+    const name = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + ext;
+    const buf = await readRawBody(req);
+    fs.writeFileSync(path.join(UPLOAD_DIR, name), buf);
+    res.writeHead(200, {'Content-Type':'application/json'});
+    res.end(JSON.stringify({url: '/uploads/' + name}));
+    return;
+  }
+
+  // ── List uploads: GET /uploads ──────────────────────────────────
+  if (req.method === 'GET' && url.pathname === '/uploads') {
+    const files = fs.readdirSync(UPLOAD_DIR).filter(f => !f.startsWith('.')).map(f => '/uploads/' + f);
+    res.writeHead(200, {'Content-Type':'application/json'});
+    res.end(JSON.stringify(files));
     return;
   }
 

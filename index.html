@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mötesplanering 4</title>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: system-ui, sans-serif; font-size: 14px; background: #f4f5f7; color: #1a1a2e; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -18,7 +19,7 @@ nav .logout { color: #f87171; }
 .workspace { display: flex; flex: 1; overflow: hidden; }
 .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 .toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: #fff; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
-.toolbar h2 { font-size: 15px; font-weight: 600; flex: 1; }
+.toolbar h2 { font-size: 15px; font-weight: 600; }
 .toolbar input[type=search] { border: 1px solid #d1d5db; border-radius: 6px; padding: 5px 10px; font-size: 13px; width: 200px; outline: none; }
 .toolbar input[type=search]:focus { border-color: #4f46e5; }
 .toolbar select { border: 1px solid #d1d5db; border-radius: 6px; padding: 5px 8px; font-size: 13px; outline: none; }
@@ -32,11 +33,8 @@ nav .logout { color: #f87171; }
 .stat { font-size: 12px; color: #6b7280; }
 .stat strong { color: #1a1a2e; }
 .table-wrap { flex: 1; overflow: auto; }
-.add-bar { padding: 6px 16px; background: #fff; border-top: 1px solid #e5e7eb; flex-shrink: 0; }
-.add-bar button { background: none; border: none; color: #4f46e5; cursor: pointer; font-size: 13px; padding: 4px 0; }
-.add-bar button:hover { text-decoration: underline; }
 table { width: 100%; border-collapse: collapse; }
-thead th { position: sticky; top: 0; background: #f9fafb; border-bottom: 2px solid #e5e7eb; padding: 9px 14px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; user-select: none; white-space: nowrap; }
+thead th { position: sticky; top: 0; z-index: 3; background: #f9fafb; border-bottom: 2px solid #e5e7eb; padding: 9px 14px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; user-select: none; white-space: nowrap; }
 thead th:hover { background: #f3f4f6; }
 thead th .si { margin-left: 4px; opacity: .4; }
 thead th.sorted .si { opacity: 1; color: #4f46e5; }
@@ -50,6 +48,7 @@ tbody td { padding: 9px 14px; }
 .badge-sunday  { background: #dbeafe; color: #1d4ed8; }
 .badge-weekday { background: #d1fae5; color: #065f46; }
 .badge-special { background: #fef3c7; color: #92400e; }
+.badge-anteckning { background: #f3f4f6; color: #6b7280; }
 .badge-yes { background: #d1fae5; color: #065f46; }
 .badge-no  { background: #f3f4f6; color: #6b7280; }
 </style>
@@ -77,7 +76,7 @@ tbody td { padding: 9px 14px; }
 
 /* MONSTER TABLE */
 .monster table { width: auto; min-width: 100%; }
-.monster thead th.th-event { min-width: 180px; position: sticky; left: 0; z-index: 2; background: #f9fafb; }
+.monster thead th.th-event { min-width: 180px; position: sticky; left: 0; z-index: 4; background: #f9fafb; }
 .monster tbody td.td-event { position: sticky; left: 0; background: #fff; z-index: 1; font-weight: 500; white-space: nowrap; }
 .monster tbody tr.selected td.td-event { background: #ede9fe; }
 .monster tbody tr:hover td.td-event { background: #f0f0ff; }
@@ -108,25 +107,60 @@ tbody td { padding: 9px 14px; }
 .pop-add:hover { background: #f0f0ff; }
 
 /* SLIDES TAB */
-.slides-wrap { flex: 1; overflow-y: auto; padding: 24px; background: #1a1a2e; display: flex; flex-direction: column; align-items: center; }
-.slide-nav { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
-.slide-nav button { background: rgba(255,255,255,.1); border: none; color: #fff; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
-.slide-nav button:hover { background: rgba(255,255,255,.2); }
-.slide-nav span { color: #a78bfa; font-weight: 600; font-size: 15px; }
-.slide-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.3); padding: 36px 40px; max-width: 700px; width: 100%; color: #e2e8f0; }
-.slide-card h2 { font-size: 22px; font-weight: 700; color: #a78bfa; margin-bottom: 24px; letter-spacing: .02em; }
-.slide-day { margin-bottom: 18px; }
-.slide-day-name { font-size: 14px; font-weight: 700; color: #f8fafc; margin-bottom: 6px; }
-.slide-day-name span { font-weight: 400; color: #64748b; margin-left: 6px; }
-.slide-event-row { display: flex; align-items: baseline; gap: 10px; padding: 4px 0 4px 16px; font-size: 14px; }
-.slide-event-time { color: #a78bfa; font-weight: 600; min-width: 44px; }
-.slide-event-title { color: #e2e8f0; }
-.slide-event-desc { color: #64748b; font-size: 13px; }
-.slide-event-link { color: #818cf8; font-size: 12px; text-decoration: none; margin-left: 6px; }
-.slide-event-link:hover { text-decoration: underline; }
-.slide-promos { display: flex; gap: 10px; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.08); flex-wrap: wrap; }
-.slide-promo-img { width: 120px; height: 68px; border-radius: 8px; background: #334155; object-fit: cover; }
-.slide-promo-placeholder { width: 120px; height: 68px; border-radius: 8px; background: #334155; display: flex; align-items: center; justify-content: center; color: #475569; font-size: 11px; }
+.slides-wrap { flex: 1; overflow: hidden; background: #111; display: flex; align-items: center; justify-content: center; position: relative; }
+.slide { position: absolute; inset: 0; opacity: 0; transition: opacity .8s ease; pointer-events: none; display: flex; flex-direction: column; }
+.slide.active { opacity: 1; pointer-events: auto; }
+/* Week overview slide */
+.slide-week { display: flex; flex-direction: column; width: 100%; height: 100%; background: #111; color: #e5e5e5; }
+.slide-week-header { padding: 2.5vh 3vw 0; flex-shrink: 0; text-align: center; margin-bottom: 40px; }
+.slide-week-header h2 { font-size: clamp(24px, 3.5vw, 56px); font-weight: 800; color: #fff; margin: 0; letter-spacing: -.01em; }
+.slide-columns { display: flex; flex: 1; padding: 0 2vw 2vh; gap: 1.5vw; overflow: hidden; }
+.slide-col { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.slide-col-day { font-size: clamp(16px, 2.2vw, 36px); font-weight: 700; color: #fff; padding-bottom: .5vh; border-bottom: 2px solid #444; margin-bottom: 1.5vh; }
+.slide-col-events { display: flex; flex-direction: column; gap: 1.2vh; }
+.slide-ev { animation: slideEvIn .5s ease both; }
+.slide-ev-title { font-size: clamp(14px, 1.8vw, 30px); font-weight: 700; color: #e5e5e5; line-height: 1.15; }
+.slide-ev-meta { font-size: clamp(11px, 1.1vw, 20px); color: #777; margin-top: .2vh; }
+.slide-ev-meta .ev-time { color: #aaa; font-weight: 600; }
+@keyframes slideEvIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+/* Week slide footer */
+.slide-footer { flex-shrink: 0; display: flex; align-items: center; padding: 1.5vh 3vw; }
+.slide-clock { color: #fff; font-size: clamp(20px, 2.5vw, 42px); font-weight: 700; font-variant-numeric: tabular-nums; }
+.slide-logo { margin-left: auto; height: clamp(35px, 4.4vh, 70px); }
+.slide-logo img { height: 100%; width: auto; opacity: .8; }
+/* Promo slide */
+.slide-promo { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #111; }
+.slide-promo img { width: 100%; height: 100%; object-fit: contain; }
+/* Controls */
+.slide-controls { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; align-items: center; z-index: 2; }
+.slide-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.2); cursor: pointer; border: none; padding: 0; transition: all .2s; }
+.slide-dot.active { background: #fff; width: 20px; border-radius: 4px; }
+.slide-pause { background: none; border: none; color: rgba(255,255,255,.3); cursor: pointer; font-size: 16px; margin-left: 8px; display: inline-flex; align-items: center; }
+.slide-pause:hover { color: #fff; }
+.slide-progress { position: absolute; top: 0; left: 0; height: 3px; background: rgba(255,255,255,.5); z-index: 3; transition: none; }
+.slide-progress.animating { transition: width linear; }
+body.slides-fullscreen nav,
+body.slides-fullscreen .toolbar,
+body.slides-fullscreen .stats-bar,
+body.slides-fullscreen .sidebar,
+body.slides-fullscreen .sim-warning { display: none !important; }
+body.slides-fullscreen .workspace { height: 100vh; }
+body.slides-fullscreen .slides-wrap { position: fixed; inset: 0; z-index: 999; }
+body.nameplate-fullscreen nav,
+body.nameplate-fullscreen .toolbar,
+body.nameplate-fullscreen .stats-bar,
+body.nameplate-fullscreen .sidebar,
+body.nameplate-fullscreen .sim-warning { display: none !important; }
+body.nameplate-fullscreen .workspace { height: 100vh; }
+body.nameplate-fullscreen #namnskyltar-area { position: fixed; inset: 0; z-index: 999; background: #111; display: flex !important; align-items: flex-end; justify-content: flex-start; }
+.nameplate-full { padding: 4vw 5vw; color: #fff; }
+.nameplate-full .np-name { font-family: system-ui, sans-serif; font-size: min(8vw, 96px); font-weight: 800; text-transform: uppercase; letter-spacing: .05em; line-height: 1.1; white-space: nowrap; }
+.nameplate-full .np-line { border: 2px solid #fff; border-radius: 99px; width: 102%; margin: .8vh 0; }
+.nameplate-full .np-role { font-family: system-ui, sans-serif; font-size: min(3.5vw, 42px); font-weight: 300; margin-left: .2em; opacity: .85; }
+.export-wrap { flex: 1; overflow-y: auto; padding: 24px; background: #f4f5f7; display: flex; flex-direction: column; align-items: center; }
+.export-toolbar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+.export-preview { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px 32px; max-width: 400px; width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.export-code { position: absolute; left: -9999px; opacity: 0; height: 0; overflow: hidden; }
 
 /* GENERATE MODAL */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; align-items: center; justify-content: center; }
@@ -221,6 +255,7 @@ tbody tr.current-week.selected { background: #d9f0e6; }
 .cal-ev-sunday { background: #dbeafe; color: #1d4ed8; }
 .cal-ev-weekday { background: #d1fae5; color: #065f46; }
 .cal-ev-special { background: #fef3c7; color: #92400e; }
+.cal-ev-anteckning { background: #f3f4f6; color: #9ca3af; }
 .cal-more { font-size: 10px; color: #6b7280; cursor: pointer; padding: 1px 4px; }
 .cal-more:hover { color: #4f46e5; }
 .cal-nav { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
@@ -263,6 +298,58 @@ tbody tr.current-week.selected { background: #d9f0e6; }
 .year-mini-day.has-events::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: #4f46e5; }
 .year-mini-day.has-events:hover { background: #ede9fe; }
 .year-mini-day:not(.outside):hover { background: #f3f4f6; }
+
+/* TEAM BOARD */
+.team-board-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.team-board-toolbar { display: flex; gap: 4px; padding: 10px 16px; border-bottom: 1px solid #e5e7eb; background: #fff; flex-shrink: 0; align-items: center; flex-wrap: wrap; }
+.tb-task-link { background: none; border: 1px solid #e5e7eb; border-radius: 6px; padding: 5px 12px; font-size: 13px; cursor: pointer; color: #6b7280; transition: all .15s; display: inline-flex; align-items: center; gap: 4px; }
+.tb-task-link:hover { background: #f3f4f6; color: #374151; }
+.tb-task-link.active { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+.tb-task-link.tb-task-add { border-style: dashed; color: #9ca3af; }
+.tb-task-link.tb-task-add:hover { border-color: #4f46e5; color: #4f46e5; }
+.team-board { display: flex; gap: 1px; background: #e5e7eb; flex: 1; overflow-x: auto; }
+.team-col { background: #f9fafb; min-width: 200px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.team-col.pool-col { min-width: 240px; max-width: 280px; flex: none; background: #fff; }
+.team-col-header { padding: 10px 12px; font-size: 13px; font-weight: 700; color: #374151; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
+.team-col-header .team-col-count { font-weight: 400; color: #9ca3af; font-size: 12px; }
+.team-col-body { flex: 1; overflow-y: auto; padding: 6px; }
+.team-col-body.drag-over { background: #ede9fe; }
+.team-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 10px; margin-bottom: 4px; font-size: 13px; cursor: grab; display: flex; align-items: center; gap: 6px; }
+.team-card:hover { border-color: #4f46e5; background: #f8f7ff; }
+.team-card.dragging { opacity: 0.4; }
+.team-card .card-remove { background: none; border: none; color: #d1d5db; cursor: pointer; margin-left: auto; padding: 2px; border-radius: 4px; display: flex; align-items: center; transition: all .15s; }
+.team-card .card-remove:hover { color: #ef4444; background: #fef2f2; }
+.team-col-header .card-remove { background: none; border: none; color: #d1d5db; cursor: pointer; padding: 2px; border-radius: 4px; display: flex; align-items: center; transition: all .15s; }
+.team-col-header .card-remove:hover { color: #ef4444; background: #fef2f2; }
+.pool-search { width: 100%; border: none; border-bottom: 1px solid #e5e7eb; padding: 8px 12px; font-size: 13px; outline: none; }
+.pool-search:focus { box-shadow: inset 0 -2px 0 #4f46e5; }
+.pool-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 5px 10px; margin-bottom: 3px; font-size: 12px; cursor: grab; color: #6b7280; }
+.pool-card:hover { border-color: #4f46e5; color: #374151; }
+.pool-card.dragging { opacity: 0.4; }
+.pool-card.in-team { opacity: 0.35; font-style: italic; }
+
+/* MAILBOT */
+.mailbot-wrap { flex: 1; overflow-y: auto; padding: 24px; background: #f4f5f7; }
+.mb-summary { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+.mb-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px 20px; min-width: 160px; }
+.mb-card-num { font-size: 28px; font-weight: 700; color: #374151; }
+.mb-card-label { font-size: 12px; color: #6b7280; margin-top: 2px; }
+.mb-card.warn .mb-card-num { color: #f59e0b; }
+.mb-card.danger .mb-card-num { color: #ef4444; }
+.mb-card.ok .mb-card-num { color: #10b981; }
+.mb-event { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+.mb-event-header { padding: 10px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f0f0f0; }
+.mb-event-date { font-size: 12px; color: #6b7280; font-family: ui-monospace, monospace; min-width: 100px; }
+.mb-event-title { font-size: 13px; font-weight: 600; color: #374151; flex: 1; }
+.mb-event-status { font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
+.mb-status-ok { background: #d1fae5; color: #065f46; }
+.mb-status-warn { background: #fef3c7; color: #92400e; }
+.mb-status-danger { background: #fee2e2; color: #991b1b; }
+.mb-people { padding: 8px 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+.mb-person { font-size: 12px; padding: 3px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; }
+.mb-person.has-email { background: #d1fae5; color: #065f46; }
+.mb-person.no-email { background: #fee2e2; color: #991b1b; cursor: pointer; }
+.mb-person.no-email:hover { background: #fecaca; }
 </style>
 </head>
 <body>
@@ -271,10 +358,15 @@ tbody tr.current-week.selected { background: #d9f0e6; }
   <span class="brand">Mötesplanering 4</span>
   <button onclick="switchTab('contacts')" id="tab-contacts">Contacts</button>
   <button onclick="switchTab('tasks')"    id="tab-tasks">Tasks</button>
+  <button onclick="switchTab('categories')" id="tab-categories">Categories</button>
   <button onclick="switchTab('teams')"    id="tab-teams">Teams</button>
   <button onclick="switchTab('events')"   id="tab-events" class="active">Events</button>
   <button onclick="switchTab('slides')"   id="tab-slides">Slides</button>
+  <button onclick="switchTab('export')"   id="tab-export">Export</button>
+  <button onclick="switchTab('mailbot')"  id="tab-mailbot">Mailbot</button>
+  <button onclick="switchTab('namnskyltar')" id="tab-namnskyltar">Namnskyltar</button>
   <span class="spacer"></span>
+  <input type="date" id="sim-date" onchange="setSimDate(this.value)" style="border:1px solid #444;background:#2d2d4e;color:#ccc;border-radius:6px;padding:4px 8px;font-size:12px">
   <button class="logout">Logout</button>
 </nav>
 
@@ -282,9 +374,6 @@ tbody tr.current-week.selected { background: #d9f0e6; }
   <div class="main">
     <div class="toolbar" id="toolbar">
       <h2 id="section-title">Events</h2>
-      <select id="year-select" onchange="setYear(this.value)" style="display:none"></select>
-      <input type="search" id="search-input" placeholder="Search…" oninput="applyFilters()">
-      <select id="filter-select" onchange="applyFilters()" style="display:none"></select>
       <div class="view-toggle" id="view-toggle" style="display:none">
         <button id="vt-list" onclick="setView('list')" class="active">List</button>
         <button id="vt-calendar" onclick="setView('calendar')">Month</button>
@@ -292,6 +381,10 @@ tbody tr.current-week.selected { background: #d9f0e6; }
         <button id="vt-year" onclick="setView('year')">Year</button>
         <button id="vt-monster" onclick="setView('monster')">Schedule <span id="schedule-badge"></span></button>
       </div>
+      <select id="year-select" onchange="setYear(this.value)" style="display:none"></select>
+      <span style="flex:1"></span>
+      <input type="search" id="search-input" placeholder="Search…" oninput="applyFilters()">
+      <select id="filter-select" onchange="applyFilters()" style="display:none"></select>
       <button class="btn" id="btn-new" onclick="newRecord()" style="display:none">+ New</button>
       <button class="btn-ghost" id="btn-generate" onclick="openGenModal()" style="display:none">⚡ Generate</button>
     </div>
@@ -299,8 +392,12 @@ tbody tr.current-week.selected { background: #d9f0e6; }
     <div class="table-wrap" id="table-area">
       <table><thead id="table-head"></thead><tbody id="table-body"></tbody></table>
     </div>
-    <div class="add-bar" id="add-bar"><button onclick="newRecord()" id="add-bar-btn">+ Ny event</button></div>
     <div class="slides-wrap" id="slides-area" style="display:none"></div>
+    <div class="export-wrap" id="export-area" style="display:none"></div>
+    <div class="team-board-wrap" id="team-board-area" style="display:none"></div>
+    <div class="team-board-wrap" id="categories-area" style="display:none"></div>
+    <div class="mailbot-wrap" id="mailbot-area" style="display:none"></div>
+    <div class="mailbot-wrap" id="namnskyltar-area" style="display:none"></div>
   </div>
   <div class="sidebar" id="sidebar">
     <div id="sidebar-content" style="display:flex;flex-direction:column;height:100%">
@@ -333,7 +430,7 @@ tbody tr.current-week.selected { background: #d9f0e6; }
 </div>
 
 <!-- Propagate Changes Modal -->
-<div class="modal-overlay" id="propagate-modal">
+<div class="modal-overlay" id="propagate-modal" style="z-index:110">
   <div class="modal" style="width:440px">
     <div class="modal-header">
       <h3>Uppdatera liknande händelser?</h3>
@@ -352,7 +449,7 @@ tbody tr.current-week.selected { background: #d9f0e6; }
 
 <!-- Detail Modal (monster view) -->
 <div class="modal-overlay" id="detail-modal" onclick="if(event.target===this)closeDetailModal()">
-  <div class="modal" style="width:420px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column">
+  <div class="modal" style="width:600px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column">
     <div id="detail-modal-content" style="display:flex;flex-direction:column;overflow:hidden;flex:1"></div>
   </div>
 </div>
@@ -363,6 +460,38 @@ tbody tr.current-week.selected { background: #d9f0e6; }
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
 function localDate(d) { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${dd}`; }
+function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function escAttr(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+let simDate = localStorage.getItem('simDate') || null;
+function getToday() { return simDate ? new Date(simDate+'T00:00:00') : new Date(); }
+function getTodayStr() { return localDate(getToday()); }
+function setSimDate(v) {
+  simDate = v || null;
+  if (simDate) localStorage.setItem('simDate', simDate); else localStorage.removeItem('simDate');
+  const el = document.getElementById('sim-date');
+  if (el) el.value = simDate || localDate(new Date());
+  updateSimWarning();
+  if (currentTab==='events') applyFilters();
+  if (currentTab==='mailbot') renderMailbot();
+  if (currentTab==='slides') renderSlides();
+  if (currentTab==='export') renderExport();
+}
+function clearSimDate() { setSimDate(null); }
+function updateSimWarning() {
+  let w = document.getElementById('sim-warning');
+  if (simDate) {
+    if (!w) {
+      w = document.createElement('div');
+      w.id = 'sim-warning';
+      w.style.cssText = 'background:#fef3c7;color:#92400e;font-size:12px;padding:4px 16px;display:flex;align-items:center;gap:8px;flex-shrink:0';
+      document.querySelector('.main').prepend(w);
+    }
+    w.innerHTML = `⚠ Simulerat datum: <strong>${simDate}</strong> — inte dagens datum <button onclick="clearSimDate()" style="background:none;border:1px solid #92400e;border-radius:4px;color:#92400e;padding:1px 8px;font-size:11px;cursor:pointer;margin-left:4px">Återställ</button>`;
+    w.style.display = '';
+  } else if (w) {
+    w.style.display = 'none';
+  }
+}
 let db = {};
 let schedules = {};
 
@@ -373,8 +502,11 @@ let sortCol = null;
 let sortDir = 1;
 let filtered = [];
 let currentView = 'list';
-let selectedYear = new Date().getFullYear();
+let selectedYear = getToday().getFullYear();
 const assignments = {};
+let exportMonths = 2;
+let exportStartDate = getTodayStr();
+let teamBoardTaskId = null;
 
 // ── TAB CONFIG ────────────────────────────────────────────────────────────────
 const tabConfig = {
@@ -382,8 +514,9 @@ const tabConfig = {
     label:'Events',
     cols:[
       {key:'date',      label:'Date',      render:(v,r)=>`<span style="font-size:12px;white-space:nowrap">${v} ${r.time||''}</span>`},
-      {key:'weekday',   label:'Day',       render:(v,r)=>{const d=new Date(r.date+'T00:00:00');const wd=['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'][d.getDay()];const cls=d.getDay()===0?'sunday':'weekday';return `<span class="badge badge-${cls}" style="font-size:11px">${wd}</span>`}},
-      {key:'title',     label:'Title',     render:(v,r)=>r.title},
+      {key:'weekday',   label:'Day',       render:(v,r)=>{const d=new Date(r.date+'T00:00:00');return ['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'][d.getDay()]}},
+      {key:'title',     label:'Title',     render:(v,r)=>esc(r.title)},
+      {key:'category',  label:'Category',  render:(v,r)=>{const c=(r.category||'Weekday').toLowerCase();return `<span class="badge badge-${c}" style="font-size:11px">${r.category||'Weekday'}</span>`}},
       {key:'description',label:'Description',render:(v,r)=>r.description||'<span style="color:#9ca3af">—</span>'},
       {key:'infoLink',  label:'Info link',  render:(v,r)=>r.infoLink?`<a href="${r.infoLink}" target="_blank" onclick="event.stopPropagation()" style="color:#4f46e5;font-size:12px">${r.infoLink.replace(/^https?:\/\//,'').slice(0,30)}</a>`:'<span style="color:#9ca3af">—</span>'},
     ],
@@ -396,7 +529,7 @@ const tabConfig = {
       const warnHtml = warns > 0 ? ` <span class="stat warn-count">⚠ ${warns} saknas</span>` : '';
       updateScheduleBadge(warns);
       const warnStat = currentView === 'monster' && warns > 0 ? ` <span class="stat warn-count">⚠ ${warns} saknas</span>` : '';
-      return `<span class="stat">Total: <strong>${d.length}</strong></span>${warnStat}`;
+      return `<span class="stat">Total: <strong>${d.length}</strong></span>${warnStat} <button onclick="newEventOnDate(getTodayStr())" style="background:none;border:none;color:#4f46e5;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:0 4px"><i data-lucide="plus-circle" style="width:14px;height:14px"></i> Ny händelse</button>`;
     },
   },
   contacts: {
@@ -407,7 +540,8 @@ const tabConfig = {
       {key:'phone',label:'Phone',render:v=>v||'<span style="color:#9ca3af">—</span>'},
     ],
     filter:null,
-    stats:d=>`<span class="stat">Total contacts: <strong>${d.length}</strong></span>`,
+    stats:d=>`<span class="stat">Total contacts: <strong>${d.length}</strong></span>
+      <button onclick="newContact()" style="background:none;border:none;color:#4f46e5;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:0 4px"><i data-lucide="plus-circle" style="width:14px;height:14px"></i> Ny kontakt</button>`,
   },
   tasks: {
     label:'Tasks',
@@ -419,7 +553,14 @@ const tabConfig = {
     ],
     filter:null,
     stats:d=>`<span class="stat">Total tasks: <strong>${d.length}</strong></span>
-      <span class="stat">Mailbot enabled: <strong>${d.filter(t=>t.mailbot).length}</strong></span>`,
+      <span class="stat">Mailbot enabled: <strong>${d.filter(t=>t.mailbot).length}</strong></span>
+      <button onclick="newTask()" style="background:none;border:none;color:#4f46e5;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:0 4px"><i data-lucide="plus-circle" style="width:14px;height:14px"></i> Ny uppgift</button>`,
+  },
+  categories: {
+    label:'Categories',
+    cols:[],
+    filter:null,
+    stats:()=>'',
   },
   teams: {
     label:'Teams',
@@ -437,10 +578,30 @@ const tabConfig = {
     filter:null,
     stats:()=>'',
   },
+  export: {
+    label:'Export',
+    cols:[],
+    filter:null,
+    stats:()=>'',
+  },
+  mailbot: {
+    label:'Mailbot',
+    cols:[],
+    filter:null,
+    stats:()=>'',
+  },
+  namnskyltar: {
+    label:'Namnskyltar',
+    cols:[],
+    filter:null,
+    stats:()=>'',
+  },
 };
 
 // ── CORE RENDER ───────────────────────────────────────────────────────────────
 function switchTab(tab, skipHash) {
+  if (slideTimer) { clearTimeout(slideTimer); slideTimer = null; }
+  if (slideClockTimer) { clearInterval(slideClockTimer); slideClockTimer = null; }
   currentTab = tab; selectedId = null; sortCol = null; sortDir = 1;
   document.querySelectorAll('nav button[id^=tab-]').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.add('active');
@@ -448,18 +609,33 @@ function switchTab(tab, skipHash) {
   document.getElementById('search-input').value = '';
 
   const isSlides = tab === 'slides';
+  const isExport = tab === 'export';
+  const isTeams = tab === 'teams';
+  const isMailbot = tab === 'mailbot';
+  const isNamn = tab === 'namnskyltar';
+  const isCats = tab === 'categories';
+  const isSpecial = isSlides || isExport || isTeams || isMailbot || isCats || isNamn;
   const isEvents = tab === 'events';
-  document.getElementById('table-area').style.display = isSlides ? 'none' : '';
-  document.getElementById('add-bar').style.display = isSlides ? 'none' : '';
+  document.getElementById('table-area').style.display = isSpecial ? 'none' : '';
   document.getElementById('slides-area').style.display = isSlides ? '' : 'none';
-  document.getElementById('search-input').style.display = isSlides ? 'none' : '';
+  document.getElementById('export-area').style.display = isExport ? '' : 'none';
+  document.getElementById('team-board-area').style.display = isTeams ? '' : 'none';
+  document.getElementById('categories-area').style.display = isCats ? '' : 'none';
+  document.getElementById('mailbot-area').style.display = isMailbot ? '' : 'none';
+  document.getElementById('namnskyltar-area').style.display = isNamn ? '' : 'none';
+  document.getElementById('search-input').style.display = isSpecial ? 'none' : '';
   document.getElementById('btn-generate').style.display = isEvents ? '' : 'none';
   document.getElementById('view-toggle').style.display = isEvents ? '' : 'none';
-  document.getElementById('stats-bar').style.display = isSlides ? 'none' : '';
+  document.getElementById('stats-bar').style.display = isSpecial ? 'none' : '';
   if (!isEvents) currentView = 'list';
-  document.getElementById('sidebar').style.display = '';
+  document.getElementById('sidebar').style.display = (isTeams || isMailbot || isCats || isNamn) ? 'none' : '';
 
-  if (isSlides) { renderSlides(); renderSidebar(null); if (!skipHash) updateHash(); return; }
+  if (isSlides) { renderSlides(); renderSlidesSidebar(); if (!skipHash) updateHash(); return; }
+  if (isExport) { renderExport(); renderSidebar(null); if (!skipHash) updateHash(); return; }
+  if (isTeams) { renderTeamBoard(); if (!skipHash) updateHash(); return; }
+  if (isCats) { renderCategories(); if (!skipHash) updateHash(); return; }
+  if (isMailbot) { renderMailbot(); if (!skipHash) updateHash(); return; }
+  if (isNamn) { renderNamnskyltar(); if (!skipHash) updateHash(); return; }
   renderFilter();
   renderYearPicker();
   applyFilters();
@@ -470,6 +646,7 @@ function switchTab(tab, skipHash) {
 function setView(v) {
   currentView = v;
   calScrollInit = false;
+  listScrolled = false;
   ['list','calendar','week','year','monster'].forEach(k => {
     const el = document.getElementById('vt-'+k);
     if (el) el.classList.toggle('active', v===k);
@@ -539,18 +716,26 @@ function applyFilters() {
     }
     return cfg.cols.some(c=>String(r[c.key]).toLowerCase().includes(q));
   });
-  if (sortCol!==null) data.sort((a,b)=>{
-    let av=a[sortCol],bv=b[sortCol];
-    if (sortCol==='date' && currentTab==='events') { av=a.date+(a.time||''); bv=b.date+(b.time||''); }
-    return (av<bv?-1:av>bv?1:0)*sortDir;
-  });
+  if (currentTab === 'events') {
+    data.sort((a,b) => (a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
+  } else if (sortCol!==null) {
+    data.sort((a,b)=>{
+      let av=a[sortCol],bv=b[sortCol];
+      return (av<bv?-1:av>bv?1:0)*sortDir;
+    });
+  }
   filtered = data;
   renderTable();
   document.getElementById('stats-bar').innerHTML = cfg.stats(data);
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  // Highlight search field when filter is active
+  const searchEl = document.getElementById('search-input');
+  searchEl.style.background = q ? '#eff6ff' : '';
+  searchEl.style.borderColor = q ? '#93c5fd' : '';
 }
 
 function getCurrentWeekRange() {
-  const now = new Date();
+  const now = getToday();
   const mon = getMondayOfWeek(now, 0);
   const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
   return { from: localDate(mon), to: localDate(sun) };
@@ -566,8 +751,6 @@ function renderTable() {
   const calC = document.getElementById('cal-container');
   const tbl = document.querySelector('.table-wrap table');
   const calViews = ['calendar','week','year'];
-  const addBar = document.getElementById('add-bar');
-  if (addBar) addBar.style.display = (currentTab === 'slides' || (currentTab === 'events' && calViews.includes(currentView))) ? 'none' : '';
   if (currentTab === 'events' && calViews.includes(currentView)) {
     if (tbl) tbl.style.display = 'none';
     if (currentView === 'calendar') renderCalendar();
@@ -580,10 +763,11 @@ function renderTable() {
   }
   if (currentTab === 'events' && currentView === 'monster') { renderMonster(); return; }
   const cfg = tabConfig[currentTab];
+  const sortable = currentTab !== 'events';
   document.getElementById('table-head').innerHTML = '<tr>'+cfg.cols.map(c=>
-    `<th onclick="sortBy('${c.key}')" class="${sortCol===c.key?'sorted':''}">
-      ${c.label}<span class="si">${sortCol===c.key?(sortDir===1?'↑':'↓'):'↕'}</span>
-    </th>`
+    sortable
+      ? `<th onclick="sortBy('${c.key}')" class="${sortCol===c.key?'sorted':''}">${c.label}<span class="si">${sortCol===c.key?(sortDir===1?'↑':'↓'):'↕'}</span></th>`
+      : `<th style="cursor:default">${c.label}</th>`
   ).join('')+'<th style="width:40px"></th></tr>';
   document.getElementById('table-body').innerHTML = filtered.map(row => {
     const weekCls = currentTab === 'events' && isCurrentWeek(row.date) ? ' current-week' : '';
@@ -593,8 +777,14 @@ function renderTable() {
     </tr>`;
   }).join('') || `<tr><td colspan="${cfg.cols.length+1}" style="padding:24px;text-align:center;color:#9ca3af">No results</td></tr>`;
   lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
-  const addBtn = document.getElementById('add-bar-btn');
-  if (addBtn) addBtn.textContent = '+ Ny ' + tabConfig[currentTab].label.slice(0,-1).toLowerCase();
+  // Scroll to current week row in list view
+  if (currentTab === 'events' && !listScrolled) {
+    listScrolled = true;
+    requestAnimationFrame(() => {
+      const row = document.querySelector('#table-body tr.current-week');
+      if (row) row.scrollIntoView({ block: 'start', behavior: 'instant' });
+    });
+  }
 }
 
 function sortBy(key) {
@@ -622,6 +812,7 @@ function openDetailModal(id) {
   document.getElementById('detail-modal-content').innerHTML = sidebarEvent(ev);
   modal.classList.add('open');
   initSidebarTracking();
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
 }
 
 function closeDetailModal() {
@@ -680,6 +871,23 @@ document.addEventListener('click', () => hideCtxMenu());
 document.addEventListener('contextmenu', e => {
   if (!e.target.closest('.ctx-menu')) hideCtxMenu();
 });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (document.body.classList.contains('slides-fullscreen')) { document.body.classList.remove('slides-fullscreen'); history.replaceState(null, '', '#slides'); return; }
+    if (document.body.classList.contains('nameplate-fullscreen')) { exitNameplateFullscreen(); return; }
+    if (document.getElementById('propagate-modal').classList.contains('open')) { executePropagation(false); return; }
+    if (document.getElementById('detail-modal').classList.contains('open')) { closeDetailModal(); return; }
+    if (document.getElementById('gen-modal').classList.contains('open')) { closeGenModal(); return; }
+  }
+  if (currentTab === 'slides' && !e.target.closest('input,textarea,select')) {
+    const total = document.querySelectorAll('#slides-area .slide').length;
+    if (!total) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); goToSlide((slideIndex + 1) % total); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); goToSlide((slideIndex - 1 + total) % total); }
+    if (e.key === ' ') { e.preventDefault(); toggleSlidePause(); }
+    if (e.key === 'f') { e.preventDefault(); toggleSlideFullscreen(); }
+  }
+});
 
 // ── MONSTER TABLE ─────────────────────────────────────────────────────────────
 function renderMonster() {
@@ -723,17 +931,24 @@ function renderMonster() {
     const missingNames = missingTasks.map(tid => db.tasks.find(t=>t.id===tid)?.name).filter(Boolean).join(', ');
     const warnBadge = warnCount > 0 ? ` <span class="warn-count" title="Saknas: ${missingNames}">⚠ ${warnCount}</span>` : '';
     return `<tr onclick="selectRow(${ev.id})" oncontextmenu="showCtxMenu(event,${ev.id},'events')" class="${selectedId===ev.id?'selected':''}${weekCls}">
-      <td class="td-event">${ev.date} ${ev.time||''}<br><span style="font-size:12px;color:#6b7280">${ev.title}</span>${warnBadge}</td>${cells}</tr>`;
+      <td class="td-event">${ev.date} ${ev.time||''}<br><span style="font-size:12px;color:#6b7280">${esc(ev.title)}</span>${warnBadge}</td>${cells}</tr>`;
   }).join('') || `<tr><td colspan="${tasks.length+1}" style="padding:24px;text-align:center;color:#9ca3af">No results</td></tr>`;
   lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
-}
-
-// ── CALENDAR VIEW ─────────────────────────────────────────────────────────────
-let calMonth = new Date().getMonth();
-let calYear = new Date().getFullYear();
+  // Scroll to current week row in schedule view
+  if (!listScrolled) {
+    listScrolled = true;
+    requestAnimationFrame(() => {
+      const row = document.querySelector('#table-body tr.current-week');
+      if (row) row.scrollIntoView({ block: 'start', behavior: 'instant' });
+    });
+  }
+}// ── CALENDAR VIEW ─────────────────────────────────────────────────────────────
+let calMonth = getToday().getMonth();
+let calYear = getToday().getFullYear();
 let calWeekOffset = 0;
 let dragEventId = null;
 let calScrollInit = false;
+let listScrolled = false;
 
 function getCalContainer() {
   const wrap = document.querySelector('.table-wrap');
@@ -749,7 +964,7 @@ function evBadge(ev, extraCls) {
   const cat = (ev.category || 'weekday').toLowerCase();
   return `<div class="${extraCls || 'cal-ev'} cal-ev-${cat}" draggable="true" data-ev-id="${ev.id}"
     onclick="event.stopPropagation();openDetailModal(${ev.id})"
-    title="${ev.time || ''} ${ev.title}">${ev.time || ''} ${ev.title}</div>`;
+    title="${esc(ev.time || '')} ${esc(ev.title)}">${ev.time || ''} ${esc(ev.title)}</div>`;
 }
 
 function groupByDate(events) {
@@ -815,7 +1030,7 @@ function renderCalendar() {
   const dayHeaders = ['mån','tis','ons','tor','fre','lör','sön'];
 
   const byDate = groupByDate(filtered);
-  const todayStr = localDate(new Date());
+  const todayStr = getTodayStr();
   const curWeek = getCurrentWeekRange();
   const MAX_VIS = 3;
 
@@ -879,6 +1094,10 @@ function renderCalendar() {
   }
 
   html += '</div>';
+  // Save scroll position before re-render
+  const oldScroll = document.getElementById('cal-scroll-area');
+  const savedScrollTop = oldScroll ? oldScroll.scrollTop : null;
+
   const c = getCalContainer();
   c.innerHTML = html;
   initDragDrop(c);
@@ -893,6 +1112,9 @@ function renderCalendar() {
         todayCell.scrollIntoView({ block: 'center', behavior: 'instant' });
       }
     });
+  } else if (savedScrollTop !== null) {
+    const scrollArea = document.getElementById('cal-scroll-area');
+    if (scrollArea) scrollArea.scrollTop = savedScrollTop;
   }
 }
 
@@ -900,7 +1122,7 @@ function renderWeekView() {
   const yr = selectedYear;
   const dayLabels = ['mån','tis','ons','tor','fre','lör','sön'];
   const monthNames = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
-  const todayStr = localDate(new Date());
+  const todayStr = getTodayStr();
   const byDate = groupByDate(filtered);
 
   // Build all weeks for the year
@@ -959,11 +1181,13 @@ function renderWeekView() {
   }
 
   html += '</div></div>';
+  const oldWeekScroll = document.getElementById('week-scroll-area');
+  const savedWeekTop = oldWeekScroll ? oldWeekScroll.scrollTop : null;
+
   const c = getCalContainer();
   c.innerHTML = html;
   initDragDrop(c);
 
-  // Scroll to current week
   if (!calScrollInit) {
     calScrollInit = true;
     requestAnimationFrame(() => {
@@ -972,13 +1196,16 @@ function renderWeekView() {
       const todayCol = scrollArea.querySelector('.week-col.today');
       if (todayCol) todayCol.scrollIntoView({ block: 'center', behavior: 'instant' });
     });
+  } else if (savedWeekTop !== null) {
+    const scrollArea = document.getElementById('week-scroll-area');
+    if (scrollArea) scrollArea.scrollTop = savedWeekTop;
   }
 }
 
 function renderYearView() {
   const monthNames = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
   const dayHeaders = ['m','t','o','t','f','l','s'];
-  const todayStr = localDate(new Date());
+  const todayStr = getTodayStr();
   const yr = selectedYear;
 
   // collect all event dates for this year
@@ -1021,7 +1248,7 @@ function renderYearView() {
 
 function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderTable(); }
 function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderTable(); }
-function calToday() { const n = new Date(); calMonth = n.getMonth(); calYear = n.getFullYear(); renderTable(); }
+function calToday() { const n = getToday(); calMonth = n.getMonth(); calYear = n.getFullYear(); renderTable(); }
 function calShowAll(dateStr) {
   document.getElementById('search-input').value = dateStr;
   setView('list');
@@ -1214,13 +1441,16 @@ function getMondayOfWeek(refDate, offset) {
   return d;
 }
 
+let slideTimer = null;
+let slideIndex = 0;
+let slidePaused = false;
+
 function renderSlides() {
   const area = document.getElementById('slides-area');
-  const today = new Date();
+  const today = getToday();
   const monday = getMondayOfWeek(today, slideWeekOffset);
   const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
   const weekNum = getWeekNumber(monday);
-
   const monStr = localDate(monday);
   const sunStr = localDate(sunday);
 
@@ -1228,59 +1458,961 @@ function renderSlides() {
     .filter(e => e.date >= monStr && e.date <= sunStr)
     .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
 
-  // group by date
-  const byDay = {};
-  weekEvents.forEach(e => {
-    if (!byDay[e.date]) byDay[e.date] = [];
-    byDay[e.date].push(e);
-  });
-
   const dayNames = ['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'];
+  const byDay = {};
+  weekEvents.forEach(e => { if (!byDay[e.date]) byDay[e.date] = []; byDay[e.date].push(e); });
 
-  let daysHtml = '';
-  if (Object.keys(byDay).length === 0) {
-    daysHtml = '<p style="color:#475569;padding:12px 0">Inga händelser denna vecka</p>';
+  // Build column-based week slide
+  const sortedDates = Object.keys(byDay).sort();
+  let colsHtml = '';
+  if (sortedDates.length === 0) {
+    colsHtml = '<div style="flex:1;display:flex;align-items:center;justify-content:center;color:#475569;font-size:clamp(14px,1.5vw,24px)">Inga händelser denna vecka</div>';
   } else {
-    const sortedDates = Object.keys(byDay).sort();
-    daysHtml = sortedDates.map(dateStr => {
+    colsHtml = sortedDates.map((dateStr, colIdx) => {
       const d = new Date(dateStr + 'T00:00:00');
       const dayName = dayNames[d.getDay()];
-      const dayNum = d.getDate();
-      const eventsHtml = byDay[dateStr].map(ev => {
-        let extra = '';
-        if (ev.description) extra += ` <span class="slide-event-desc">${ev.description}</span>`;
-        if (ev.infoLink) extra += ` <a class="slide-event-link" href="${ev.infoLink}" target="_blank">Mer info →</a>`;
-        return `<div class="slide-event-row">
-          <span class="slide-event-time">${ev.time || ''}</span>
-          <span class="slide-event-title">${ev.title}</span>${extra}
+      const evHtml = byDay[dateStr].map((ev, evIdx) => {
+        const delay = (colIdx * 0.15 + evIdx * 0.08).toFixed(2);
+        const desc = ev.description ? ` · ${ev.description}` : '';
+        return `<div class="slide-ev" style="animation-delay:${delay}s">
+          <div class="slide-ev-title">${ev.title}</div>
+          <div class="slide-ev-meta">${ev.category || ''} · ${ev.time || ''}</div>
         </div>`;
       }).join('');
-      return `<div class="slide-day">
-        <div class="slide-day-name">${dayName.charAt(0).toUpperCase()+dayName.slice(1)} <span>${dayNum}</span></div>
-        ${eventsHtml}
+      return `<div class="slide-col" style="animation-delay:${(colIdx*0.12).toFixed(2)}s">
+        <div class="slide-col-day">${dayName.charAt(0).toUpperCase()+dayName.slice(1)}</div>
+        <div class="slide-col-events">${evHtml}</div>
       </div>`;
     }).join('');
   }
 
-  // collect promo slides from this week's events
-  const promos = weekEvents.flatMap(e => e.promoSlides || []);
-  const promosHtml = promos.length
-    ? `<div class="slide-promos">${promos.map(url =>
-        `<img class="slide-promo-img" src="${url}" alt="Promo" onerror="this.outerHTML='<div class=\\'slide-promo-placeholder\\'>Bild</div>'">`
-      ).join('')}</div>`
+  const logoUrl = db.slideLogo || '';
+  const logoHtml = logoUrl ? `<div class="slide-logo"><img src="${logoUrl}" alt="Logo"></div>` : '';
+  const weekSlide = `<div class="slide-week">
+    <div class="slide-week-header"><h2>Händer i veckan (v${weekNum})</h2></div>
+    <div class="slide-columns">${colsHtml}</div>
+    <div class="slide-footer">
+      <div class="slide-clock" id="slide-clock"></div>
+      ${logoHtml}
+    </div>
+  </div>`;
+
+  // Build slides array: week overview first, then event promos, then active global promos
+  const eventPromos = weekEvents.flatMap(e => (e.promoSlides || []).filter(Boolean));
+  const globalPromos = (db.globalSlides || []).filter(s => s.active).map(s => s.url);
+  const promos = [...eventPromos, ...globalPromos];
+  const slides = [];
+  slides.push(weekSlide);
+  promos.forEach(url => {
+    slides.push(`<div class="slide-promo"><img src="${url}" alt="Promo"></div>`);
+  });
+
+  let html = `<div class="slide-progress" id="slide-progress"></div>`;
+  html += slides.map((s, i) => `<div class="slide${i===0?' active':''}">${s}</div>`).join('');
+  html += `<div class="slide-controls">`;
+  html += slides.map((_, i) => `<button class="slide-dot${i===0?' active':''}" onclick="goToSlide(${i})"></button>`).join('');
+  if (slides.length > 1) html += `<button class="slide-pause" onclick="toggleSlidePause()" id="slide-pause-btn">⏸</button>`;
+  html += `<button class="slide-pause" onclick="toggleSlideFullscreen()" title="Fullskärm"><i data-lucide="maximize" style="width:14px;height:14px"></i></button>`;
+  html += `</div>`;
+  area.innerHTML = html;
+
+  slideIndex = 0;
+  slidePaused = false;
+  if (slideTimer) clearTimeout(slideTimer);
+  startSlideClock();
+  // 10s for ≤3 cols, +2.5s per extra col, max 20s
+  const weekDuration = Math.min(20, Math.max(10, 10 + (sortedDates.length - 3) * 2.5)) * 1000;
+  const promoDuration = 10000;
+  slideDurations = [weekDuration, ...promos.map(() => promoDuration)];
+  startSlideProgress();
+}
+
+let slideDurations = [];
+
+function startSlideProgress() {
+  if (slideTimer) clearTimeout(slideTimer);
+  const bar = document.getElementById('slide-progress');
+  if (!bar) return;
+  if (slidePaused) { bar.style.display = 'none'; return; }
+  bar.style.display = '';
+  const dur = slideDurations[slideIndex] || 10000;
+  bar.classList.remove('animating');
+  bar.style.width = '0%';
+  void bar.offsetWidth;
+  bar.classList.add('animating');
+  bar.style.transitionDuration = dur + 'ms';
+  bar.style.width = '100%';
+
+  if (slideDurations.length <= 1) return;
+  slideTimer = setTimeout(() => {
+    if (!slidePaused) {
+      const total = document.querySelectorAll('#slides-area .slide').length;
+      goToSlide((slideIndex + 1) % total, true);
+    }
+  }, dur);
+}
+
+function goToSlide(i, auto) {
+  if (!auto && !slidePaused) { slidePaused = true; const btn = document.getElementById('slide-pause-btn'); if (btn) btn.textContent = '▶'; }
+  slideIndex = i;
+  const area = document.getElementById('slides-area');
+  if (!area) return;
+  area.querySelectorAll('.slide').forEach((s, idx) => s.classList.toggle('active', idx === i));
+  area.querySelectorAll('.slide-dot').forEach((d, idx) => d.classList.toggle('active', idx === i));
+  startSlideProgress();
+}
+
+function toggleSlidePause() {
+  slidePaused = !slidePaused;
+  const btn = document.getElementById('slide-pause-btn');
+  if (btn) btn.textContent = slidePaused ? '▶' : '⏸';
+  if (slidePaused) {
+    if (slideTimer) { clearTimeout(slideTimer); slideTimer = null; }
+    const bar = document.getElementById('slide-progress');
+    if (bar) bar.style.display = 'none';
+  } else {
+    startSlideProgress();
+  }
+}
+
+function toggleSlideFullscreen() {
+  document.body.classList.toggle('slides-fullscreen');
+  const isFull = document.body.classList.contains('slides-fullscreen');
+  history.replaceState(null, '', isFull ? '#slides/fullscreen' : '#slides');
+}
+
+let slideClockTimer = null;
+function startSlideClock() {
+  if (slideClockTimer) clearInterval(slideClockTimer);
+  updateSlideClock();
+  slideClockTimer = setInterval(updateSlideClock, 10000);
+}
+function updateSlideClock() {
+  const el = document.getElementById('slide-clock');
+  if (!el) return;
+  const now = new Date();
+  el.textContent = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+}
+
+function enterSlidesFullscreen() {
+  if (currentTab !== 'slides') switchTab('slides', true);
+  document.body.classList.add('slides-fullscreen');
+}
+
+function getEventPromoListHtml() {
+  const today = getToday();
+  const monday = getMondayOfWeek(today, slideWeekOffset);
+  const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+  const monStr = localDate(monday);
+  const sunStr = localDate(sunday);
+  const eventsWithPromos = (db.events || [])
+    .filter(e => e.date >= monStr && e.date <= sunStr && (e.promoSlides || []).some(Boolean))
+    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+  if (eventsWithPromos.length === 0) return '<p style="font-size:13px;color:#9ca3af">Inga eventbilder denna vecka</p>';
+  return eventsWithPromos.map(ev => {
+    const thumbs = ev.promoSlides.filter(Boolean).map(url =>
+      `<img src="${url}" style="width:40px;height:28px;object-fit:cover;border-radius:3px;border:1px solid #e5e7eb" onerror="this.style.display='none'">`
+    ).join('');
+    return `<div onclick="switchTab('events',true);selectRow(${ev.id})" style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid #f0f0f0;cursor:pointer;border-radius:4px" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ev.title}</div>
+        <div style="font-size:11px;color:#9ca3af">${ev.date} ${ev.time||''} · ${ev.promoSlides.filter(Boolean).length} bild${ev.promoSlides.filter(Boolean).length>1?'er':''}</div>
+      </div>
+      <div style="display:flex;gap:2px;flex-shrink:0">${thumbs}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderSlidesSidebar() {
+  const el = document.getElementById('sidebar-content');
+  if (!db.globalSlides) db.globalSlides = [];
+  const slides = db.globalSlides;
+
+  const listHtml = slides.length === 0
+    ? '<p style="font-size:13px;color:#9ca3af;padding:8px 0">Inga globala slides ännu</p>'
+    : slides.map((s, i) => `<div style="position:relative;margin-bottom:8px">
+        <img src="${s.url}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;display:block;opacity:${s.active?'1':'0.35'};transition:opacity .2s" onerror="this.style.display='none'">
+        <input type="checkbox" ${s.active?'checked':''} onchange="toggleGlobalSlide(${i},this.checked)" style="accent-color:#4f46e5;position:absolute;top:6px;left:6px;width:18px;height:18px;cursor:pointer">
+        <button onclick="removeGlobalSlide(${i})" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);border:none;color:#fff;cursor:pointer;padding:2px 4px;border-radius:4px"><i data-lucide="x" style="width:12px;height:12px"></i></button>
+      </div>`).join('');
+
+  const logoUrl = db.slideLogo || '';
+  const logoPreview = logoUrl
+    ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <img src="${logoUrl}" style="height:32px;width:auto;border-radius:4px;background:#111;padding:4px">
+        <button class="btn-ghost" onclick="db.slideLogo='';persist('slideLogo');renderSlides();renderSlidesSidebar()" style="font-size:11px;padding:3px 8px">Ta bort</button>
+      </div>`
     : '';
 
-  area.innerHTML = `
-    <div class="slide-nav">
-      <button onclick="slideWeekOffset--;renderSlides()">← Förra</button>
-      <span>Händer i veckan (v${weekNum})</span>
-      <button onclick="slideWeekOffset++;renderSlides()">Nästa →</button>
+  el.innerHTML = `
+  <div class="sidebar-header">
+    <h3>Slideshow</h3>
+  </div>
+  <div class="sidebar-body">
+    <div class="sb-section" style="margin-top:0;padding-top:0;border:none">
+      <h4>Logotyp</h4>
+      <p style="font-size:12px;color:#6b7280;margin-bottom:8px">Visas i nedre högra hörnet på veckoschemat.</p>
+      ${logoPreview}
+      <label class="btn-ghost" style="font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+        <i data-lucide="upload" style="width:12px;height:12px"></i> ${logoUrl ? 'Byt logotyp' : 'Ladda upp logotyp'}
+        <input type="file" accept="image/*" onchange="uploadSlideLogo(this)" style="display:none">
+      </label>
     </div>
-    <div class="slide-card">
-      <h2>Händer i veckan (v${weekNum})</h2>
-      ${daysHtml}
-      ${promosHtml}
+    <div class="sb-section">
+      <h4>Globala slides</h4>
+      <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Bilder som visas i slideshowen oavsett vecka. Bocka i för att aktivera.</p>
+      ${listHtml}
+      <div style="margin-top:12px;display:flex;gap:6px">
+        <label class="btn-ghost" style="font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+          <i data-lucide="upload" style="width:12px;height:12px"></i> Ladda upp
+          <input type="file" accept="image/*" onchange="uploadGlobalSlide(this)" style="display:none">
+        </label>
+        <button class="btn-ghost" onclick="addGlobalSlideUrl()" style="font-size:12px">+ URL</button>
+      </div>
+    </div>
+    <div class="sb-section">
+      <h4>Eventbilder denna vecka</h4>
+      ${getEventPromoListHtml()}
+    </div>
+  </div>`;
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+}
+
+function toggleGlobalSlide(idx, checked) {
+  db.globalSlides[idx].active = checked;
+  persist('globalSlides');
+  renderSlides();
+  renderSlidesSidebar();
+}
+
+function removeGlobalSlide(idx) {
+  db.globalSlides.splice(idx, 1);
+  persist('globalSlides');
+  renderSlides();
+  renderSlidesSidebar();
+}
+
+function uploadGlobalSlide(input) {
+  const file = input.files[0];
+  if (!file) return;
+  fetch('/upload', { method: 'POST', headers: {'Content-Type': file.type}, body: file })
+    .then(r => r.json())
+    .then(data => {
+      if (!db.globalSlides) db.globalSlides = [];
+      db.globalSlides.push({ url: data.url, label: '', active: true });
+      persist('globalSlides');
+      renderSlides();
+      renderSlidesSidebar();
+    })
+    .catch(err => alert('Upload failed: ' + err));
+}
+
+function addGlobalSlideUrl() {
+  const url = prompt('Bild-URL:');
+  if (!url) return;
+  if (!db.globalSlides) db.globalSlides = [];
+  db.globalSlides.push({ url, label: '', active: true });
+  persist('globalSlides');
+  renderSlides();
+  renderSlidesSidebar();
+}
+
+function uploadSlideLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  fetch('/upload', { method: 'POST', headers: {'Content-Type': file.type}, body: file })
+    .then(r => r.json())
+    .then(data => {
+      db.slideLogo = data.url;
+      persist('slideLogo');
+      renderSlides();
+      renderSlidesSidebar();
+    })
+    .catch(err => alert('Upload failed: ' + err));
+}
+
+// ── CATEGORIES TAB ────────────────────────────────────────────────────────────
+function ensureCategories() {
+  if (!db.categories) {
+    const used = [...new Set((db.events||[]).map(e=>e.category).filter(Boolean))];
+    db.categories = used.map((name,i) => ({id:i+1, name}));
+    persist('categories');
+  }
+}
+
+function renderCategories() {
+  ensureCategories();
+  const area = document.getElementById('categories-area');
+  const cats = db.categories || [];
+  const events = db.events || [];
+
+  // Find uncategorized
+  const catNames = new Set(cats.map(c=>c.name));
+  const uncategorized = events.filter(e => !e.category || !catNames.has(e.category));
+
+  let html = `<div class="team-board-toolbar">
+    <span style="font-size:14px;font-weight:600;color:#374151">${cats.length} kategorier · ${events.length} händelser</span>
+    <span style="flex:1"></span>
+    <button class="btn-ghost" onclick="addCategory()" style="font-size:12px;display:inline-flex;align-items:center;gap:4px"><i data-lucide="plus" style="width:12px;height:12px"></i> Ny kategori</button>
+  </div>
+  <div style="padding:16px;overflow-y:auto;flex:1">`;
+
+  if (uncategorized.length > 0) {
+    html += `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:6px">Okategoriserade (${uncategorized.length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">${uncategorized.slice(0,20).map(e =>
+        `<span style="font-size:11px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;cursor:pointer" onclick="switchTab('events',true);selectRow(${e.id})">${e.title}</span>`
+      ).join('')}${uncategorized.length>20?`<span style="font-size:11px;color:#991b1b">+${uncategorized.length-20} till</span>`:''}</div>
     </div>`;
+  }
+
+  cats.forEach(cat => {
+    const linked = events.filter(e => e.category === cat.name);
+    const cls = cat.name.toLowerCase();
+    html += `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px 18px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="badge badge-${cls}" style="font-size:12px">${cat.name}</span>
+        <span style="font-size:12px;color:#9ca3af">${linked.length} händelser</span>
+        <span style="flex:1"></span>
+        <button onclick="renameCategory(${cat.id})" style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;gap:3px"><i data-lucide="pencil" style="width:12px;height:12px"></i> Byt namn</button>
+        ${linked.length===0?`<button onclick="deleteCategory(${cat.id})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;gap:3px"><i data-lucide="trash-2" style="width:12px;height:12px"></i></button>`:''}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">${linked.slice(0,30).map(e =>
+        `<span style="font-size:11px;background:#f3f4f6;color:#374151;padding:2px 8px;border-radius:4px;cursor:pointer" onclick="switchTab('events',true);selectRow(${e.id})">${e.date} ${e.title}</span>`
+      ).join('')}${linked.length>30?`<span style="font-size:11px;color:#9ca3af">+${linked.length-30} till</span>`:''}</div>
+    </div>`;
+  });
+
+  html += '</div>';
+  area.innerHTML = html;
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+}
+
+function addCategory() {
+  const name = prompt('Namn på ny kategori:');
+  if (!name) return;
+  ensureCategories();
+  const maxId = db.categories.reduce((m,c) => Math.max(m,c.id), 0) + 1;
+  db.categories.push({id:maxId, name});
+  persist('categories');
+  renderCategories();
+}
+
+function renameCategory(id) {
+  const cat = db.categories.find(c=>c.id===id);
+  if (!cat) return;
+  const name = prompt('Nytt namn:', cat.name);
+  if (!name || name === cat.name) return;
+  const oldName = cat.name;
+  cat.name = name;
+  // Update all events with old category name
+  (db.events||[]).forEach(e => { if (e.category === oldName) e.category = name; });
+  persist('categories');
+  persist('events');
+  renderCategories();
+}
+
+function deleteCategory(id) {
+  db.categories = db.categories.filter(c=>c.id!==id);
+  persist('categories');
+  renderCategories();
+}
+
+// ── EXPORT TAB ─────────────────────────────────────────────────────────────────
+function renderExport() {
+  const area = document.getElementById('export-area');
+  const numMonths = exportMonths || 2;
+  const start = new Date(exportStartDate + 'T00:00:00');
+  const startStr = exportStartDate;
+  const endMonth = new Date(start.getFullYear(), start.getMonth() + numMonths, 0);
+  const endStr = localDate(endMonth);
+  const events = (db.events || []).filter(e => e.date >= startStr && e.date <= endStr).sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+
+  const monthNames = ['Januari','Februari','Mars','April','Maj','Juni','Juli','Augusti','September','Oktober','November','December'];
+  const dayNames = ['Söndag','Måndag','Tisdag','Onsdag','Torsdag','Fredag','Lördag'];
+
+  // Group by month
+  const byMonth = {};
+  events.forEach(ev => {
+    const m = parseInt(ev.date.slice(5,7)) - 1;
+    if (!byMonth[m]) byMonth[m] = [];
+    byMonth[m].push(ev);
+  });
+
+  // Generate the HTML in the same format as the site
+  const cssBlock = `<style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400&display=swap');
+    .api { margin-bottom: 2em; }
+    .api>p { font-family: 'Roboto', sans-serif; font-weight: 100; text-transform: none; text-align: center; font-size: 3.95em; color: #a30c0c !important; display: table; margin: 10px auto !important; padding: 10px 20px 30px 20px; }
+    .api .weekday { border-top: 1px solid rgba(0, 0, 0, .2); }
+    .api tr.today { background-color: rgba(255, 255, 0, .1); }
+    .api table { border-collapse: collapse; font-family: 'Roboto', sans-serif; font-weight: 300; margin: 10px auto; }
+    .api td { padding: 0 7px 4px 8px; }
+    td.holiday { text-align: center; letter-spacing: .2rem; font-weight: 200; text-transform: uppercase; font-size: 1.5em; padding-top: 10px; padding-bottom: 5px; }
+    tr.holiday { border-right: 5px solid; border-left: 5px solid; border-color: #a30c0c; }
+</style>`;
+
+  let exportHtml = '';
+  const todayStr = getTodayStr();
+
+  // Get current week range for thisweek class
+  const curWeek = getCurrentWeekRange();
+
+  Object.keys(byMonth).sort((a,b) => a-b).forEach(m => {
+    const monthEvents = byMonth[m];
+    let rows = '';
+    let lastDate = '';
+
+    // Group events by date to figure out lastinweek
+    const byDate = {};
+    monthEvents.forEach(ev => {
+      if (!byDate[ev.date]) byDate[ev.date] = [];
+      byDate[ev.date].push(ev);
+    });
+    const dates = Object.keys(byDate).sort();
+
+    dates.forEach((dateStr, dateIdx) => {
+      const evs = byDate[dateStr];
+      const d = new Date(dateStr + 'T00:00:00');
+      const dayName = dayNames[d.getDay()];
+      const dayNum = d.getDate();
+      const isThisWeek = dateStr >= curWeek.from && dateStr <= curWeek.to;
+      const isSunday = d.getDay() === 0;
+
+      // Check if this is the last date in its week (next date is in a different week or doesn't exist)
+      const nextDate = dates[dateIdx + 1];
+      let isLastInWeek = false;
+      if (isSunday) {
+        isLastInWeek = true;
+      } else if (nextDate) {
+        const nextD = new Date(nextDate + 'T00:00:00');
+        const thisWeekNum = getWeekNumber(d);
+        const nextWeekNum = getWeekNumber(nextD);
+        if (nextWeekNum !== thisWeekNum) isLastInWeek = true;
+      } else {
+        isLastInWeek = true;
+      }
+
+      evs.forEach((ev, evIdx) => {
+        const isFirst = evIdx === 0;
+        const weekdayCls = isFirst ? 'weekday' : '';
+        const thisweekCls = isThisWeek ? ' thisweek' : '';
+        const lastCls = (isLastInWeek && evIdx === evs.length - 1) ? ' lastinweek' : '';
+        const todayCls = dateStr === todayStr ? ' today' : '';
+        const cls = (weekdayCls + thisweekCls + lastCls + todayCls).trim();
+
+        const dateCell = isFirst ? `${dayName}&nbsp;${dayNum}` : '';
+        const titleCell = ev.infoLink
+          ? `${ev.title} - <a href="${ev.infoLink}">Läs mer här</a>`
+          : ev.title;
+
+        rows += `<tr class="${cls}">\n    <td>${dateCell}</td>\n    <td>${ev.time || ''}</td>\n    <td>${titleCell}</td>\n</tr>\n`;
+      });
+    });
+
+    exportHtml += `<div class="api">\n    <p>${monthNames[m]}</p>\n    <table style="border: 0;" class="dataframe">\n        <tbody>\n${cssBlock}\n${rows}        </tbody>\n    </table>\n</div>\n`;
+  });
+
+  const wrappedHtml = `<div class="wpb_wrapper">\n${exportHtml}</div>`;
+
+  // Render preview + raw code
+  area.innerHTML = `
+    <div class="export-toolbar">
+      <label style="font-size:13px;color:#6b7280">Från:</label>
+      <input type="date" value="${startStr}" onchange="exportStartDate=this.value;renderExport()" style="border:1px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:13px">
+      <label style="font-size:13px;color:#6b7280">Månader:</label>
+      <select onchange="exportMonths=parseInt(this.value);renderExport()" style="border:1px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:13px">
+        ${[1,2,3,4,6,9,12].map(n => `<option value="${n}" ${n===numMonths?'selected':''}>${n}</option>`).join('')}
+      </select>
+      <button class="btn" onclick="copyExport()">Kopiera HTML</button>
+      <span style="font-size:13px;color:#6b7280">${events.length} händelser · → ${endStr}</span>
+    </div>
+    <div class="export-preview" id="export-preview">${wrappedHtml}</div>
+    <div class="export-code" id="export-code"></div>`;
+
+  // Set raw HTML as text (escaped)
+  document.getElementById('export-code').textContent = wrappedHtml;
+}
+
+function copyExport() {
+  const code = document.getElementById('export-code');
+  if (!code) return;
+  navigator.clipboard.writeText(code.textContent).then(() => {
+    const btn = document.querySelector('.export-toolbar .btn');
+    if (btn) { const orig = btn.textContent; btn.textContent = 'Kopierad!'; setTimeout(() => btn.textContent = orig, 1500); }
+  });
+}
+
+// ── TEAM BOARD ────────────────────────────────────────────────────────────────
+function renderTeamBoard() {
+  const area = document.getElementById('team-board-area');
+  const teamTasks = db.tasks.filter(t => t.teamTask);
+  if (!teamBoardTaskId && teamTasks.length > 0) teamBoardTaskId = teamTasks[0].id;
+
+  const teams = db.teams.filter(t => t.taskId === teamBoardTaskId).sort((a,b) => a.number - b.number);
+  const allInTeams = new Set(teams.flatMap(t => t.members));
+
+  const taskLinks = teamTasks.map(t =>
+    `<button onclick="teamBoardTaskId=${t.id};renderTeamBoard()" class="tb-task-link${t.id===teamBoardTaskId?' active':''}">${t.name}</button>`
+  ).join('') + `<button onclick="onTeamTaskSelect('__new__')" class="tb-task-link tb-task-add"><i data-lucide="plus" style="width:12px;height:12px"></i> Ny teamuppgift</button>`;
+
+  let html = `<div class="team-board-toolbar">
+    ${taskLinks}
+    <span style="flex:1"></span>
+    <span style="font-size:13px;color:#6b7280">${teams.length} team · ${allInTeams.size} personer</span>
+  </div>
+  <div class="team-board" id="team-board">`;
+
+  // Pool column
+  html += `<div class="team-col pool-col">
+    <div class="team-col-header">Alla personer <span class="team-col-count">${db.contacts.length}</span></div>
+    <input class="pool-search" type="text" placeholder="Sök…" oninput="filterPool(this.value)">
+    <div class="team-col-body" id="pool-body" data-team-id="pool">`;
+  db.contacts.sort((a,b) => a.name.localeCompare(b.name)).forEach(c => {
+    const inTeam = allInTeams.has(c.id);
+    html += `<div class="pool-card${inTeam?' in-team':''}" draggable="true" data-contact-id="${c.id}" data-name="${c.name.toLowerCase()}" onclick="openContactModal(${c.id})">${c.name}</div>`;
+  });
+  html += `</div></div>`;
+
+  // Team columns
+  teams.forEach(team => {
+    html += `<div class="team-col">
+      <div class="team-col-header">
+        <span>Team ${team.number}</span>
+        <button class="card-remove" onclick="if(confirm('Ta bort Team ${team.number}?'))deleteTeamCol(${team.id})" title="Ta bort team"><i data-lucide="x" style="width:14px;height:14px"></i></button>
+      </div>
+      <div class="team-col-body" data-team-id="${team.id}">`;
+    team.members.forEach(mid => {
+      const c = db.contacts.find(x => x.id === mid);
+      if (!c) return;
+      html += `<div class="team-card" draggable="true" data-contact-id="${c.id}" onclick="openContactModal(${c.id})">
+        <span>${c.name}</span>
+        <button class="card-remove" onclick="event.stopPropagation();removeFromTeam(${team.id},${c.id})"><i data-lucide="x" style="width:12px;height:12px"></i></button>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  // "+ Nytt team" column
+  const nextNum = teams.length > 0 ? Math.max(...teams.map(t=>t.number)) + 1 : 1;
+  const taskName = db.tasks.find(t=>t.id===teamBoardTaskId)?.name || 'team';
+  html += `<div class="team-col" style="min-width:120px;flex:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:13px" onclick="createTeamCol(${teamBoardTaskId},${nextNum})">
+    <div style="text-align:center"><i data-lucide="plus-circle" style="width:24px;height:24px;margin-bottom:4px"></i><br>Nytt ${taskName}</div>
+  </div>`;
+
+  html += '</div>';
+  area.innerHTML = html;
+  area.style.display = '';
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  initTeamBoardDrag();
+}
+
+function filterPool(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('#pool-body .pool-card').forEach(el => {
+    el.style.display = el.dataset.name.includes(q) ? '' : 'none';
+  });
+}
+
+function onTeamTaskSelect(val) {
+  if (val === '__new__') {
+    const name = prompt('Namn på ny teamuppgift:');
+    if (!name) { return; }
+    const maxId = db.tasks.reduce((m,t) => Math.max(m,t.id), 0) + 1;
+    db.tasks.push({id:maxId, name, teamTask:true, mailbot:false, phrase:''});
+    persist('tasks');
+    teamBoardTaskId = maxId;
+    renderTeamBoard();
+  } else {
+    teamBoardTaskId = parseInt(val);
+    renderTeamBoard();
+  }
+}
+
+function createTeamCol(taskId, num) {
+  const maxId = db.teams.reduce((m,t) => Math.max(m,t.id), 0) + 1;
+  db.teams.push({id:maxId, taskId, number:num, members:[]});
+  persist('teams');
+  renderTeamBoard();
+}
+
+function deleteTeamCol(teamId) {
+  db.teams = db.teams.filter(t => t.id !== teamId);
+  persist('teams');
+  renderTeamBoard();
+}
+
+function removeFromTeam(teamId, contactId) {
+  const team = db.teams.find(t => t.id === teamId);
+  if (!team) return;
+  team.members = team.members.filter(id => id !== contactId);
+  persist('teams');
+  renderTeamBoard();
+}
+
+function addToTeam(teamId, contactId) {
+  const team = db.teams.find(t => t.id === teamId);
+  if (!team) return;
+  if (!team.members.includes(contactId)) team.members.push(contactId);
+  persist('teams');
+}
+
+function moveContactBetweenTeams(contactId, fromTeamId, toTeamId) {
+  if (fromTeamId === toTeamId) return;
+  // Remove from old team
+  if (fromTeamId !== 'pool') {
+    const from = db.teams.find(t => t.id === parseInt(fromTeamId));
+    if (from) from.members = from.members.filter(id => id !== contactId);
+  }
+  // Add to new team
+  if (toTeamId !== 'pool') {
+    const to = db.teams.find(t => t.id === parseInt(toTeamId));
+    if (to && !to.members.includes(contactId)) to.members.push(contactId);
+  }
+  persist('teams');
+  renderTeamBoard();
+}
+
+function initTeamBoardDrag() {
+  const board = document.getElementById('team-board');
+  if (!board) return;
+  let dragContactId = null;
+  let dragFromTeam = null;
+
+  board.addEventListener('dragstart', e => {
+    const card = e.target.closest('[data-contact-id]');
+    if (!card) return;
+    dragContactId = parseInt(card.dataset.contactId);
+    const col = card.closest('[data-team-id]');
+    dragFromTeam = col ? col.dataset.teamId : null;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragContactId);
+  });
+
+  board.addEventListener('dragend', e => {
+    const card = e.target.closest('[data-contact-id]');
+    if (card) card.classList.remove('dragging');
+    board.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    dragContactId = null;
+    dragFromTeam = null;
+  });
+
+  board.addEventListener('dragover', e => {
+    const body = e.target.closest('[data-team-id]');
+    if (!body) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    board.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    body.classList.add('drag-over');
+  });
+
+  board.addEventListener('dragleave', e => {
+    const body = e.target.closest('[data-team-id]');
+    if (body && !body.contains(e.relatedTarget)) body.classList.remove('drag-over');
+  });
+
+  board.addEventListener('drop', e => {
+    e.preventDefault();
+    const body = e.target.closest('[data-team-id]');
+    if (!body || dragContactId === null) return;
+    body.classList.remove('drag-over');
+    const toTeamId = body.dataset.teamId;
+    moveContactBetweenTeams(dragContactId, dragFromTeam, toTeamId);
+    dragContactId = null;
+    dragFromTeam = null;
+  });
+}
+
+// ── MAILBOT ───────────────────────────────────────────────────────────────────
+function renderMailbot() {
+  const area = document.getElementById('mailbot-area');
+  const now = getToday();
+  const todayStr = localDate(now);
+  const in30 = new Date(now); in30.setDate(now.getDate() + 30);
+  const in30Str = localDate(in30);
+
+  // Upcoming events with assignments
+  const upcoming = (db.events || [])
+    .filter(e => e.date >= todayStr && e.date <= in30Str)
+    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+
+  // Collect all assigned people across upcoming events
+  const allPeopleIds = new Set();
+  const noEmailIds = new Set();
+  let totalAssignments = 0;
+  let missingEmailCount = 0;
+
+  function getPeopleForEvent(ev) {
+    const asgn = assignments[ev.id] || {};
+    const people = [];
+    Object.entries(asgn).forEach(([tid, val]) => {
+      const task = db.tasks.find(t => t.id === parseInt(tid));
+      if (!task || !task.mailbot) return;
+      if (val.type === 'contact') {
+        (val.ids || []).forEach(cid => people.push({cid, task: task.name}));
+      } else if (val.type === 'team') {
+        const team = db.teams.find(t => t.id === val.id);
+        if (team) team.members.forEach(cid => people.push({cid, task: task.name}));
+      }
+    });
+    return people;
+  }
+
+  const eventData = upcoming.map(ev => {
+    const people = getPeopleForEvent(ev);
+    const withEmail = [];
+    const withoutEmail = [];
+    people.forEach(p => {
+      const c = db.contacts.find(x => x.id === p.cid);
+      if (!c) return;
+      allPeopleIds.add(c.id);
+      totalAssignments++;
+      if (c.email) {
+        withEmail.push({...p, name: c.name, email: c.email});
+      } else {
+        withoutEmail.push({...p, name: c.name});
+        noEmailIds.add(c.id);
+        missingEmailCount++;
+      }
+    });
+    return {ev, people, withEmail, withoutEmail};
+  }).filter(d => d.people.length > 0);
+
+  // Compute reminder schedule
+  const reminders6d = upcoming.filter(ev => {
+    const evDate = new Date(ev.date + 'T00:00:00');
+    const diff = Math.round((evDate - now) / 86400000);
+    return diff >= 5 && diff <= 7;
+  });
+  const reminders1d = upcoming.filter(ev => {
+    const evDate = new Date(ev.date + 'T00:00:00');
+    const diff = Math.round((evDate - now) / 86400000);
+    return diff >= 0 && diff <= 2;
+  });
+
+  // Summary cards
+  let html = `<div class="mb-summary">
+    <div class="mb-card"><div class="mb-card-num">${upcoming.length}</div><div class="mb-card-label">Händelser närmaste 30 dagarna</div></div>
+    <div class="mb-card"><div class="mb-card-num">${allPeopleIds.size}</div><div class="mb-card-label">Unika personer tilldelade</div></div>
+    <div class="mb-card ${noEmailIds.size > 0 ? 'danger' : 'ok'}"><div class="mb-card-num">${noEmailIds.size}</div><div class="mb-card-label">Saknar e-post</div></div>
+    <div class="mb-card ${missingEmailCount > 0 ? 'warn' : 'ok'}"><div class="mb-card-num">${missingEmailCount}</div><div class="mb-card-label">Utskick som inte kan skickas</div></div>
+    <div class="mb-card"><div class="mb-card-num">${reminders6d.length + reminders1d.length}</div><div class="mb-card-label">Påminnelser att skicka snart</div></div>
+  </div>`;
+
+  // Reminder schedule info
+  html += `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#374151">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><i data-lucide="clock" style="width:14px;height:14px;color:#6b7280"></i> Påminnelseschema</div>
+    <div style="color:#6b7280;font-size:12px">• 6 dagar före kl 09:00 — första påminnelsen</div>
+    <div style="color:#6b7280;font-size:12px">• 1 dag före kl 18:00 — sista påminnelsen</div>
+  </div>`;
+
+  // Event list
+  html += `<h3 style="font-size:14px;font-weight:600;color:#374151;margin-bottom:10px">Kommande händelser med tilldelningar</h3>`;
+
+  if (eventData.length === 0) {
+    html += `<div style="color:#9ca3af;font-size:13px;padding:20px;text-align:center">Inga händelser med tilldelningar de närmaste 30 dagarna</div>`;
+  }
+
+  eventData.forEach(({ev, withEmail, withoutEmail}) => {
+    const total = withEmail.length + withoutEmail.length;
+    const statusCls = withoutEmail.length === 0 ? 'mb-status-ok' : withoutEmail.length === total ? 'mb-status-danger' : 'mb-status-warn';
+    const statusText = withoutEmail.length === 0 ? 'Alla nåbara' : `${withoutEmail.length} saknar e-post`;
+
+    html += `<div class="mb-event">
+      <div class="mb-event-header">
+        <span class="mb-event-date">${ev.date} ${ev.time || ''}</span>
+        <span class="mb-event-title">${ev.title}</span>
+        <span class="mb-event-status ${statusCls}">${statusText}</span>
+        <button onclick="event.stopPropagation();previewMailchat(${ev.id})" style="background:none;border:1px solid #d1d5db;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#6b7280;display:inline-flex;align-items:center;gap:3px"><i data-lucide="mail" style="width:10px;height:10px"></i> Mailchat</button>
+      </div>
+      <div class="mb-people">`;
+
+    withEmail.forEach(p => {
+      html += `<span class="mb-person has-email" title="${p.email} — ${p.task}" onclick="previewEmail(${ev.id},${p.cid})" style="cursor:pointer"><i data-lucide="mail" style="width:10px;height:10px"></i> ${p.name}</span>`;
+    });
+    withoutEmail.forEach(p => {
+      html += `<span class="mb-person no-email" title="Saknar e-post — ${p.task}" onclick="openContactModal(${p.cid})"><i data-lucide="mail-x" style="width:10px;height:10px"></i> ${p.name}</span>`;
+    });
+
+    html += `</div></div>`;
+  });
+
+  area.innerHTML = html;
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+}
+
+// ── NAMNSKYLTAR ───────────────────────────────────────────────────────────────
+function renderNamnskyltar() {
+  const area = document.getElementById('namnskyltar-area');
+  const personTasks = db.tasks.filter(t => !t.teamTask);
+
+  let html = `<div style="max-width:800px;margin:0 auto">
+    <div style="margin-bottom:16px">
+      <p style="font-size:13px;color:#6b7280;margin-bottom:10px">Fullskärmslänkar per uppgift (öppnas i ny flik):</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${personTasks.map(t =>
+        `<a href="#namnskyltar/fullscreen/${t.id}" target="_blank" class="btn-ghost" style="font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px"><i data-lucide="maximize" style="width:12px;height:12px"></i> ${t.name}</a>`
+      ).join('')}</div>
+    </div>
+  </div>`;
+  area.innerHTML = html;
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+}
+
+function openNameplate(name, role) {
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Namnskylt — ${name}</title>
+<style>
+  * { margin:0; padding:0; }
+  body { display:flex; align-items:flex-end; height:100vh; background:#111; }
+  .np { padding:4vw 5vw; color:#fff; }
+  .np-name { font-family:system-ui,sans-serif; font-size:min(8vw,96px); font-weight:800; text-transform:uppercase; letter-spacing:.05em; line-height:1.1; white-space:nowrap; }
+  .np-line { border:2px solid #fff; border-radius:99px; width:102%; margin:.8vh 0; }
+  .np-role { font-family:system-ui,sans-serif; font-size:min(3.5vw,42px); font-weight:300; margin-left:.2em; opacity:.85; }
+</style></head><body><div class="np"><div class="np-name">${name}</div><div class="np-line"></div><div class="np-role">${role||''}</div></div></body></html>`);
+  w.document.close();
+}
+
+function getTodayNameForTask(taskId) {
+  const todayStr = getTodayStr();
+  const todayEvents = (db.events||[]).filter(e => e.date === todayStr);
+  for (const ev of todayEvents) {
+    const asgn = assignments[ev.id]?.[taskId];
+    if (asgn?.type === 'contact' && asgn.ids.length > 0) {
+      return asgn.ids.map(cid => db.contacts.find(x=>x.id===cid)?.name).filter(Boolean).join(', ');
+    }
+  }
+  return null;
+}
+
+function enterNameplateFullscreen(taskId) {
+  if (currentTab !== 'namnskyltar') switchTab('namnskyltar', true);
+  // If no taskId, try predikant
+  if (!taskId) {
+    const t = db.tasks.find(t => t.name.toLowerCase().includes('predikant'));
+    if (t) taskId = t.id;
+  }
+  const task = db.tasks.find(t => t.id === taskId);
+  const name = taskId ? getTodayNameForTask(taskId) : null;
+  const area = document.getElementById('namnskyltar-area');
+  area.innerHTML = name
+    ? `<div class="nameplate-full"><div class="np-name">${name}</div><div class="np-line"></div><div class="np-role">${task?.name||''}</div></div>`
+    : `<div style="color:#666;font-size:18px;width:100%;height:100%;display:flex;align-items:center;justify-content:center">Ingen tilldelad idag</div>`;
+  area.style.display = '';
+  document.body.classList.add('nameplate-fullscreen');
+}
+
+function exitNameplateFullscreen() {
+  document.body.classList.remove('nameplate-fullscreen');
+  history.replaceState(null, '', '#namnskyltar');
+  renderNamnskyltar();
+}
+
+function buildVolunteerTable(eventId) {
+  const asgn = assignments[eventId] || {};
+  let rows = '';
+  Object.entries(asgn).forEach(([tid, val]) => {
+    const task = db.tasks.find(t=>t.id===parseInt(tid));
+    if (!task) return;
+    if (val.type==='contact') {
+      (val.ids||[]).forEach(cid => { const c=db.contacts.find(x=>x.id===cid); if(!c) return; rows += `<tr><td>${task.name}</td><td>${c.name}</td></tr>`; });
+    } else if (val.type==='team') {
+      const team = db.teams.find(t=>t.id===val.id);
+      if (!team) return;
+      rows += `<tr><td colspan="2" style="padding-top:12px"><strong>${task.name} — Team ${team.number}</strong></td></tr>`;
+      team.members.forEach(cid => { const c=db.contacts.find(x=>x.id===cid); if(!c) return; rows += `<tr><td></td><td>${c.name}</td></tr>`; });
+    }
+  });
+  return rows;
+}
+
+function findPersonTask(eventId, contactId) {
+  const asgn = assignments[eventId] || {};
+  for (const [tid, val] of Object.entries(asgn)) {
+    const task = db.tasks.find(t=>t.id===parseInt(tid));
+    if (!task) continue;
+    if (val.type==='contact' && (val.ids||[]).includes(contactId)) return task;
+    if (val.type==='team') { const team=db.teams.find(t=>t.id===val.id); if (team && team.members.includes(contactId)) return task; }
+  }
+  return null;
+}
+
+function previewEmail(eventId, contactId) {
+  const ev = db.events.find(e=>e.id===eventId);
+  const contact = db.contacts.find(c=>c.id===contactId);
+  if (!ev || !contact) return;
+  const dayNames = ['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'];
+  const d = new Date(ev.date+'T00:00:00');
+  const task = findPersonTask(eventId, contactId);
+  const taskPhrase = task?.phrase || ('är ' + (task?.name||'med'));
+  const firstName = contact.name.split(' ')[0];
+  const rosterHtml = buildVolunteerTable(eventId);
+  const isLeader = task?.name === 'Ledare';
+
+  const emailHtml = `<div style="font-family:'Be Vietnam',sans-serif;background:#fff;padding:20px;border-radius:3px">
+    <h1 style="font-size:35px;font-weight:300;text-align:center;margin-bottom:30px">Hej ${firstName}!</h1>
+    <p>Du ${taskPhrase} på "${ev.title}", ${dayNames[d.getDay()]} kl ${ev.time||''}.</p>
+    <p>Alla som har ansvar då är:</p>
+    <table class="dudes" style="width:100%;border-top:1px solid #ccc;border-bottom:1px solid #ccc;padding:10px;margin-bottom:10px;border-collapse:collapse;font-size:13px"><tbody>${rosterHtml}</tbody></table>
+    ${isLeader ? '<hr style="border:0;border-bottom:1px solid #f6f6f6;margin:20px 0"><br><br><h2 style="font-weight:400">Info som finns i veckoschemat för nästa vecka:</h2><p style="color:#999;font-size:12px;font-style:italic">(veckoschema infogas här)</p>' : ''}
+    <h3 style="font-weight:400">Ha en fortsatt välsignad vecka!</h3>
+    <img style="width:150px" src="http://pingstkungsbacka.se/logo.png">
+  </div>
+  <div style="text-align:center;margin-top:10px;font-size:12px;color:#999">Pingstkyrkan Kungsbacka<br>Det här mailet avser ${ev.date} ${ev.time||''}.<br>Ser något fel ut? Svara på det här mailet isåfall.</div>`;
+
+  const modal = document.getElementById('detail-modal');
+  document.getElementById('detail-modal-content').innerHTML = `
+    <div class="sidebar-header"><h3>Personligt mail → ${contact.name}</h3><button class="sidebar-close" onclick="closeDetailModal()">×</button></div>
+    <div class="sidebar-body" style="background:#f6f6f6;padding:16px">
+      <div style="margin-bottom:8px;font-size:12px;color:#6b7280"><strong>Till:</strong> ${contact.email}<br><strong>Ämne:</strong> Påminnelse: ${ev.title} ${ev.date}</div>
+      ${emailHtml}
+    </div>`;
+  modal.classList.add('open');
+}
+
+function previewMailchat(eventId) {
+  const ev = db.events.find(e=>e.id===eventId);
+  if (!ev) return;
+  const dayNames = ['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'];
+  const monthNames = ['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
+  const d = new Date(ev.date+'T00:00:00');
+  const dateStr = `${d.getDate()} ${monthNames[d.getMonth()]} ${ev.time||''}`.trim();
+  const asgn = assignments[ev.id] || {};
+  let zebraRows = '';
+  const recipients = [];
+  Object.entries(asgn).forEach(([tid, val]) => {
+    const task = db.tasks.find(t=>t.id===parseInt(tid));
+    if (!task) return;
+    const names = [];
+    if (val.type==='contact') (val.ids||[]).forEach(cid => { const c=db.contacts.find(x=>x.id===cid); if(c){names.push(c.name);if(c.email)recipients.push(c);} });
+    else if (val.type==='team') { const team=db.teams.find(t=>t.id===val.id); if(team) team.members.forEach(cid => { const c=db.contacts.find(x=>x.id===cid); if(c){names.push(c.name);if(c.email)recipients.push(c);} }); }
+    zebraRows += `<tr><td style="padding:3px 8px">${task.name}</td><td style="padding:3px 8px">${names.join(', ')}</td></tr>`;
+  });
+
+  const emailHtml = `<div style="font-family:'Be Vietnam',sans-serif;background:#fff;padding:20px;border-radius:3px">
+    <h1 style="font-size:35px;font-weight:300;text-align:center;margin-bottom:30px">Hej alla!</h1>
+    <p>Ni som är med i den här mailtråden gör "${ev.title}" <strong>${dateStr}</strong> tillsammans. Använd den här mailtråden för kommunikation kring sådant som behöver spikas inför ${dayNames[d.getDay()]}.</p>
+    <br>
+    <table style="display:table;width:28rem;border:1px solid #f0f0f0;border-radius:10px;margin:auto;border-collapse:collapse;text-align:left;font-size:13px">
+      <thead style="border-bottom:1px solid #e0e0e0;font-weight:900"><tr><th style="padding:3px 8px">Vad</th><th style="padding:3px 8px">Vem</th></tr></thead>
+      <tbody>${zebraRows}</tbody>
+    </table>
+    <br><br>
+    <p>Allt som skickas i den här mailtråden skickas också till bilddatorns mail.</p>
+    <hr style="border:0;border-bottom:1px solid #f6f6f6;margin:20px 0">
+    <h3 style="font-weight:400">Fortsatt välsignad vecka!</h3>
+    <img style="width:150px" src="http://pingstkungsbacka.se/logo.png">
+  </div>
+  <div style="text-align:center;margin-top:10px;font-size:12px;color:#999">Pingstkyrkan Kungsbacka<br>Det här mailet avser ${ev.date} ${ev.time||''}.<br>Ser något fel ut? Svara på det här mailet isåfall.</div>`;
+
+  const modal = document.getElementById('detail-modal');
+  document.getElementById('detail-modal-content').innerHTML = `
+    <div class="sidebar-header"><h3>Mailchat → ${ev.title}</h3><button class="sidebar-close" onclick="closeDetailModal()">×</button></div>
+    <div class="sidebar-body" style="background:#f6f6f6;padding:16px">
+      <div style="margin-bottom:8px;font-size:12px;color:#6b7280"><strong>Till:</strong> ${recipients.map(c=>c.email).join(', ')}<br><strong>Ämne:</strong> ${ev.title} ${ev.date}</div>
+      ${emailHtml}
+    </div>`;
+  modal.classList.add('open');
 }
 
 // ── SIDEBAR ───────────────────────────────────────────────────────────────────
@@ -1295,6 +2427,7 @@ function renderSidebar(record) {
   const builders = { events:sidebarEvent, contacts:sidebarContact, tasks:sidebarTask, teams:sidebarTeam };
   if (builders[currentTab]) el.innerHTML = builders[currentTab](record);
   initSidebarTracking();
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
 }
 
 function getAssignmentLabel(eid, tid) {
@@ -1316,8 +2449,9 @@ function sidebarEvent(r) {
   const promos = r.promoSlides || [];
   const promoHtml = promos.length
     ? promos.map((url,i) => `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-        <input type="text" value="${url}" style="flex:1" placeholder="Image URL" data-promo-idx="${i}">
-        <button class="btn-ghost" onclick="removePromoSlide(${r.id},${i})" style="padding:3px 8px;font-size:11px">✕</button>
+        <img src="${url}" style="width:48px;height:32px;object-fit:cover;border-radius:4px;border:1px solid #e5e7eb" onerror="this.style.display='none'">
+        <input type="text" value="${url}" style="flex:1" placeholder="URL eller ladda upp" data-promo-idx="${i}">
+        <button class="btn-ghost" onclick="removePromoSlide(${r.id},${i})" style="padding:3px 8px;font-size:11px"><i data-lucide="x" style="width:12px;height:12px"></i></button>
       </div>`).join('')
     : '<p style="font-size:13px;color:#9ca3af">Inga promo-bilder</p>';
   const deleteBtn = isNew ? '' : `<button class="btn-danger" onclick="if(confirm('Ta bort denna händelse?'))deleteEvent(${r.id})" style="font-size:12px;padding:5px 10px">Ta bort</button>`;
@@ -1327,22 +2461,28 @@ function sidebarEvent(r) {
     </div>`;
   return `
   <div class="sidebar-header">
-    <h3>${isNew ? 'Ny händelse' : r.title}</h3>
+    <h3>${isNew ? 'Ny händelse' : esc(r.title)}</h3>
     <button class="sidebar-close" onclick="closeEventDetail()">×</button>
   </div>
   <div class="sidebar-body" id="sb-body">
     <div class="field-group"><label>Date</label><input type="date" value="${r.date}" id="sb-date"></div>
     <div class="field-group"><label>Time</label><input type="time" value="${r.time||''}" id="sb-time"></div>
-    <div class="field-group"><label>Title</label><input type="text" value="${r.title}" id="sb-title"></div>
+    <div class="field-group"><label>Title</label><input type="text" value="${escAttr(r.title)}" id="sb-title"></div>
     <div class="field-group"><label>Category</label>
-      <select id="sb-category">${['Sunday','Weekday','Special'].map(o=>`<option${o===r.category?' selected':''}>${o}</option>`).join('')}</select>
+      <select id="sb-category">${['Sunday','Weekday','Special','Anteckning'].map(o=>`<option${o===r.category?' selected':''}>${o}</option>`).join('')}</select>
     </div>
-    <div class="field-group"><label>Description</label><textarea rows="2" id="sb-desc">${r.description||''}</textarea></div>
-    <div class="field-group"><label>Info link</label><input type="url" value="${r.infoLink||''}" placeholder="https://…" id="sb-infolink"></div>
+    <div class="field-group"><label>Description</label><textarea rows="2" id="sb-desc">${esc(r.description||'')}</textarea></div>
+    <div class="field-group"><label>Info link</label><input type="url" value="${escAttr(r.infoLink||'')}" placeholder="https://…" id="sb-infolink"></div>
     <div class="sb-section">
       <h4>Promo slides</h4>
       <div id="sb-promos">${promoHtml}</div>
-      <button class="btn-ghost" onclick="addPromoSlide(${r.id})" style="margin-top:4px;font-size:12px">+ Lägg till bild</button>
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <label class="btn-ghost" style="font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+          <i data-lucide="upload" style="width:12px;height:12px"></i> Ladda upp
+          <input type="file" accept="image/*" onchange="uploadPromoFile(this,${r.id})" style="display:none">
+        </label>
+        <button class="btn-ghost" onclick="addPromoSlide(${r.id})" style="font-size:12px">+ URL</button>
+      </div>
     </div>
     <div class="sb-section">
       <h4>Förväntade uppgifter</h4>
@@ -1377,11 +2517,23 @@ function initSidebarTracking() {
 }
 
 function sidebarContact(r) {
-  const upcoming = (db.events||[]).filter(e=>e.date>='2026-03-22').slice(0,3);
+  const todayStr = getTodayStr();
+  const upcoming = (db.events||[])
+    .filter(e => e.date >= todayStr)
+    .filter(e => {
+      const asgn = assignments[e.id] || {};
+      return Object.values(asgn).some(val => {
+        if (val.type === 'contact') return (val.ids||[]).includes(r.id);
+        if (val.type === 'team') { const team = db.teams.find(t=>t.id===val.id); return team && team.members.includes(r.id); }
+        return false;
+      });
+    })
+    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time))
+    .slice(0, 10);
   return `
   <div class="sidebar-header">
     <h3>${r.name}</h3>
-    <button class="sidebar-close" onclick="renderSidebar(null);selectedId=null;renderTable()">×</button>
+    <button class="sidebar-close" onclick="closeContactDetail()">×</button>
   </div>
   <div class="sidebar-body" id="sb-body">
     <div class="field-group"><label>Full name</label><input type="text" value="${r.name}" id="sb-cname"></div>
@@ -1389,30 +2541,81 @@ function sidebarContact(r) {
     <div class="field-group"><label>Phone</label><input type="tel" value="${r.phone}" id="sb-cphone"></div>
     <div class="sb-section">
       <h4>Upcoming events</h4>
-      <ul class="mini-list">${upcoming.map(e=>`<li><span>${e.date}</span><span class="who">${e.title}</span></li>`).join('')}</ul>
+      <ul class="mini-list">${upcoming.length ? upcoming.map(e=>{
+        const asgn = assignments[e.id]||{};
+        const tasks = Object.entries(asgn).filter(([tid,val]) => {
+          if (val.type==='contact') return (val.ids||[]).includes(r.id);
+          if (val.type==='team') { const team=db.teams.find(t=>t.id===val.id); return team&&team.members.includes(r.id); }
+          return false;
+        }).map(([tid])=>db.tasks.find(t=>t.id===parseInt(tid))?.name).filter(Boolean).join(', ');
+        return `<li><span>${e.date}</span><span class="who">${esc(e.title)}${tasks?' · '+tasks:''}</span></li>`;
+      }).join('') : '<li style="color:#9ca3af">Inga kommande tilldelningar</li>'}</ul>
     </div>
   </div>
   <div class="sidebar-footer">
-    <button class="btn-save" id="btn-save" onclick="saveContact(${r.id})">Spara</button>
+    <button class="btn-save" id="btn-save" onclick="saveContact(${r.id})" data-is-new="${r._isNew?'1':''}">Spara</button>
   </div>`;
 }
 
+function openContactModal(id) {
+  const c = db.contacts.find(x=>x.id===id);
+  if (!c) return;
+  const modal = document.getElementById('detail-modal');
+  document.getElementById('detail-modal-content').innerHTML = sidebarContact(c);
+  modal.classList.add('open');
+  initSidebarTracking();
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+}
+
+function closeContactDetail() {
+  const useModal = ['teams','mailbot'].includes(currentTab);
+  if (useModal) {
+    closeDetailModal();
+    if (currentTab === 'teams') renderTeamBoard();
+    if (currentTab === 'mailbot') renderMailbot();
+  } else {
+    renderSidebar(null); selectedId = null; renderTable();
+  }
+}
+
 function saveContact(id) {
+  const isNew = document.getElementById('btn-save')?.dataset.isNew === '1';
+  if (isNew) {
+    const c = {
+      id: id,
+      name: document.getElementById('sb-cname').value,
+      email: document.getElementById('sb-cemail').value,
+      phone: document.getElementById('sb-cphone').value,
+    };
+    db.contacts.push(c);
+    persist('contacts');
+    closeDetailModal();
+    applyFilters();
+    return;
+  }
   const c = db.contacts.find(x=>x.id===id);
   if (!c) return;
   c.name = document.getElementById('sb-cname').value;
   c.email = document.getElementById('sb-cemail').value;
   c.phone = document.getElementById('sb-cphone').value;
   persist('contacts');
-  applyFilters();
-  renderSidebar(c);
+  const useModal = ['teams','mailbot'].includes(currentTab);
+  if (useModal) {
+    closeDetailModal();
+    if (currentTab === 'teams') renderTeamBoard();
+    if (currentTab === 'mailbot') renderMailbot();
+  } else {
+    applyFilters();
+    renderSidebar(c);
+  }
 }
 
 function sidebarTask(r) {
+  const isNew = r._isNew;
   return `
   <div class="sidebar-header">
-    <h3>${r.name}</h3>
-    <button class="sidebar-close" onclick="renderSidebar(null);selectedId=null;renderTable()">×</button>
+    <h3>${isNew ? 'Ny uppgift' : r.name}</h3>
+    <button class="sidebar-close" onclick="${isNew ? 'closeDetailModal()' : 'renderSidebar(null);selectedId=null;renderTable()'}">×</button>
   </div>
   <div class="sidebar-body" id="sb-body">
     <div class="field-group"><label>Name</label><input type="text" value="${r.name}" id="sb-tname"></div>
@@ -1423,11 +2626,26 @@ function sidebarTask(r) {
     <div class="field-group"><label>Reminder phrase</label><input type="text" value="${r.phrase}" id="sb-tphrase"></div>
   </div>
   <div class="sidebar-footer">
-    <button class="btn-save" id="btn-save" onclick="saveTask(${r.id})">Spara</button>
+    <button class="btn-save" id="btn-save" onclick="saveTask(${r.id})" data-is-new="${isNew?'1':''}">Spara</button>
   </div>`;
 }
 
 function saveTask(id) {
+  const isNew = document.getElementById('btn-save')?.dataset.isNew === '1';
+  if (isNew) {
+    const t = {
+      id: id,
+      name: document.getElementById('sb-tname').value,
+      teamTask: document.getElementById('sb-tteam').checked,
+      mailbot: document.getElementById('sb-tmailbot').checked,
+      phrase: document.getElementById('sb-tphrase').value,
+    };
+    db.tasks.push(t);
+    persist('tasks');
+    closeDetailModal();
+    applyFilters();
+    return;
+  }
   const t = db.tasks.find(x=>x.id===id);
   if (!t) return;
   t.name = document.getElementById('sb-tname').value;
@@ -1529,31 +2747,50 @@ function saveTeam(id) {
 function newRecord() {
   if (currentTab === 'slides') return;
   if (currentTab === 'events') {
-    newEventOnDate(localDate(new Date()));
+    newEventOnDate(getTodayStr());
+    return;
+  }
+  if (currentTab === 'tasks') {
+    newTask();
     return;
   }
   alert('New ' + tabConfig[currentTab].label.slice(0,-1) + ' — wire up to your backend!');
 }
 
+function newContact() {
+  const maxId = db.contacts.reduce((m,c) => Math.max(m,c.id), 0) + 1;
+  const draft = {id:maxId, name:'', email:'', phone:'', _isNew:true};
+  const modal = document.getElementById('detail-modal');
+  document.getElementById('detail-modal-content').innerHTML = sidebarContact(draft);
+  modal.classList.add('open');
+  initSidebarTracking();
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  const btn = document.getElementById('btn-save');
+  if (btn) btn.classList.add('dirty');
+}
+
+function newTask() {
+  const maxId = db.tasks.reduce((m,t) => Math.max(m,t.id), 0) + 1;
+  const draft = {id:maxId, name:'', teamTask:false, mailbot:false, phrase:'', _isNew:true};
+  const modal = document.getElementById('detail-modal');
+  document.getElementById('detail-modal-content').innerHTML = sidebarTask(draft);
+  modal.classList.add('open');
+  initSidebarTracking();
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  const btn = document.getElementById('btn-save');
+  if (btn) btn.classList.add('dirty');
+}
+
 function newEventOnDate(dateStr) {
   const maxId = db.events.reduce((m,e) => Math.max(m,e.id), 0) + 1;
   const draft = {id:maxId, title:'', category:'Weekday', date:dateStr, time:'10:00', description:'', volunteers:0, promoSlides:[], infoLink:'', expectedTasks:[], _isNew:true};
-  if (['calendar','week','year','monster'].includes(currentView)) {
-    const modal = document.getElementById('detail-modal');
-    document.getElementById('detail-modal-content').innerHTML = sidebarEvent(draft);
-    modal.classList.add('open');
-    initSidebarTracking();
-    // auto-mark dirty so save is active
-    const btn = document.getElementById('btn-save');
-    if (btn) btn.classList.add('dirty');
-  } else {
-    selectedId = null;
-    const el = document.getElementById('sidebar-content');
-    el.innerHTML = sidebarEvent(draft);
-    initSidebarTracking();
-    const btn = document.getElementById('btn-save');
-    if (btn) btn.classList.add('dirty');
-  }
+  const modal = document.getElementById('detail-modal');
+  document.getElementById('detail-modal-content').innerHTML = sidebarEvent(draft);
+  modal.classList.add('open');
+  initSidebarTracking();
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  const btn = document.getElementById('btn-save');
+  if (btn) btn.classList.add('dirty');
 }
 
 // ── SAVE EVENT + SMART PROPAGATION ────────────────────────────────────────────
@@ -1577,22 +2814,20 @@ function saveEvent(id) {
     db.events.push(ev);
     assignments[ev.id] = {};
     persist('events');
+    closeDetailModal();
     applyFilters();
-    if (['calendar','week','year','monster'].includes(currentView)) {
-      closeDetailModal();
-    } else {
-      selectedId = ev.id;
-      renderTable();
-      renderSidebar(ev);
-    }
     return;
   }
 
   const ev = db.events.find(e=>e.id===id);
   if (!ev) return;
+  // snapshot original date before reading form
+  const oldDate = ev.date;
   const oldTitle = ev.title;
-  // snapshot propagatable fields before edit
-  const oldSnap = {title:ev.title, category:ev.category, promoSlides:JSON.stringify(ev.promoSlides||[]), infoLink:ev.infoLink||'', expectedTasks:JSON.stringify(ev.expectedTasks||[])};
+  const skipFields = new Set(['id','date','time','volunteers','_isNew']);
+  // snapshot all propagatable fields before edit
+  const oldSnap = {};
+  Object.keys(ev).forEach(k => { if (!skipFields.has(k)) oldSnap[k] = JSON.stringify(ev[k]); });
   // read sidebar values
   ev.date = document.getElementById('sb-date').value;
   ev.time = document.getElementById('sb-time').value;
@@ -1603,33 +2838,34 @@ function saveEvent(id) {
   ev.promoSlides = [...document.querySelectorAll('#sb-promos input[data-promo-idx]')].map(i=>i.value).filter(Boolean);
   ev.expectedTasks = [...document.querySelectorAll('[data-exp-task]')].filter(cb=>cb.checked).map(cb=>parseInt(cb.dataset.expTask));
 
-  // check if any propagatable field actually changed
-  const newSnap = {title:ev.title, category:ev.category, promoSlides:JSON.stringify(ev.promoSlides), infoLink:ev.infoLink, expectedTasks:JSON.stringify(ev.expectedTasks)};
-  const propChanged = Object.keys(oldSnap).some(k => oldSnap[k] !== newSnap[k]);
+  // check which propagatable fields changed
+  const changedFields = Object.keys(oldSnap).filter(k => JSON.stringify(ev[k]) !== oldSnap[k]);
 
-  const futureMatches = db.events.filter(e => e.id !== id && e.title === oldTitle && e.date >= ev.date);
+  const futureMatches = db.events.filter(e => e.id !== id && e.title === oldTitle && e.date > oldDate);
 
-  if (propChanged && futureMatches.length > 0) {
-    showPropagatePopup(ev, futureMatches, oldTitle);
+  if (changedFields.length > 0 && futureMatches.length > 0) {
+    showPropagatePopup(ev, futureMatches, oldTitle, changedFields);
   } else {
     persist('events');
     applyFilters();
-    if (currentView === 'monster') { closeDetailModal(); }
+    if (['monster','calendar','week','year'].includes(currentView)) { closeDetailModal(); }
     else { renderSidebar(ev); }
   }
 }
 
-function showPropagatePopup(ev, matches, oldTitle) {
+function showPropagatePopup(ev, matches, oldTitle, changedFields) {
   const count = matches.length;
   const overlay = document.getElementById('propagate-modal');
   document.getElementById('prop-msg').innerHTML =
     `Du ändrade <strong>"${oldTitle}"</strong>. Det finns <strong>${count}</strong> framtida händelse${count>1?'r':''} med samma titel.<br>Vill du uppdatera dem också?`;
-  document.getElementById('prop-fields').innerHTML = `
-    <label><input type="checkbox" checked data-prop="title"> Titel → ${ev.title}</label>
-    <label><input type="checkbox" checked data-prop="category"> Kategori → ${ev.category}</label>
-    <label><input type="checkbox" checked data-prop="infoLink"> Info-länk → ${ev.infoLink || '(tom)'}</label>
-    <label><input type="checkbox" checked data-prop="promoSlides"> Promo-bilder (${(ev.promoSlides||[]).length} st)</label>
-    <label><input type="checkbox" checked data-prop="expectedTasks"> Förväntade uppgifter (${(ev.expectedTasks||[]).length} st)</label>`;
+  const fieldLabel = k => {
+    const val = ev[k];
+    const display = Array.isArray(val) ? `(${val.length} st)` : (val || '(tom)');
+    return `${k} → ${display}`;
+  };
+  document.getElementById('prop-fields').innerHTML = changedFields.map(k =>
+    `<label><input type="checkbox" checked data-prop="${k}"> ${fieldLabel(k)}</label>`
+  ).join('');
   overlay._ev = ev;
   overlay._matches = matches;
   overlay.classList.add('open');
@@ -1644,11 +2880,7 @@ function executePropagation(apply) {
       .filter(cb=>cb.checked).map(cb=>cb.dataset.prop);
     matches.forEach(m => {
       fields.forEach(f => {
-        if (f === 'promoSlides' || f === 'expectedTasks') {
-          m[f] = JSON.parse(JSON.stringify(ev[f]));
-        } else {
-          m[f] = ev[f];
-        }
+        m[f] = typeof ev[f] === 'object' ? JSON.parse(JSON.stringify(ev[f])) : ev[f];
       });
     });
   }
@@ -1656,7 +2888,7 @@ function executePropagation(apply) {
   persist('events');
   applyFilters();
   const ev = overlay._ev;
-  if (currentView === 'monster') { closeDetailModal(); }
+  if (['monster','calendar','week','year'].includes(currentView)) { closeDetailModal(); }
   else { renderSidebar(ev); }
 }
 
@@ -1678,14 +2910,42 @@ function addPromoSlide(id) {
   if (!ev) return;
   if (!ev.promoSlides) ev.promoSlides = [];
   ev.promoSlides.push('');
-  renderSidebar(ev);
+  rerenderEventForm(ev);
 }
 
 function removePromoSlide(id, idx) {
   const ev = db.events.find(e=>e.id===id);
   if (!ev) return;
   ev.promoSlides.splice(idx, 1);
-  renderSidebar(ev);
+  rerenderEventForm(ev);
+}
+
+function uploadPromoFile(input, id) {
+  const file = input.files[0];
+  if (!file) return;
+  fetch('/upload', { method: 'POST', headers: {'Content-Type': file.type}, body: file })
+    .then(r => r.json())
+    .then(data => {
+      const ev = db.events.find(e=>e.id===id);
+      if (!ev) return;
+      if (!ev.promoSlides) ev.promoSlides = [];
+      ev.promoSlides.push(data.url);
+      rerenderEventForm(ev);
+      const btn = document.getElementById('btn-save');
+      if (btn) btn.classList.add('dirty');
+    })
+    .catch(err => alert('Upload failed: ' + err));
+}
+
+function rerenderEventForm(ev) {
+  const isModal = document.getElementById('detail-modal').classList.contains('open');
+  if (isModal) {
+    document.getElementById('detail-modal-content').innerHTML = sidebarEvent(ev);
+    initSidebarTracking();
+    lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  } else {
+    renderSidebar(ev);
+  }
 }
 
 // ── WARNING CONFIG ─────────────────────────────────────────────────────────────
@@ -1766,7 +3026,7 @@ function closeGenModal() {
 
 function renderGenModal() {
   const body = document.getElementById('gen-body');
-  const today = new Date();
+  const today = getToday();
   const defFrom = document.getElementById('gen-from')?.value || localDate(today);
   const defTo = document.getElementById('gen-to')?.value || localDate(new Date(today.getFullYear(), today.getMonth()+3, today.getDate()));
 
@@ -1906,6 +3166,17 @@ function applyHash() {
 
   switchTab(tab, true);
 
+  if (tab === 'slides' && parts[1] === 'fullscreen') {
+    enterSlidesFullscreen();
+    return;
+  }
+
+  if (tab === 'namnskyltar' && parts[1] === 'fullscreen') {
+    const taskId = parts[2] ? parseInt(parts[2]) : null;
+    enterNameplateFullscreen(taskId);
+    return;
+  }
+
   const viewMap = {schedule:'monster', calendar:'calendar', week:'week', year:'year'};
   if (tab === 'events' && viewMap[parts[1]]) {
     setView(viewMap[parts[1]]);
@@ -1950,6 +3221,8 @@ fetch(API)
   .then(data => {
     db = data;
     loadAssignments();
+    document.getElementById('sim-date').value = simDate || localDate(new Date());
+    updateSimWarning();
     document.getElementById('view-toggle').style.display = '';
     document.getElementById('btn-generate').style.display = '';
     renderFilter();
