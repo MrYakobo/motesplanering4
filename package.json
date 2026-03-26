@@ -1,0 +1,13 @@
+{
+  "name": "motesplanering4",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.16",
+    "ssh2-sftp-client": "^11.0.0"
+  }
+}
