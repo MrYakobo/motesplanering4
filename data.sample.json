@@ -7,7 +7,19 @@
     { "id": 5, "name": "Eva Nilsson", "email": "eva@example.com", "phone": "070-222 33 44" },
     { "id": 6, "name": "Fredrik Berg", "email": "fredrik@example.com", "phone": "070-555 66 77" },
     { "id": 7, "name": "Greta Holm", "email": "greta@example.com", "phone": "" },
-    { "id": 8, "name": "Hans Lund", "email": "hans@example.com", "phone": "070-888 99 00" }
+    { "id": 8, "name": "Hans Lund", "email": "hans@example.com", "phone": "070-888 99 00" },
+    { "id": 9, "name": "Ingrid Falk", "email": "ingrid@example.com", "phone": "070-333 44 55" },
+    { "id": 10, "name": "Johan Strand", "email": "johan@example.com", "phone": "070-666 77 88" },
+    { "id": 11, "name": "Karin Moberg", "email": "karin@example.com", "phone": "" },
+    { "id": 12, "name": "Lars Pettersson", "email": "lars@example.com", "phone": "070-999 00 11" },
+    { "id": 13, "name": "Maria Dahl", "email": "maria@example.com", "phone": "070-123 45 67" },
+    { "id": 14, "name": "Nils Ågren", "email": "nils@example.com", "phone": "" },
+    { "id": 15, "name": "Olivia Roos", "email": "olivia@example.com", "phone": "070-234 56 78" },
+    { "id": 16, "name": "Per Sandberg", "email": "per@example.com", "phone": "070-345 67 89" },
+    { "id": 17, "name": "Rita Engström", "email": "rita@example.com", "phone": "" },
+    { "id": 18, "name": "Stefan Blom", "email": "stefan@example.com", "phone": "070-456 78 90" },
+    { "id": 19, "name": "Tina Wallin", "email": "tina@example.com", "phone": "070-567 89 01" },
+    { "id": 20, "name": "Ulf Nordin", "email": "ulf@example.com", "phone": "" }
   ],
   "tasks": [
     { "id": 1, "name": "Talare", "teamTask": false, "mailbot": true, "phrase": "" },
@@ -15,12 +27,19 @@
     { "id": 3, "name": "Musik", "teamTask": false, "mailbot": true, "phrase": "" },
     { "id": 4, "name": "Ljud", "teamTask": false, "mailbot": true, "phrase": "" },
     { "id": 5, "name": "Bild", "teamTask": false, "mailbot": true, "phrase": "" },
-    { "id": 6, "name": "Värdteam", "teamTask": true, "mailbot": true, "phrase": "" }
+    { "id": 6, "name": "Värdteam", "teamTask": true, "mailbot": true, "phrase": "" },
+    { "id": 7, "name": "Caféteam", "teamTask": true, "mailbot": true, "phrase": "" },
+    { "id": 8, "name": "Förebedjare", "teamTask": false, "mailbot": true, "phrase": "" }
   ],
   "teams": [
-    { "id": 1, "taskId": 6, "number": 1, "members": [1, 2] },
-    { "id": 2, "taskId": 6, "number": 2, "members": [3, 4] },
-    { "id": 3, "taskId": 6, "number": 3, "members": [5, 6] }
+    { "id": 1, "taskId": 6, "number": 1, "members": [1, 5, 9] },
+    { "id": 2, "taskId": 6, "number": 2, "members": [2, 6, 10] },
+    { "id": 3, "taskId": 6, "number": 3, "members": [3, 7, 11] },
+    { "id": 4, "taskId": 6, "number": 4, "members": [4, 8, 12] },
+    { "id": 5, "taskId": 6, "number": 5, "members": [13, 14, 15] },
+    { "id": 6, "taskId": 7, "number": 1, "members": [16, 17] },
+    { "id": 7, "taskId": 7, "number": 2, "members": [18, 19] },
+    { "id": 8, "taskId": 7, "number": 3, "members": [20, 1] }
   ],
   "categories": [
     { "id": 1, "name": "Söndag", "color": "blue" },
@@ -29,15 +48,51 @@
     { "id": 4, "name": "Anteckning", "color": "gray", "hidden": true }
   ],
   "events": [
-    { "id": 1, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-04-05", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6] },
-    { "id": 2, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-04-12", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6] },
-    { "id": 3, "title": "Bönekväll", "category": "Vardag", "date": "2026-04-08", "time": "19:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [2] },
-    { "id": 4, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-04-19", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6] },
-    { "id": 5, "title": "Påskgudstjänst", "category": "Special", "date": "2026-04-03", "time": "18:00", "description": "Långfredagsgudstjänst", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5] }
+    { "id": 1, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-03-01", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7] },
+    { "id": 2, "title": "Bönekväll", "category": "Vardag", "date": "2026-03-04", "time": "19:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [2] },
+    { "id": 3, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-03-08", "time": "11:00", "description": "Nattvard", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7] },
+    { "id": 4, "title": "Ungdomskväll", "category": "Vardag", "date": "2026-03-11", "time": "18:30", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [2, 3, 4] },
+    { "id": 5, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-03-15", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7] },
+    { "id": 6, "title": "Bönekväll", "category": "Vardag", "date": "2026-03-18", "time": "19:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [2] },
+    { "id": 7, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-03-22", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7] },
+    { "id": 8, "title": "Ungdomskväll", "category": "Vardag", "date": "2026-03-25", "time": "18:30", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [2, 3, 4] },
+    { "id": 9, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-03-29", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7] },
+    { "id": 10, "title": "Påskgudstjänst", "category": "Special", "date": "2026-04-03", "time": "18:00", "description": "Långfredagsgudstjänst", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 8] },
+    { "id": 11, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-04-05", "time": "11:00", "description": "Påskdagen", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7] },
+    { "id": 12, "title": "Bönekväll", "category": "Vardag", "date": "2026-04-08", "time": "19:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [2] },
+    { "id": 13, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-04-12", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7] },
+    { "id": 14, "title": "Ungdomskväll", "category": "Vardag", "date": "2026-04-15", "time": "18:30", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [2, 3, 4] },
+    { "id": 15, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-04-19", "time": "11:00", "description": "Nattvard", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7] },
+    { "id": 16, "title": "Bönekväll", "category": "Vardag", "date": "2026-04-22", "time": "19:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [2] },
+    { "id": 17, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-04-26", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7] },
+    { "id": 18, "title": "Ungdomskväll", "category": "Vardag", "date": "2026-04-29", "time": "18:30", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [2, 3, 4] },
+    { "id": 19, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-05-03", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7] },
+    { "id": 20, "title": "Bönekväll", "category": "Vardag", "date": "2026-05-06", "time": "19:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [2] },
+    { "id": 21, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-05-10", "time": "11:00", "description": "Nattvard", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7] },
+    { "id": 22, "title": "Kristi himmelsfärd", "category": "Special", "date": "2026-05-14", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5] },
+    { "id": 23, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-05-17", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7] },
+    { "id": 24, "title": "Ungdomskväll", "category": "Vardag", "date": "2026-05-20", "time": "18:30", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [2, 3, 4] },
+    { "id": 25, "title": "Pingstdagen", "category": "Special", "date": "2026-05-24", "time": "11:00", "description": "Pingstgudstjänst", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7, 8] },
+    { "id": 26, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-05-31", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7] },
+    { "id": 27, "title": "Bönekväll", "category": "Vardag", "date": "2026-06-03", "time": "19:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [2] },
+    { "id": 28, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-06-07", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7] },
+    { "id": 29, "title": "Sommaravslutning", "category": "Special", "date": "2026-06-14", "time": "11:00", "description": "Sista mötet före sommaren", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7, 8] },
+    { "id": 30, "title": "Planeringsdag höst", "category": "Anteckning", "date": "2026-08-15", "time": "", "description": "Planera höstens schema", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [] },
+    { "id": 31, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-08-30", "time": "11:00", "description": "Höststart", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6, 7] }
   ],
-  "schedules": {},
+  "schedules": {
+    "1": { "1": { "type": "contact", "ids": [1] }, "2": { "type": "contact", "ids": [4] }, "3": { "type": "contact", "ids": [6] }, "4": { "type": "contact", "ids": [8] }, "5": { "type": "contact", "ids": [10] }, "6": { "type": "team", "id": 1 }, "7": { "type": "team", "id": 6 } },
+    "3": { "1": { "type": "contact", "ids": [2] }, "2": { "type": "contact", "ids": [5] }, "3": { "type": "contact", "ids": [7] }, "4": { "type": "contact", "ids": [10] }, "5": { "type": "contact", "ids": [8] }, "6": { "type": "team", "id": 2 }, "7": { "type": "team", "id": 7 } },
+    "5": { "1": { "type": "contact", "ids": [3] }, "2": { "type": "contact", "ids": [1] }, "3": { "type": "contact", "ids": [6] }, "4": { "type": "contact", "ids": [8] }, "5": { "type": "contact", "ids": [10] }, "6": { "type": "team", "id": 3 }, "7": { "type": "team", "id": 8 } },
+    "7": { "1": { "type": "contact", "ids": [4] }, "2": { "type": "contact", "ids": [2] }, "3": { "type": "contact", "ids": [7] }, "4": { "type": "contact", "ids": [10] }, "5": { "type": "contact", "ids": [8] }, "6": { "type": "team", "id": 4 }, "7": { "type": "team", "id": 6 } },
+    "9": { "1": { "type": "contact", "ids": [5] }, "2": { "type": "contact", "ids": [3] }, "3": { "type": "contact", "ids": [6] }, "4": { "type": "contact", "ids": [8] }, "5": { "type": "contact", "ids": [10] }, "6": { "type": "team", "id": 5 }, "7": { "type": "team", "id": 7 } },
+    "10": { "1": { "type": "contact", "ids": [1] }, "2": { "type": "contact", "ids": [4] }, "3": { "type": "contact", "ids": [7] }, "4": { "type": "contact", "ids": [10] }, "5": { "type": "contact", "ids": [8] }, "8": { "type": "contact", "ids": [13, 14, 15, 16] } }
+  },
   "recurring_events": {},
   "globalSlides": [],
   "slideLogo": "",
-  "settings": {}
+  "settings": {
+    "orgName": "Exempelkyrkan",
+    "orgLogo": ""
+  }
 }

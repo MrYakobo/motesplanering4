@@ -31,6 +31,8 @@ function renderGenModal() {
       const filter = e.filter || 'ALL';
       const time = e.time || '10:00';
       const title = e.title || '';
+      const cat = e.category || '';
+      const catOptions = (db.categories||[]).map(c => `<option value="${c.name}" ${c.name===cat?'selected':''}>${c.name}</option>`).join('');
       return `<div class="gen-row">
         <select onchange="updateGenEntry('${day}',${i},'filter',this.value);previewGen()">
           <option value="ALL" ${filter==='ALL'?'selected':''}>Varje</option>
@@ -39,6 +41,10 @@ function renderGenModal() {
         </select>
         <input type="text" value="${time}" placeholder="HH:MM" style="width:60px" onchange="updateGenEntry('${day}',${i},'time',this.value);previewGen()">
         <input type="text" class="gen-title" value="${title}" placeholder="Titel" oninput="updateGenEntry('${day}',${i},'title',this.value);previewGen()">
+        <select onchange="updateGenEntry('${day}',${i},'category',this.value);previewGen()" style="max-width:100px">
+          <option value="">Kategori…</option>
+          ${catOptions}
+        </select>
         <button class="gen-rm" onclick="removeGenEntry('${day}',${i})">✕</button>
       </div>`;
     }).join('');
@@ -59,6 +65,7 @@ function updateGenEntry(day, idx, field, val) {
   if (field==='filter') { e.filter = val === 'ALL' ? undefined : val; if (!e.filter) delete e.filter; }
   if (field==='time') e.time = val;
   if (field==='title') e.title = val;
+  if (field==='category') e.category = val;
 }
 
 function removeGenEntry(day, idx) {
@@ -94,7 +101,7 @@ function generateEventList() {
       if (!title) return;
       if (filter === 'ODD' && wn % 2 === 0) return;
       if (filter === 'EVEN' && wn % 2 !== 0) return;
-      results.push({ date: localDate(d), time: e.time, title, category: e.category||'Weekday', expectedTasks: e.expectedTasks||[], promoSlides: e.promoSlides||[], infoLink: e.infoLink||'' });
+      results.push({ date: localDate(d), time: e.time, title, category: e.category||'', expectedTasks: e.expectedTasks||[], promoSlides: e.promoSlides||[], infoLink: e.infoLink||'' });
     });
     d.setDate(d.getDate() + 1);
   }
