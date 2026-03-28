@@ -32,6 +32,14 @@ npm start
 
 Open http://localhost:3000. Without credentials configured, the app runs in open mode.
 
+### Docker
+
+```bash
+cp data.sample.json data_prod.json
+cp .env.example .env        # edit with your credentials
+docker compose up -d
+```
+
 ## Configuration
 
 Create a `.env` file:
