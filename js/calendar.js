@@ -6,6 +6,12 @@ let dragEventId = null;
 let calScrollInit = false;
 let listScrolled = false;
 
+// Range: render from 1 year before to 1 year after today
+function getCalRange() {
+  const today = getToday();
+  return { startYear: today.getFullYear() - 1, endYear: today.getFullYear() + 1 };
+}
+
 function getCalContainer() {
   const wrap = document.querySelector('.table-wrap');
   let c = document.getElementById('cal-container');
@@ -17,10 +23,9 @@ function getCalContainer() {
 }
 
 function evBadge(ev, extraCls) {
-  const cat = (ev.category || 'weekday').toLowerCase();
-  return `<div class="${extraCls || 'cal-ev'} cal-ev-${cat}" draggable="true" data-ev-id="${ev.id}"
+  return `<div class="${extraCls || 'cal-ev'}" style="${catCalClass(ev.category)}" draggable="true" data-ev-id="${ev.id}"
     onclick="event.stopPropagation();openDetailModal(${ev.id})"
-    title="${esc(ev.time || '')} ${esc(ev.title)}">${ev.time || ''} ${esc(ev.title)}</div>`;
+    data-tip="${esc(ev.time || '')} ${esc(ev.title)}">${ev.time || ''} ${esc(ev.title)}</div>`;
 }
 
 function groupByDate(events) {
@@ -34,7 +39,6 @@ function moveEventToDate(evId, newDate) {
   if (!ev || ev.date === newDate) return;
   ev.date = newDate;
   persist('events');
-  // preserve scroll position across re-render
   const scrollEl = document.getElementById('cal-scroll-area') || document.getElementById('week-scroll-area');
   const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
   applyFilters();
@@ -80,14 +84,13 @@ function initDragDrop(container) {
 }
 
 function renderCalendar() {
-  const yr = selectedYear;
+  const { startYear, endYear } = getCalRange();
   const monthNames = ['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
   const shortMonths = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
   const dayHeaders = ['mån','tis','ons','tor','fre','lör','sön'];
 
   const byDate = groupByDate(filtered);
   const todayStr = getTodayStr();
-  const curWeek = getCurrentWeekRange();
   const MAX_VIS = 3;
 
   document.getElementById('table-head').innerHTML = '';
@@ -97,60 +100,56 @@ function renderCalendar() {
 
   let html = `<div class="cal-scroll" id="cal-scroll-area">`;
 
-  for (let m = 0; m < 12; m++) {
-    const first = new Date(yr, m, 1);
-    const last = new Date(yr, m + 1, 0);
-    const startDay = (first.getDay() + 6) % 7;
-
-    // Build weeks for this month
-    const startDate = new Date(first);
-    startDate.setDate(1 - startDay);
-    // figure out how many weeks we need (until we pass the last day)
-    const weeks = [];
-    const wd = new Date(startDate);
-    while (true) {
-      weeks.push(new Date(wd));
-      wd.setDate(wd.getDate() + 7);
-      if (wd > last && wd.getDay() === 1) break;
-      if (weeks.length >= 6) break;
-    }
-
-    html += `<div class="cal-month-section">`;
-    html += `<div class="cal-month-label">${monthNames[m]} <span>${yr}</span></div>`;
-    html += `<div class="cal-grid">${headerRow}`;
-
-    weeks.forEach(weekMon => {
-      const wn = getWeekNumber(weekMon);
-      html += `<div class="cal-wk">${wn}</div>`;
-      for (let i = 0; i < 7; i++) {
-        const day = new Date(weekMon);
-        day.setDate(weekMon.getDate() + i);
-        const ds = localDate(day);
-        const outside = day.getMonth() !== m;
-        const isToday = ds === todayStr;
-        const inCurWeek = ds >= curWeek.from && ds <= curWeek.to;
-        let cls = 'cal-cell';
-        if (outside) cls += ' outside';
-        if (isToday) cls += ' today';
-        if (inCurWeek && !outside) cls += ' current-week-cell';
-
-        const evs = byDate[ds] || [];
-        const visible = evs.slice(0, MAX_VIS);
-        const extra = evs.length - MAX_VIS;
-
-        const dayLabel = day.getDate() === 1 && !outside ? `1 ${shortMonths[day.getMonth()]}` : `${day.getDate()}`;
-        let inner = `<div class="cal-day-num">${dayLabel}</div>`;
-        visible.forEach(ev => { inner += evBadge(ev); });
-        if (extra > 0) inner += `<div class="cal-more" onclick="event.stopPropagation();calShowAll('${ds}')">+${extra} till</div>`;
-        html += `<div class="${cls}" data-drop-date="${ds}" onclick="if(!event.target.closest('[data-ev-id],.cal-more'))newEventOnDate('${ds}')">${inner}</div>`;
+  for (let yr = startYear; yr <= endYear; yr++) {
+    for (let m = 0; m < 12; m++) {
+      const first = new Date(yr, m, 1);
+      const last = new Date(yr, m + 1, 0);
+      const startDay = (first.getDay() + 6) % 7;
+      const startDate = new Date(first);
+      startDate.setDate(1 - startDay);
+      const weeks = [];
+      const wd = new Date(startDate);
+      while (true) {
+        weeks.push(new Date(wd));
+        wd.setDate(wd.getDate() + 7);
+        if (wd > last && wd.getDay() === 1) break;
+        if (weeks.length >= 6) break;
       }
-    });
 
-    html += '</div></div>';
+      html += `<div class="cal-month-section">`;
+      html += `<div class="cal-month-label">${monthNames[m]} <span>${yr}</span></div>`;
+      html += `<div class="cal-grid">${headerRow}`;
+
+      weeks.forEach(weekMon => {
+        const wn = getWeekNumber(weekMon);
+        html += `<div class="cal-wk">${wn}</div>`;
+        for (let i = 0; i < 7; i++) {
+          const day = new Date(weekMon);
+          day.setDate(weekMon.getDate() + i);
+          const ds = localDate(day);
+          const outside = day.getMonth() !== m;
+          const isToday = ds === todayStr;
+          let cls = 'cal-cell';
+          if (outside) cls += ' outside';
+          if (isToday) cls += ' today';
+
+          const evs = byDate[ds] || [];
+          const visible = evs.slice(0, MAX_VIS);
+          const extra = evs.length - MAX_VIS;
+
+          const dayLabel = day.getDate() === 1 && !outside ? `1 ${shortMonths[day.getMonth()]}` : `${day.getDate()}`;
+          let inner = `<div class="cal-day-num">${dayLabel}</div>`;
+          visible.forEach(ev => { inner += evBadge(ev); });
+          if (extra > 0) inner += `<div class="cal-more" onclick="event.stopPropagation();calShowAll('${ds}')">+${extra} till</div>`;
+          html += `<div class="${cls}" data-drop-date="${ds}" onclick="if(!event.target.closest('[data-ev-id],.cal-more'))newEventOnDate('${ds}')">${inner}</div>`;
+        }
+      });
+
+      html += '</div></div>';
+    }
   }
 
   html += '</div>';
-  // Save scroll position before re-render
   const oldScroll = document.getElementById('cal-scroll-area');
   const savedScrollTop = oldScroll ? oldScroll.scrollTop : null;
 
@@ -165,7 +164,10 @@ function renderCalendar() {
       if (!scrollArea) return;
       const todayCell = scrollArea.querySelector('.cal-cell.today');
       if (todayCell) {
-        todayCell.scrollIntoView({ block: 'center', behavior: 'instant' });
+        const monthSection = todayCell.closest('.cal-month-section');
+        if (monthSection) {
+          monthSection.scrollIntoView({ block: 'start', behavior: 'instant' });
+        }
       }
     });
   } else if (savedScrollTop !== null) {
@@ -175,17 +177,16 @@ function renderCalendar() {
 }
 
 function renderWeekView() {
-  const yr = selectedYear;
+  const { startYear, endYear } = getCalRange();
   const dayLabels = ['mån','tis','ons','tor','fre','lör','sön'];
   const monthNames = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
   const todayStr = getTodayStr();
   const byDate = groupByDate(filtered);
 
-  // Build all weeks for the year
-  const janFirst = new Date(yr, 0, 1);
+  const janFirst = new Date(startYear, 0, 1);
   const startMon = new Date(janFirst);
   startMon.setDate(janFirst.getDate() - ((janFirst.getDay() + 6) % 7));
-  const decLast = new Date(yr, 11, 31);
+  const decLast = new Date(endYear, 11, 31);
   const endSun = new Date(decLast);
   endSun.setDate(decLast.getDate() + (7 - ((decLast.getDay() + 6) % 7)) % 7);
 
@@ -197,14 +198,12 @@ function renderWeekView() {
   const d = new Date(startMon);
   while (d <= endSun) {
     const wn = getWeekNumber(d);
-    const monDate = localDate(d);
     const sunD = new Date(d); sunD.setDate(d.getDate() + 6);
-    const sunDate = localDate(sunD);
     const monMonth = monthNames[d.getMonth()];
     const sunMonth = monthNames[sunD.getMonth()];
     const range = monMonth === sunMonth
-      ? `${d.getDate()}–${sunD.getDate()} ${monMonth}`
-      : `${d.getDate()} ${monMonth} – ${sunD.getDate()} ${sunMonth}`;
+      ? `${d.getDate()}–${sunD.getDate()} ${monMonth} ${d.getFullYear()}`
+      : `${d.getDate()} ${monMonth} – ${sunD.getDate()} ${sunMonth} ${sunD.getFullYear()}`;
 
     html += `<div class="week-section" data-week-date="${localDate(d)}"><div class="week-section-header">Vecka ${wn} <span>${range}</span></div>`;
     html += `<div class="week-grid">`;
@@ -214,16 +213,17 @@ function renderWeekView() {
       day.setDate(d.getDate() + i);
       const ds = localDate(day);
       const isToday = ds === todayStr;
+      const isHighlight = ds === highlightDate;
       let cls = 'week-col';
       if (isToday) cls += ' today';
+      if (isHighlight && !isToday) cls += ' highlight';
 
       const evs = byDate[ds] || [];
       let inner = `<div class="week-col-header${isToday?' today-hdr':''}">
         ${dayLabels[i]}<span class="week-date">${day.getDate()}</span>
       </div>`;
       evs.forEach(ev => {
-        const cat = (ev.category || 'weekday').toLowerCase();
-        inner += `<div class="week-ev cal-ev-${cat}" draggable="true" data-ev-id="${ev.id}"
+        inner += `<div class="week-ev" style="${catCalClass(ev.category)}" draggable="true" data-ev-id="${ev.id}"
           onclick="event.stopPropagation();openDetailModal(${ev.id})">
           <div class="week-ev-time">${ev.time || ''}</div>
           <div class="week-ev-title">${ev.title}</div>
@@ -244,6 +244,18 @@ function renderWeekView() {
   c.innerHTML = html;
   initDragDrop(c);
 
+  const weekBtn = document.createElement('div');
+  weekBtn.id = 'week-today-btn';
+  weekBtn.className = 'scroll-today';
+  weekBtn.innerHTML = '<button onclick="weekScrollToToday()">↕ Idag</button>';
+  c.appendChild(weekBtn);
+
+  const scrollArea2 = document.getElementById('week-scroll-area');
+  if (scrollArea2) {
+    scrollArea2.addEventListener('scroll', updateWeekTodayVisibility);
+    requestAnimationFrame(updateWeekTodayVisibility);
+  }
+
   if (!calScrollInit) {
     calScrollInit = true;
     requestAnimationFrame(() => {
@@ -259,47 +271,80 @@ function renderWeekView() {
 }
 
 function renderYearView() {
+  const { startYear, endYear } = getCalRange();
   const monthNames = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
   const dayHeaders = ['m','t','o','t','f','l','s'];
   const todayStr = getTodayStr();
-  const yr = selectedYear;
+  const curWeek = getCurrentWeekRange();
 
-  // collect all event dates for this year
   const eventDates = new Set(filtered.map(e => e.date));
 
   document.getElementById('table-head').innerHTML = '';
   document.getElementById('table-body').innerHTML = '';
 
-  let html = `<div class="year-grid">`;
-  for (let m = 0; m < 12; m++) {
-    const first = new Date(yr, m, 1);
-    const startDay = (first.getDay() + 6) % 7;
-    const daysInMonth = new Date(yr, m + 1, 0).getDate();
+  let html = `<div style="overflow-y:auto;height:100%;padding:8px">`;
+  for (let yr = startYear; yr <= endYear; yr++) {
+    html += `<div style="margin-bottom:24px"><div style="font-size:20px;font-weight:800;color:#1a1a2e;padding:8px 16px">${yr}</div>`;
+    html += `<div class="year-grid">`;
+    for (let m = 0; m < 12; m++) {
+      const first = new Date(yr, m, 1);
+      const last = new Date(yr, m + 1, 0);
+      const startDay = (first.getDay() + 6) % 7;
+      const startDate = new Date(first);
+      startDate.setDate(1 - startDay);
+      const weeks = [];
+      const wd = new Date(startDate);
+      while (true) {
+        weeks.push(new Date(wd));
+        wd.setDate(wd.getDate() + 7);
+        if (wd > last && wd.getDay() === 1) break;
+        if (weeks.length >= 6) break;
+      }
 
-    html += `<div class="year-month"><div class="year-month-title">${monthNames[m]} ${yr}</div><div class="year-mini-grid">`;
-    html += dayHeaders.map(d => `<div class="year-mini-hdr">${d}</div>`).join('');
+      html += `<div class="year-month"><div class="year-month-title">${monthNames[m]}</div><div class="year-mini-grid" style="grid-template-columns:24px repeat(7,1fr)">`;
+      html += `<div class="year-mini-hdr" style="color:'+acMid()+'">v</div>`;
+      html += dayHeaders.map(d => `<div class="year-mini-hdr">${d}</div>`).join('');
 
-    // leading blanks
-    for (let i = 0; i < startDay; i++) html += `<div class="year-mini-day outside"></div>`;
-    for (let d = 1; d <= daysInMonth; d++) {
-      const ds = `${yr}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const isToday = ds === todayStr;
-      const hasEv = eventDates.has(ds);
-      let cls = 'year-mini-day';
-      if (isToday) cls += ' today';
-      if (hasEv) cls += ' has-events';
-      html += `<div class="${cls}" onclick="goToWeek('${ds}')" style="cursor:pointer">${d}</div>`;
+      weeks.forEach(weekMon => {
+        const wn = getWeekNumber(weekMon);
+        const weekSun = new Date(weekMon);
+        weekSun.setDate(weekMon.getDate() + 6);
+        const weekMonStr = localDate(weekMon);
+        const weekSunStr = localDate(weekSun);
+        const isCurWeek = weekMonStr <= curWeek.to && weekSunStr >= curWeek.from;
+
+        const weekStyle = isCurWeek ? 'color:'+ac()+';font-weight:700' : '';
+        html += `<div class="year-mini-hdr" style="font-size:9px;${weekStyle}">${wn}</div>`;
+
+        for (let i = 0; i < 7; i++) {
+          const day = new Date(weekMon);
+          day.setDate(weekMon.getDate() + i);
+          const ds = localDate(day);
+          const outside = day.getMonth() !== m;
+          const isToday = ds === todayStr;
+          const hasEv = eventDates.has(ds);
+          let cls = 'year-mini-day';
+          if (outside) cls += ' outside';
+          if (isToday) cls += ' today';
+          if (hasEv && !outside) cls += ' has-events';
+          const borderStyle = isToday ? 'outline:1.5px solid '+ac()+';outline-offset:-1px;border-radius:3px;' : '';
+          html += `<div class="${cls}" style="${borderStyle}cursor:pointer" onclick="goToWeek('${ds}')">${day.getDate()}</div>`;
+        }
+      });
+
+      html += '</div></div>';
     }
-    // trailing blanks
-    const total = startDay + daysInMonth;
-    const trailing = (7 - total % 7) % 7;
-    for (let i = 0; i < trailing; i++) html += `<div class="year-mini-day outside"></div>`;
-
     html += '</div></div>';
   }
   html += '</div>';
   const c = getCalContainer();
   c.innerHTML = html;
+
+  // Scroll to current year section
+  requestAnimationFrame(() => {
+    const todayEl = c.querySelector('.year-mini-day.today');
+    if (todayEl) todayEl.scrollIntoView({ block: 'center', behavior: 'instant' });
+  });
 }
 
 function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderTable(); }
@@ -310,13 +355,15 @@ function calShowAll(dateStr) {
   setView('list');
   applyFilters();
 }
+let highlightDate = null;
+
 function goToWeek(dateStr) {
-  // Find the Monday of the week containing dateStr
+  highlightDate = dateStr;
   const d = new Date(dateStr + 'T00:00:00');
   const mon = new Date(d);
   mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   const monStr = localDate(mon);
-  calScrollInit = true; // prevent auto-scroll to today
+  calScrollInit = true;
   setView('week');
   requestAnimationFrame(() => {
     const scrollArea = document.getElementById('week-scroll-area');
@@ -324,4 +371,27 @@ function goToWeek(dateStr) {
     const section = scrollArea.querySelector(`[data-week-date="${monStr}"]`);
     if (section) section.scrollIntoView({ block: 'start', behavior: 'instant' });
   });
+}
+
+function weekScrollToToday() {
+  const scrollArea = document.getElementById('week-scroll-area');
+  if (!scrollArea) return;
+  const todayCol = scrollArea.querySelector('.week-col.today');
+  if (todayCol) todayCol.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+
+function updateWeekTodayVisibility() {
+  const btn = document.getElementById('week-today-btn');
+  if (!btn) return;
+  const scrollArea = document.getElementById('week-scroll-area');
+  const todayCol = scrollArea?.querySelector('.week-col.today');
+  if (!todayCol) { btn.style.display = 'none'; return; }
+  const areaRect = scrollArea.getBoundingClientRect();
+  const todayRect = todayCol.getBoundingClientRect();
+  const visible = todayRect.bottom > areaRect.top && todayRect.top < areaRect.bottom;
+  btn.style.display = visible ? 'none' : '';
+  if (!visible) {
+    const above = todayRect.bottom <= areaRect.top;
+    btn.querySelector('button').textContent = (above ? '↑' : '↓') + ' Idag';
+  }
 }

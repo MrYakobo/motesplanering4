@@ -4,7 +4,7 @@ function renderSidebar(record) {
   if (!record) {
     el.innerHTML = `<div class="empty-sidebar">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-      <p style="font-size:13px">Select a row to view details</p></div>`;
+      <p style="font-size:13px">Välj en rad för att se detaljer</p></div>`;
     return;
   }
   const builders = { events:sidebarEvent, contacts:sidebarContact, tasks:sidebarTask, teams:sidebarTeam };
@@ -48,16 +48,16 @@ function sidebarEvent(r) {
     <button class="sidebar-close" onclick="closeEventDetail()">×</button>
   </div>
   <div class="sidebar-body" id="sb-body">
-    <div class="field-group"><label>Date</label><input type="date" value="${r.date}" id="sb-date"></div>
-    <div class="field-group"><label>Time</label><input type="time" value="${r.time||''}" id="sb-time"></div>
-    <div class="field-group"><label>Title</label><input type="text" value="${escAttr(r.title)}" id="sb-title"></div>
-    <div class="field-group"><label>Category</label>
-      <select id="sb-category">${['Sunday','Weekday','Special','Anteckning'].map(o=>`<option${o===r.category?' selected':''}>${o}</option>`).join('')}</select>
+    <div class="field-group"><label>Datum</label><input type="date" value="${r.date}" id="sb-date"></div>
+    <div class="field-group"><label>Tid</label><input type="time" value="${r.time||''}" id="sb-time"></div>
+    <div class="field-group"><label>Titel</label><input type="text" value="${escAttr(r.title)}" id="sb-title"></div>
+    <div class="field-group"><label>Kategori</label>
+      <select id="sb-category">${(db.categories||[]).map(c=>`<option${c.name===r.category?' selected':''}>${esc(c.name)}</option>`).join('')}</select>
     </div>
-    <div class="field-group"><label>Description</label><textarea rows="2" id="sb-desc">${esc(r.description||'')}</textarea></div>
-    <div class="field-group"><label>Info link</label><input type="url" value="${escAttr(r.infoLink||'')}" placeholder="https://…" id="sb-infolink"></div>
+    <div class="field-group"><label>Beskrivning</label><textarea rows="2" id="sb-desc">${esc(r.description||'')}</textarea></div>
+    <div class="field-group"><label>Infolänk</label><input type="url" value="${escAttr(r.infoLink||'')}" placeholder="https://…" id="sb-infolink"></div>
     <div class="sb-section">
-      <h4>Promo slides</h4>
+      <h4>Promobilder</h4>
       <div id="sb-promos">${promoHtml}</div>
       <div style="display:flex;gap:6px;margin-top:4px">
         <label class="btn-ghost" style="font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px">
@@ -86,7 +86,7 @@ function closeEventDetail() {
   if (currentView === 'monster' || currentView === 'calendar') {
     closeDetailModal();
   } else {
-    renderSidebar(null); selectedId = null; renderTable();
+    renderSidebar(null); selectedId = null; renderTable(); updateHash();
   }
 }
 
@@ -97,6 +97,10 @@ function initSidebarTracking() {
   const mark = () => { const b = document.getElementById('btn-save'); if (b) b.classList.add('dirty'); };
   body.addEventListener('input', mark);
   body.addEventListener('change', mark);
+}
+
+function slugifyEmail(email) {
+  return (email || '').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
 }
 
 function sidebarContact(r) {
@@ -113,17 +117,31 @@ function sidebarContact(r) {
     })
     .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time))
     .slice(0, 10);
+  const icalSlug = slugifyEmail(r.email);
+  const icalUrl = r.email ? (location.origin + '/api/cal/' + icalSlug + '.ics') : '';
+  const webcalUrl = icalUrl ? icalUrl.replace(/^https?:/, 'webcal:') : '';
+  const icalHtml = icalUrl
+    ? `<div class="sb-section">
+        <h4>Kalender</h4>
+        <p style="font-size:11px;color:#9ca3af;margin-bottom:8px">Importera ${esc(r.name.split(' ')[0])}s tilldelade uppgifter till en kalenderapp.</p>
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+          <input type="text" value="${escAttr(icalUrl)}" readonly onclick="this.select()" style="flex:1;font-size:11px;background:#f9fafb;color:#6b7280;cursor:text">
+          <button class="btn-ghost" onclick="navigator.clipboard.writeText('${escAttr(icalUrl)}');showToast('Kopierad!','ok')" style="flex-shrink:0;padding:5px 8px" data-tip="Kopiera länk"><i data-lucide="copy" style="width:12px;height:12px"></i></button>
+        </div>
+        <a href="${escAttr(webcalUrl)}" class="btn" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:12px;padding:5px 12px">📅 Öppna i kalenderapp</a>
+      </div>`
+    : '';
   return `
   <div class="sidebar-header">
     <h3>${r.name}</h3>
     <button class="sidebar-close" onclick="closeContactDetail()">×</button>
   </div>
   <div class="sidebar-body" id="sb-body">
-    <div class="field-group"><label>Full name</label><input type="text" value="${r.name}" id="sb-cname"></div>
-    <div class="field-group"><label>Email</label><input type="email" value="${r.email}" id="sb-cemail"></div>
-    <div class="field-group"><label>Phone</label><input type="tel" value="${r.phone}" id="sb-cphone"></div>
+    <div class="field-group"><label>Namn</label><input type="text" value="${r.name}" id="sb-cname"></div>
+    <div class="field-group"><label>E-post</label><input type="email" value="${r.email}" id="sb-cemail"></div>
+    <div class="field-group"><label>Telefon</label><input type="tel" value="${r.phone}" id="sb-cphone"></div>
     <div class="sb-section">
-      <h4>Upcoming events</h4>
+      <h4>Kommande händelser</h4>
       <ul class="mini-list">${upcoming.length ? upcoming.map(e=>{
         const asgn = assignments[e.id]||{};
         const tasks = Object.entries(asgn).filter(([tid,val]) => {
@@ -134,6 +152,7 @@ function sidebarContact(r) {
         return `<li><span>${e.date}</span><span class="who">${esc(e.title)}${tasks?' · '+tasks:''}</span></li>`;
       }).join('') : '<li style="color:#9ca3af">Inga kommande tilldelningar</li>'}</ul>
     </div>
+    ${icalHtml}
   </div>
   <div class="sidebar-footer">
     <button class="btn-save" id="btn-save" onclick="saveContact(${r.id})" data-is-new="${r._isNew?'1':''}">Spara</button>
@@ -157,7 +176,7 @@ function closeContactDetail() {
     if (currentTab === 'teams') renderTeamBoard();
     if (currentTab === 'mailbot') renderMailbot();
   } else {
-    renderSidebar(null); selectedId = null; renderTable();
+    renderSidebar(null); selectedId = null; renderTable(); updateHash();
   }
 }
 
@@ -201,12 +220,12 @@ function sidebarTask(r) {
     <button class="sidebar-close" onclick="${isNew ? 'closeDetailModal()' : 'renderSidebar(null);selectedId=null;renderTable()'}">×</button>
   </div>
   <div class="sidebar-body" id="sb-body">
-    <div class="field-group"><label>Name</label><input type="text" value="${r.name}" id="sb-tname"></div>
-    <div class="field-group"><label>Options</label>
-      <div class="checkbox-row"><input type="checkbox" id="sb-tteam" ${r.teamTask?'checked':''}><label for="sb-tteam" style="text-transform:none;font-size:13px;color:#374151">Team task</label></div>
-      <div class="checkbox-row"><input type="checkbox" id="sb-tmailbot" ${r.mailbot?'checked':''}><label for="sb-tmailbot" style="text-transform:none;font-size:13px;color:#374151">Mailbot enabled</label></div>
+    <div class="field-group"><label>Namn</label><input type="text" value="${r.name}" id="sb-tname"></div>
+    <div class="field-group"><label>Alternativ</label>
+      <div class="checkbox-row"><input type="checkbox" id="sb-tteam" ${r.teamTask?'checked':''}><label for="sb-tteam" style="text-transform:none;font-size:13px;color:#374151">Teamuppgift</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="sb-tmailbot" ${r.mailbot?'checked':''}><label for="sb-tmailbot" style="text-transform:none;font-size:13px;color:#374151">Mailbot aktiverad</label></div>
     </div>
-    <div class="field-group"><label>Reminder phrase</label><input type="text" value="${r.phrase}" id="sb-tphrase"></div>
+    <div class="field-group"><label>Påminnelsefras</label><input type="text" value="${r.phrase}" id="sb-tphrase"></div>
   </div>
   <div class="sidebar-footer">
     <button class="btn-save" id="btn-save" onclick="saveTask(${r.id})" data-is-new="${isNew?'1':''}">Spara</button>
@@ -260,7 +279,7 @@ function sidebarTeam(r) {
         <div class="sb-member-list" id="sb-member-list" style="max-height:240px;overflow-y:auto">
           ${db.contacts.map(c=>`
             <label data-name="${c.name.toLowerCase()}" style="display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:4px;cursor:pointer;font-size:13px;color:#374151">
-              <input type="checkbox" data-member-id="${c.id}" ${r.members.includes(c.id)?'checked':''} style="accent-color:#4f46e5"> ${c.name}
+              <input type="checkbox" data-member-id="${c.id}" ${r.members.includes(c.id)?'checked':''} style="accent-color:'+ac()+'"> ${c.name}
             </label>`).join('')}
         </div>
         <div id="sb-member-add-area" style="margin-top:6px">

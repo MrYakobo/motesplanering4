@@ -1,0 +1,43 @@
+{
+  "contacts": [
+    { "id": 1, "name": "Anna Svensson", "email": "anna@example.com", "phone": "070-111 22 33" },
+    { "id": 2, "name": "Bo Karlsson", "email": "bo@example.com", "phone": "070-444 55 66" },
+    { "id": 3, "name": "Cecilia Lindqvist", "email": "cecilia@example.com", "phone": "" },
+    { "id": 4, "name": "David Ek", "email": "david@example.com", "phone": "070-777 88 99" },
+    { "id": 5, "name": "Eva Nilsson", "email": "eva@example.com", "phone": "070-222 33 44" },
+    { "id": 6, "name": "Fredrik Berg", "email": "fredrik@example.com", "phone": "070-555 66 77" },
+    { "id": 7, "name": "Greta Holm", "email": "greta@example.com", "phone": "" },
+    { "id": 8, "name": "Hans Lund", "email": "hans@example.com", "phone": "070-888 99 00" }
+  ],
+  "tasks": [
+    { "id": 1, "name": "Talare", "teamTask": false, "mailbot": true, "phrase": "" },
+    { "id": 2, "name": "Ledare", "teamTask": false, "mailbot": true, "phrase": "" },
+    { "id": 3, "name": "Musik", "teamTask": false, "mailbot": true, "phrase": "" },
+    { "id": 4, "name": "Ljud", "teamTask": false, "mailbot": true, "phrase": "" },
+    { "id": 5, "name": "Bild", "teamTask": false, "mailbot": true, "phrase": "" },
+    { "id": 6, "name": "Värdteam", "teamTask": true, "mailbot": true, "phrase": "" }
+  ],
+  "teams": [
+    { "id": 1, "taskId": 6, "number": 1, "members": [1, 2] },
+    { "id": 2, "taskId": 6, "number": 2, "members": [3, 4] },
+    { "id": 3, "taskId": 6, "number": 3, "members": [5, 6] }
+  ],
+  "categories": [
+    { "id": 1, "name": "Söndag", "color": "blue" },
+    { "id": 2, "name": "Vardag", "color": "green" },
+    { "id": 3, "name": "Special", "color": "amber" },
+    { "id": 4, "name": "Anteckning", "color": "gray", "hidden": true }
+  ],
+  "events": [
+    { "id": 1, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-04-05", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6] },
+    { "id": 2, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-04-12", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6] },
+    { "id": 3, "title": "Bönekväll", "category": "Vardag", "date": "2026-04-08", "time": "19:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [2] },
+    { "id": 4, "title": "Söndagsmöte", "category": "Söndag", "date": "2026-04-19", "time": "11:00", "description": "", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5, 6] },
+    { "id": 5, "title": "Påskgudstjänst", "category": "Special", "date": "2026-04-03", "time": "18:00", "description": "Långfredagsgudstjänst", "volunteers": 0, "promoSlides": [], "infoLink": "", "expectedTasks": [1, 2, 3, 4, 5] }
+  ],
+  "schedules": {},
+  "recurring_events": {},
+  "globalSlides": [],
+  "slideLogo": "",
+  "settings": {}
+}

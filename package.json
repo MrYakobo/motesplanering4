@@ -1,7 +1,8 @@
 {
-  "name": "motesplanering4",
+  "name": "motesplanering",
   "version": "1.0.0",
-  "private": true,
+  "description": "Lightweight event scheduling and volunteer management for churches and small organizations",
+  "private": false,
   "scripts": {
     "start": "node server.js"
   },

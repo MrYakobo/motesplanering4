@@ -27,14 +27,14 @@ function renderTeamBoard() {
     const inTeam = allInTeams.has(c.id);
     html += `<div class="pool-card${inTeam?' in-team':''}" draggable="true" data-contact-id="${c.id}" data-name="${c.name.toLowerCase()}" onclick="openContactModal(${c.id})">${c.name}</div>`;
   });
-  html += `</div></div>`;
-
-  // Team columns
+  html += `</div>
+    <button onclick="newContactFromTeams()" style="border:none;border-top:1px solid #e5e7eb;padding:8px 12px;font-size:12px;color:'+ac()+';cursor:pointer;text-align:left;background:none;width:100%;flex-shrink:0;display:flex;align-items:center;gap:4px"><i data-lucide="plus-circle" style="width:12px;height:12px"></i> Ny person</button>
+  </div>`;
   teams.forEach(team => {
     html += `<div class="team-col">
       <div class="team-col-header">
         <span>Team ${team.number}</span>
-        <button class="card-remove" onclick="if(confirm('Ta bort Team ${team.number}?'))deleteTeamCol(${team.id})" title="Ta bort team"><i data-lucide="x" style="width:14px;height:14px"></i></button>
+        <button class="card-remove" onclick="if(confirm('Ta bort Team ${team.number}?'))deleteTeamCol(${team.id})" data-tip="Ta bort team"><i data-lucide="x" style="width:14px;height:14px"></i></button>
       </div>
       <div class="team-col-body" data-team-id="${team.id}">`;
     team.members.forEach(mid => {
@@ -177,4 +177,15 @@ function initTeamBoardDrag() {
     dragContactId = null;
     dragFromTeam = null;
   });
+}
+
+function newContactFromTeams() {
+  const maxId = (db.contacts || []).reduce((m, c) => Math.max(m, c.id), 0) + 1;
+  const c = { id: maxId, name: '', email: '', phone: '', _isNew: true };
+  const modal = document.getElementById('detail-modal');
+  document.getElementById('detail-modal-content').innerHTML = sidebarContact(c);
+  modal.classList.add('open');
+  initSidebarTracking();
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  document.getElementById('sb-cname')?.focus();
 }

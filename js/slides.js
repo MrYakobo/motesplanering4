@@ -1,6 +1,17 @@
 // ── SLIDES ────────────────────────────────────────────────────────────────────
 let slideWeekOffset = 0;
 
+function getSlideWeekOffset() {
+  const today = getToday();
+  // If today is Sunday (day 0), show next week
+  return slideWeekOffset + (today.getDay() === 0 ? 1 : 0);
+}
+
+function slideBreakTitle(title) {
+  // Insert soft hyphen before common Swedish compound suffixes
+  return (title || '').replace(/(gudstjänst|samling|möte|kväll|morgon|stund|fest|konsert)/gi, '\u00AD$1');
+}
+
 function getWeekNumber(d) {
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
@@ -23,13 +34,13 @@ let slidePaused = false;
 function renderSlides() {
   const area = document.getElementById('slides-area');
   const today = getToday();
-  const monday = getMondayOfWeek(today, slideWeekOffset);
+  const monday = getMondayOfWeek(today, getSlideWeekOffset());
   const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
   const weekNum = getWeekNumber(monday);
   const monStr = localDate(monday);
   const sunStr = localDate(sunday);
 
-  const weekEvents = (db.events||[])
+  const weekEvents = getPublicEvents()
     .filter(e => e.date >= monStr && e.date <= sunStr)
     .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
 
@@ -50,7 +61,7 @@ function renderSlides() {
         const delay = (colIdx * 0.15 + evIdx * 0.08).toFixed(2);
         const desc = ev.description ? ` · ${ev.description}` : '';
         return `<div class="slide-ev" style="animation-delay:${delay}s">
-          <div class="slide-ev-title">${ev.title}</div>
+          <div class="slide-ev-title">${slideBreakTitle(ev.title)}</div>
           <div class="slide-ev-meta">${ev.category || ''} · ${ev.time || ''}</div>
         </div>`;
       }).join('');
@@ -87,9 +98,17 @@ function renderSlides() {
   html += `<div class="slide-controls">`;
   html += slides.map((_, i) => `<button class="slide-dot${i===0?' active':''}" onclick="goToSlide(${i})"></button>`).join('');
   if (slides.length > 1) html += `<button class="slide-pause" onclick="toggleSlidePause()" id="slide-pause-btn">⏸</button>`;
-  html += `<button class="slide-pause" onclick="toggleSlideFullscreen()" title="Fullskärm"><i data-lucide="maximize" style="width:14px;height:14px"></i></button>`;
+  html += `<button class="slide-pause" onclick="toggleSlideFullscreen()" data-tip="Fullskärm"><i data-lucide="maximize" style="width:14px;height:14px"></i></button>`;
   html += `</div>`;
   area.innerHTML = html;
+
+  // Apply configurable background
+  const bg = db.slideBackground || {};
+  if (bg.image) {
+    area.style.background = `url('${bg.image}') center/cover no-repeat`;
+  } else {
+    area.style.background = bg.color || '#111';
+  }
 
   slideIndex = 0;
   slidePaused = false;
@@ -174,13 +193,36 @@ function enterSlidesFullscreen() {
   document.body.classList.add('slides-fullscreen');
 }
 
-function getEventPromoListHtml() {
+function getWeekEventListHtml() {
   const today = getToday();
-  const monday = getMondayOfWeek(today, slideWeekOffset);
+  const monday = getMondayOfWeek(today, getSlideWeekOffset());
   const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
   const monStr = localDate(monday);
   const sunStr = localDate(sunday);
-  const eventsWithPromos = (db.events || [])
+  const dayNames = ['sön','mån','tis','ons','tor','fre','lör'];
+  const events = getPublicEvents()
+    .filter(e => e.date >= monStr && e.date <= sunStr)
+    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+  if (events.length === 0) return '<p style="font-size:13px;color:#9ca3af">Inga händelser denna vecka</p>';
+  return events.map(ev => {
+    const d = new Date(ev.date + 'T00:00:00');
+    const day = dayNames[d.getDay()];
+    return `<div onclick="switchTab('events',true);selectRow(${ev.id})" style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid #f0f0f0;cursor:pointer;border-radius:4px;font-size:13px" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">
+      <span style="min-width:28px;color:#9ca3af;font-size:11px;font-weight:600">${day}</span>
+      <span style="min-width:40px;color:#6b7280;font-size:12px">${ev.time || ''}</span>
+      <span style="flex:1;color:#374151;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(ev.title)}</span>
+      <span class="badge" style="${catBadgeStyle(ev.category)};font-size:10px">${esc(ev.category || '')}</span>
+    </div>`;
+  }).join('');
+}
+
+function getEventPromoListHtml() {
+  const today = getToday();
+  const monday = getMondayOfWeek(today, getSlideWeekOffset());
+  const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+  const monStr = localDate(monday);
+  const sunStr = localDate(sunday);
+  const eventsWithPromos = getPublicEvents()
     .filter(e => e.date >= monStr && e.date <= sunStr && (e.promoSlides || []).some(Boolean))
     .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
   if (eventsWithPromos.length === 0) return '<p style="font-size:13px;color:#9ca3af">Inga eventbilder denna vecka</p>';
@@ -207,7 +249,7 @@ function renderSlidesSidebar() {
     ? '<p style="font-size:13px;color:#9ca3af;padding:8px 0">Inga globala slides ännu</p>'
     : slides.map((s, i) => `<div style="position:relative;margin-bottom:8px">
         <img src="${s.url}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;display:block;opacity:${s.active?'1':'0.35'};transition:opacity .2s" onerror="this.style.display='none'">
-        <input type="checkbox" ${s.active?'checked':''} onchange="toggleGlobalSlide(${i},this.checked)" style="accent-color:#4f46e5;position:absolute;top:6px;left:6px;width:18px;height:18px;cursor:pointer">
+        <input type="checkbox" ${s.active?'checked':''} onchange="toggleGlobalSlide(${i},this.checked)" style="accent-color:'+ac()+';position:absolute;top:6px;left:6px;width:18px;height:18px;cursor:pointer">
         <button onclick="removeGlobalSlide(${i})" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);border:none;color:#fff;cursor:pointer;padding:2px 4px;border-radius:4px"><i data-lucide="x" style="width:12px;height:12px"></i></button>
       </div>`).join('');
 
@@ -219,12 +261,33 @@ function renderSlidesSidebar() {
       </div>`
     : '';
 
+  const bgConf = db.slideBackground || {};
+  const bgColors = ['#111','#1a1a2e','#0f172a','#18181b','#1e293b','#27272a','#0c0a09','#020617'];
+  const bgSwatches = bgColors.map(c =>
+    `<button onclick="setSlideBackground('${c}',null)" style="width:24px;height:24px;border-radius:4px;border:2px solid ${(bgConf.color||'#111')===c && !bgConf.image?ac():'transparent'};background:${c};cursor:pointer;padding:0"></button>`
+  ).join('');
+  const bgImagePreview = bgConf.image
+    ? `<div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <img src="${bgConf.image}" style="height:32px;width:56px;object-fit:cover;border-radius:4px;border:1px solid #e5e7eb">
+        <button class="btn-ghost" onclick="setSlideBackground('#111',null)" style="font-size:11px;padding:3px 8px">Ta bort</button>
+      </div>`
+    : '';
+
   el.innerHTML = `
   <div class="sidebar-header">
     <h3>Slideshow</h3>
   </div>
   <div class="sidebar-body">
     <div class="sb-section" style="margin-top:0;padding-top:0;border:none">
+      <h4>Bakgrund</h4>
+      <div style="display:flex;gap:4px;align-items:center;margin-bottom:6px">${bgSwatches}
+        <label style="width:24px;height:24px;border-radius:4px;border:2px dashed #9ca3af;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:#9ca3af" data-tip="Ladda upp bakgrundsbild">
+          <i data-lucide="image" style="width:12px;height:12px"></i>
+          <input type="file" accept="image/*" onchange="uploadSlideBackground(this)" style="display:none">
+        </label>
+      </div>${bgImagePreview}
+    </div>
+    <div class="sb-section">
       <h4>Logotyp</h4>
       <p style="font-size:12px;color:#6b7280;margin-bottom:8px">Visas i nedre högra hörnet på veckoschemat.</p>
       ${logoPreview}
@@ -244,6 +307,10 @@ function renderSlidesSidebar() {
         </label>
         <button class="btn-ghost" onclick="addGlobalSlideUrl()" style="font-size:12px">+ URL</button>
       </div>
+    </div>
+    <div class="sb-section">
+      <h4>Händelser denna vecka</h4>
+      ${getWeekEventListHtml()}
     </div>
     <div class="sb-section">
       <h4>Eventbilder denna vecka</h4>
@@ -270,16 +337,23 @@ function removeGlobalSlide(idx) {
 function uploadGlobalSlide(input) {
   const file = input.files[0];
   if (!file) return;
-  fetch('/upload', { method: 'POST', headers: {'Content-Type': file.type}, body: file })
-    .then(r => r.json())
+  const headers = Object.assign({'Content-Type': file.type}, authHeader ? {'Authorization': authHeader} : {});
+  fetch('/upload', { method: 'POST', headers, body: file })
+    .then(r => {
+      if (r.status === 413) throw new Error('Filen är för stor (max 25 MB)');
+      if (r.status === 401) { showLogin(); return null; }
+      if (!r.ok) throw new Error('Serverfel (' + r.status + ')');
+      return r.json();
+    })
     .then(data => {
+      if (!data) return;
       if (!db.globalSlides) db.globalSlides = [];
       db.globalSlides.push({ url: data.url, label: '', active: true });
       persist('globalSlides');
       renderSlides();
       renderSlidesSidebar();
     })
-    .catch(err => alert('Upload failed: ' + err));
+    .catch(err => showToast('Uppladdning misslyckades: ' + err.message, 'error'));
 }
 
 function addGlobalSlideUrl() {
@@ -295,13 +369,45 @@ function addGlobalSlideUrl() {
 function uploadSlideLogo(input) {
   const file = input.files[0];
   if (!file) return;
-  fetch('/upload', { method: 'POST', headers: {'Content-Type': file.type}, body: file })
-    .then(r => r.json())
+  const headers = Object.assign({'Content-Type': file.type}, authHeader ? {'Authorization': authHeader} : {});
+  fetch('/upload', { method: 'POST', headers, body: file })
+    .then(r => {
+      if (r.status === 413) throw new Error('Filen är för stor (max 25 MB)');
+      if (r.status === 401) { showLogin(); return null; }
+      if (!r.ok) throw new Error('Serverfel (' + r.status + ')');
+      return r.json();
+    })
     .then(data => {
+      if (!data) return;
       db.slideLogo = data.url;
       persist('slideLogo');
       renderSlides();
       renderSlidesSidebar();
     })
-    .catch(err => alert('Upload failed: ' + err));
+    .catch(err => showToast('Uppladdning misslyckades: ' + err.message, 'error'));
+}
+
+function setSlideBackground(color, image) {
+  db.slideBackground = { color: color || '#111', image: image || '' };
+  persist('slideBackground');
+  renderSlides();
+  renderSlidesSidebar();
+}
+
+function uploadSlideBackground(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const headers = Object.assign({'Content-Type': file.type}, authHeader ? {'Authorization': authHeader} : {});
+  fetch('/upload', { method: 'POST', headers, body: file })
+    .then(r => {
+      if (r.status === 413) throw new Error('Filen är för stor (max 25 MB)');
+      if (r.status === 401) { showLogin(); return null; }
+      if (!r.ok) throw new Error('Serverfel (' + r.status + ')');
+      return r.json();
+    })
+    .then(data => {
+      if (!data) return;
+      setSlideBackground(null, data.url);
+    })
+    .catch(err => showToast('Uppladdning misslyckades: ' + err.message, 'error'));
 }

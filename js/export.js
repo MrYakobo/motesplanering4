@@ -2,14 +2,15 @@
 function renderExport() {
   const area = document.getElementById('export-area');
   const numMonths = exportMonths || 2;
-  const startStr = exportStartDate;
+  const startStr = getTodayStr();
   const start = new Date(startStr + 'T00:00:00');
   const endMonth = new Date(start.getFullYear(), start.getMonth() + numMonths, 0);
   const endStr = localDate(endMonth);
-  const eventCount = (db.events || []).filter(e => e.date >= startStr && e.date <= endStr).length;
+  const publicEvents = getPublicEvents();
+  const eventCount = publicEvents.filter(e => e.date >= startStr && e.date <= endStr).length;
 
   const wrappedHtml = ExportBuilder.buildExportHtml({
-    events: db.events || [],
+    events: publicEvents,
     startDate: startStr,
     months: numMonths,
     today: getToday()
@@ -17,15 +18,12 @@ function renderExport() {
 
   area.innerHTML = `
     <div class="export-toolbar">
-      <label style="font-size:13px;color:#6b7280">Från:</label>
-      <input type="date" value="${startStr}" onchange="exportStartDate=this.value;renderExport()" style="border:1px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:13px">
       <label style="font-size:13px;color:#6b7280">Månader:</label>
       <select onchange="exportMonths=parseInt(this.value);renderExport()" style="border:1px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:13px">
         ${[1,2,3,4,6,9,12].map(n => `<option value="${n}" ${n===numMonths?'selected':''}>${n}</option>`).join('')}
       </select>
-      <button class="btn" onclick="copyExport()">Kopiera HTML</button>
       <button class="btn" onclick="publishExport()" id="btn-publish">Publicera</button>
-      <span style="font-size:13px;color:#6b7280">${eventCount} händelser · → ${endStr}</span>
+      <span style="font-size:13px;color:#6b7280">${eventCount} händelser · ${startStr} → ${endStr}</span>
     </div>
     <div class="export-preview" id="export-preview">${wrappedHtml}</div>
     <div class="export-code" id="export-code"></div>`;
@@ -51,15 +49,21 @@ function publishExport() {
   btn.disabled = true;
   fetch('/api/publish', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: getAuthHeaders(),
     body: JSON.stringify({ html })
   })
-  .then(r => r.json())
+  .then(r => {
+    if (r.status === 401) { showLogin(); return null; }
+    if (!r.ok) throw new Error('Serverfel (' + r.status + ')');
+    return r.json();
+  })
   .then(data => {
+    if (!data) return;
     btn.textContent = data.ok ? '✓ Publicerad!' : 'Fel: ' + (data.error || 'okänt');
     setTimeout(() => { btn.textContent = 'Publicera'; btn.disabled = false; }, 2500);
   })
   .catch(err => {
+    showToast('Publicering misslyckades: ' + err.message, 'error');
     btn.textContent = 'Fel!';
     setTimeout(() => { btn.textContent = 'Publicera'; btn.disabled = false; }, 2500);
   });

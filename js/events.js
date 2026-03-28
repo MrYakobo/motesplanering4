@@ -177,9 +177,16 @@ function removePromoSlide(id, idx) {
 function uploadPromoFile(input, id) {
   const file = input.files[0];
   if (!file) return;
-  fetch('/upload', { method: 'POST', headers: {'Content-Type': file.type}, body: file })
-    .then(r => r.json())
+  const headers = Object.assign({'Content-Type': file.type}, authHeader ? {'Authorization': authHeader} : {});
+  fetch('/upload', { method: 'POST', headers, body: file })
+    .then(r => {
+      if (r.status === 413) throw new Error('Filen är för stor (max 25 MB)');
+      if (r.status === 401) { showLogin(); return null; }
+      if (!r.ok) throw new Error('Serverfel (' + r.status + ')');
+      return r.json();
+    })
     .then(data => {
+      if (!data) return;
       const ev = db.events.find(e=>e.id===id);
       if (!ev) return;
       if (!ev.promoSlides) ev.promoSlides = [];
@@ -188,7 +195,7 @@ function uploadPromoFile(input, id) {
       const btn = document.getElementById('btn-save');
       if (btn) btn.classList.add('dirty');
     })
-    .catch(err => alert('Upload failed: ' + err));
+    .catch(err => showToast('Uppladdning misslyckades: ' + err.message, 'error'));
 }
 
 function rerenderEventForm(ev) {
@@ -232,7 +239,7 @@ function renderWarningConfig() {
     const catCls = info.category === 'Sunday' ? 'sunday' : info.category === 'Special' ? 'special' : 'weekday';
     return `<div class="cat-section">
       <div class="cat-section-label">
-        <span class="badge badge-${catCls}">${title}</span>
+        <span class="badge" style="${catBadgeStyle(info.category)}">${esc(title)}</span>
         <span style="font-size:12px;color:#6b7280">${info.expectedTasks.length} uppgifter · ${info.count} händelser</span>
       </div>
       <div class="cat-task-list">${taskChecks}</div>
