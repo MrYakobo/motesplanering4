@@ -57,6 +57,7 @@ function switchTab(tab, skipHash) {
   document.getElementById('sunday-area').style.display = isSunday ? '' : 'none';
   document.getElementById('search-input').style.display = isSpecial ? 'none' : '';
   document.getElementById('btn-generate').style.display = isEvents ? '' : 'none';
+  document.getElementById('btn-subscribe').style.display = isEvents ? '' : 'none';
   document.getElementById('view-toggle').style.display = isEvents ? '' : 'none';
   document.getElementById('stats-bar').style.display = isSpecial ? 'none' : '';
   if (!isEvents) currentView = 'list';

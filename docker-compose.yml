@@ -2,10 +2,14 @@ services:
   app:
     build: .
     ports:
-      - "3000:3000"
+      - "1999:3000"
     env_file:
       - .env
     volumes:
+      - ./server.js:/app/server.js
+      - ./index.html:/app/index.html
+      - ./js:/app/js
+      - ./lib:/app/lib
       - ./data_prod.json:/app/data_prod.json
       - ./backups:/app/backups
       - ./uploads:/app/uploads

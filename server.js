@@ -1,6 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const PORT = 3000;
 const DB_FILE = path.join(__dirname, 'data_prod.json');
@@ -47,6 +48,18 @@ function checkAuth(req) {
   const decoded = Buffer.from(auth.slice(6), 'base64').toString();
   const [user, pass] = decoded.split(':');
   return user === AUTH_USER && pass === AUTH_PASS;
+}
+
+function checkMemberToken(req) {
+  const url = new URL(req.url, `http://localhost:${PORT}`);
+  const token = url.searchParams.get('token') || req.headers['x-member-token'] || '';
+  if (!token) return null;
+  const db = loadDb();
+  return (db.contacts || []).find(c => c.token === token) || null;
+}
+
+function generateToken() {
+  return crypto.randomBytes(24).toString('base64url');
 }
 
 function stripForViewer(data) {
@@ -319,9 +332,51 @@ async function publishViaSftp(html) {
   }
 }
 
+function slugifyCategory(name) {
+  return (name || '').toLowerCase().replace(/[åä]/g,'a').replace(/ö/g,'o').replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+function buildIcalForCategory(category, db) {
+  const events = (db.events || []).filter(ev => ev.category === category.name);
+  let cal = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Motesplanering//EN\r\nX-WR-CALNAME:' + category.name + '\r\n';
+  for (const ev of events) {
+    const dtStart = (ev.date || '').replace(/-/g, '') + (ev.time ? 'T' + ev.time.replace(/:/g, '') + '00' : '');
+    const startDate = new Date(ev.date + 'T' + (ev.time || '00:00') + ':00');
+    const endDate = new Date(startDate.getTime() + 3600000);
+    const pad = (n) => String(n).padStart(2,'0');
+    const dtEnd = endDate.getFullYear() + pad(endDate.getMonth()+1) + pad(endDate.getDate()) + 'T' + pad(endDate.getHours()) + pad(endDate.getMinutes()) + pad(endDate.getSeconds());
+    cal += 'BEGIN:VEVENT\r\n';
+    cal += 'UID:ev' + ev.id + '-cat' + category.id + '@motesplanering\r\n';
+    cal += 'DTSTART:' + dtStart + '\r\n';
+    cal += 'DTEND:' + dtEnd + '\r\n';
+    cal += 'SUMMARY:' + (ev.title || 'Event') + '\r\n';
+    if (ev.description) cal += 'DESCRIPTION:' + ev.description.replace(/\n/g, '\\n') + '\r\n';
+    cal += 'END:VEVENT\r\n';
+  }
+  cal += 'END:VCALENDAR\r\n';
+  return cal;
+}
+
 // ── HTTP SERVER ───────────────────────────────────────────────────────────────
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
+
+  // ── iCal feed: GET /api/cal/cat/:slug.ics (category, no auth) ──
+  const catIcsMatch = url.pathname.match(/^\/api\/cal\/cat\/(.+)\.ics$/);
+  if (req.method === 'GET' && catIcsMatch) {
+    const slug = catIcsMatch[1];
+    const db = loadDb();
+    const category = (db.categories || []).find(c => slugifyCategory(c.name) === slug);
+    if (!category) {
+      res.writeHead(404, {'Content-Type':'text/plain'});
+      res.end('Not found');
+      return;
+    }
+    const ical = buildIcalForCategory(category, db);
+    res.writeHead(200, {'Content-Type':'text/calendar; charset=utf-8', 'Content-Disposition': 'inline; filename="' + slug + '.ics"'});
+    res.end(ical);
+    return;
+  }
 
   // ── iCal feed: GET /api/cal/:slug.ics (no auth required) ─────
   const icsMatch = url.pathname.match(/^\/api\/cal\/(.+)\.ics$/);
@@ -343,8 +398,78 @@ const server = http.createServer(async (req, res) => {
 
   // ── Auth check ─────────────────────────────────────────────────
   const isAdmin = AUTH_USER ? checkAuth(req) : true;
+  const memberContact = !isAdmin ? checkMemberToken(req) : null;
+  const isMember = !!memberContact;
 
-  // Write operations require admin auth
+  // ── Member API: GET /api/me ───────────────────────────────────
+  if (req.method === 'GET' && url.pathname === '/api/me') {
+    if (isAdmin) {
+      res.writeHead(200, {'Content-Type':'application/json'});
+      res.end(JSON.stringify({ role: 'admin' }));
+      return;
+    }
+    if (isMember) {
+      res.writeHead(200, {'Content-Type':'application/json'});
+      res.end(JSON.stringify({ role: 'member', contactId: memberContact.id, name: memberContact.name }));
+      return;
+    }
+    res.writeHead(200, {'Content-Type':'application/json'});
+    res.end(JSON.stringify({ role: 'viewer' }));
+    return;
+  }
+
+  // ── Member API: PUT /api/me/contact ───────────────────────────
+  if (req.method === 'PUT' && url.pathname === '/api/me/contact' && isMember) {
+    const body = await readBody(req);
+    try {
+      const { name, email, phone } = JSON.parse(body);
+      const db = loadDb();
+      const c = db.contacts.find(x => x.id === memberContact.id);
+      if (!c) { res.writeHead(404); res.end('{}'); return; }
+      if (name !== undefined) c.name = String(name);
+      if (email !== undefined) c.email = String(email);
+      if (phone !== undefined) c.phone = String(phone);
+      saveDb(db);
+      res.writeHead(200, {'Content-Type':'application/json'});
+      res.end(JSON.stringify({ ok: true, version: dbVersion }));
+    } catch { res.writeHead(400); res.end('{"error":"invalid json"}'); }
+    return;
+  }
+
+  // ── Member API: POST /api/me/join-team, /api/me/leave-team ────
+  if (req.method === 'POST' && (url.pathname === '/api/me/join-team' || url.pathname === '/api/me/leave-team') && isMember) {
+    const body = await readBody(req);
+    try {
+      const { teamId } = JSON.parse(body);
+      const db = loadDb();
+      const team = (db.teams || []).find(t => t.id === teamId);
+      if (!team) { res.writeHead(404); res.end('{"error":"team not found"}'); return; }
+      if (url.pathname === '/api/me/join-team') {
+        if (!team.members.includes(memberContact.id)) team.members.push(memberContact.id);
+      } else {
+        team.members = team.members.filter(id => id !== memberContact.id);
+      }
+      saveDb(db);
+      res.writeHead(200, {'Content-Type':'application/json'});
+      res.end(JSON.stringify({ ok: true, version: dbVersion }));
+    } catch { res.writeHead(400); res.end('{"error":"invalid json"}'); }
+    return;
+  }
+
+  // ── Admin API: POST /api/generate-tokens ──────────────────────
+  if (req.method === 'POST' && url.pathname === '/api/generate-tokens' && isAdmin) {
+    const db = loadDb();
+    let count = 0;
+    (db.contacts || []).forEach(c => {
+      if (!c.token) { c.token = generateToken(); count++; }
+    });
+    saveDb(db);
+    res.writeHead(200, {'Content-Type':'application/json'});
+    res.end(JSON.stringify({ ok: true, generated: count, version: dbVersion }));
+    return;
+  }
+
+  // Write operations require admin auth (members use scoped endpoints above)
   if (req.method !== 'GET' && !isAdmin) {
     if (url.pathname.startsWith('/api/') || url.pathname === '/upload') {
       res.writeHead(401, {'Content-Type':'application/json'});
@@ -433,10 +558,25 @@ const server = http.createServer(async (req, res) => {
   // ── KV API: GET /api/:collection ────────────────────────────────
   if (req.method === 'GET' && url.pathname.startsWith('/api/')) {
     const key = url.pathname.slice(5);
+    const canRead = isAdmin || isMember;
     if (!key) {
       const data = loadDb();
+      if (!canRead) {
+        res.writeHead(200, {'Content-Type':'application/json'});
+        res.end(JSON.stringify(stripForViewer(data)));
+        return;
+      }
+      // Members get full data minus settings and tokens
+      if (isMember) {
+        const copy = JSON.parse(JSON.stringify(data));
+        delete copy.settings;
+        copy.contacts = copy.contacts.map(c => { const { token, ...rest } = c; return rest; });
+        res.writeHead(200, {'Content-Type':'application/json'});
+        res.end(JSON.stringify(copy));
+        return;
+      }
       res.writeHead(200, {'Content-Type':'application/json'});
-      res.end(JSON.stringify(!isAdmin ? stripForViewer(data) : data));
+      res.end(JSON.stringify(data));
       return;
     }
     const db = loadDb();
@@ -446,13 +586,21 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     let val = db[key];
-    if (!isAdmin && key === 'contacts') {
+    if (!canRead && key === 'contacts') {
       val = val.map(c => ({ id: c.id, name: c.name }));
     }
-    if (!isAdmin && key === 'settings') {
+    if (!canRead && key === 'settings') {
       res.writeHead(403, {'Content-Type':'application/json'});
       res.end(JSON.stringify({error: 'read-only'}));
       return;
+    }
+    if (isMember && key === 'settings') {
+      res.writeHead(403, {'Content-Type':'application/json'});
+      res.end(JSON.stringify({error: 'read-only'}));
+      return;
+    }
+    if (isMember && key === 'contacts') {
+      val = val.map(c => { const { token, ...rest } = c; return rest; });
     }
     res.writeHead(200, {'Content-Type':'application/json'});
     res.end(JSON.stringify(val));
@@ -576,6 +724,7 @@ server.listen(PORT, () => {
   console.log(`Publish: POST /api/publish`);
   console.log(`Cron: POST /api/cron/run (manual trigger)`);
   console.log(`iCal: GET /api/cal/:email-slug.ics`);
+  console.log(`iCal: GET /api/cal/cat/:category-slug.ics`);
   console.log(`Auth: ${AUTH_USER ? 'enabled (Basic)' : 'DISABLED — set ADMIN_USERNAME/ADMIN_PASSWORD in .env'}`);
   // Run initial backup on start
   runBackup();

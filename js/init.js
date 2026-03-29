@@ -103,6 +103,9 @@ const API = '/api/';
 
 // ── VIEWER MODE ───────────────────────────────────────────────────────────────
 let isViewerMode = false;
+let isMemberMode = false;
+let memberContactId = null;
+let memberToken = new URLSearchParams(location.search).get('token') || localStorage.getItem('memberToken') || '';
 
 // ── AUTH ───────────────────────────────────────────────────────────────────────
 let authHeader = localStorage.getItem('authHeader') || '';
@@ -110,6 +113,7 @@ let authHeader = localStorage.getItem('authHeader') || '';
 function getAuthHeaders() {
   const h = {'Content-Type':'application/json'};
   if (authHeader) h['Authorization'] = authHeader;
+  if (memberToken) h['X-Member-Token'] = memberToken;
   return h;
 }
 
@@ -208,8 +212,23 @@ function loadAssignments() {
 }
 
 function loadApp() {
-  const headers = authHeader ? { 'Authorization': authHeader } : {};
-  fetch(API, { headers })
+  // Persist token from URL to localStorage, then clean URL
+  if (memberToken && new URLSearchParams(location.search).get('token')) {
+    localStorage.setItem('memberToken', memberToken);
+    history.replaceState(null, '', location.pathname + location.hash);
+  }
+
+  const headers = getAuthHeaders();
+  // Check role first
+  fetch(API + 'me', { headers })
+    .then(r => r.json())
+    .then(me => {
+      if (me.role === 'member') {
+        isMemberMode = true;
+        memberContactId = me.contactId;
+      }
+      return fetch(API, { headers });
+    })
     .then(r => {
       if (!r.ok) throw new Error('Serverfel (' + r.status + ')');
       return r.json();
@@ -221,12 +240,14 @@ function loadApp() {
       // Detect viewer mode: contacts have no email field (unauthenticated or viewer token)
       isViewerMode = db.contacts && db.contacts.length > 0 && !('email' in db.contacts[0]);
       if (isViewerMode) applyViewerMode();
+      else if (isMemberMode) applyMemberMode();
       if (typeof initTheme === 'function') initTheme();
       loadAssignments();
       document.getElementById('sim-date').value = simDate || localDate(new Date());
       updateSimWarning();
       document.getElementById('view-toggle').style.display = '';
       document.getElementById('btn-generate').style.display = '';
+      document.getElementById('btn-subscribe').style.display = '';
       _suppressHash = true;
       renderFilter();
       renderYearPicker();
@@ -283,5 +304,29 @@ function applyViewerMode() {
   // Default to slides tab
   if (!location.hash || location.hash === '#events') {
     switchTab('slides');
+  }
+}
+
+function applyMemberMode() {
+  // Hide admin-only tabs: settings, mailbot, export, generate
+  ['tab-settings','tab-mailbot','tab-export','tab-generate'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  // Hide new-record buttons (members can't create events/tasks/contacts)
+  ['btn-generate','btn-new'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  // Show member identity in nav
+  const me = db.contacts?.find(c => c.id === memberContactId);
+  const logoutBtn = document.getElementById('btn-logout');
+  if (logoutBtn && me) {
+    logoutBtn.textContent = me.name.split(' ')[0] + ' — Logga ut';
+    logoutBtn.onclick = function() {
+      memberToken = '';
+      localStorage.removeItem('memberToken');
+      location.reload();
+    };
   }
 }

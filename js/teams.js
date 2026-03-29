@@ -100,6 +100,14 @@ function deleteTeamCol(teamId) {
 function removeFromTeam(teamId, contactId) {
   const team = db.teams.find(t => t.id === teamId);
   if (!team) return;
+  // Member mode: use scoped endpoint for own membership
+  if (isMemberMode && contactId === memberContactId) {
+    fetch('/api/me/leave-team', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ teamId }) })
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(data => { team.members = team.members.filter(id => id !== contactId); if (data.version) dbVersion = data.version; renderTeamBoard(); })
+      .catch(err => showToast('Kunde inte spara: ' + err.message, 'error'));
+    return;
+  }
   team.members = team.members.filter(id => id !== contactId);
   persist('teams');
   renderTeamBoard();
@@ -109,6 +117,14 @@ function addToTeam(teamId, contactId) {
   const team = db.teams.find(t => t.id === teamId);
   if (!team) return;
   if (!team.members.includes(contactId)) team.members.push(contactId);
+  // Member mode: use scoped endpoint for own membership
+  if (isMemberMode && contactId === memberContactId) {
+    fetch('/api/me/join-team', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ teamId }) })
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(data => { if (data.version) dbVersion = data.version; renderTeamBoard(); })
+      .catch(err => showToast('Kunde inte spara: ' + err.message, 'error'));
+    return;
+  }
   persist('teams');
 }
 

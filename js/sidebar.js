@@ -131,15 +131,16 @@ function sidebarContact(r) {
         <a href="${escAttr(webcalUrl)}" class="btn" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:12px;padding:5px 12px">📅 Öppna i kalenderapp</a>
       </div>`
     : '';
+  const canEdit = !isMemberMode || r.id === memberContactId;
   return `
   <div class="sidebar-header">
     <h3>${r.name}</h3>
     <button class="sidebar-close" onclick="closeContactDetail()">×</button>
   </div>
   <div class="sidebar-body" id="sb-body">
-    <div class="field-group"><label>Namn</label><input type="text" value="${r.name}" id="sb-cname"></div>
-    <div class="field-group"><label>E-post</label><input type="email" value="${r.email}" id="sb-cemail"></div>
-    <div class="field-group"><label>Telefon</label><input type="tel" value="${r.phone}" id="sb-cphone"></div>
+    <div class="field-group"><label>Namn</label><input type="text" value="${r.name}" id="sb-cname" ${canEdit?'':'readonly'}></div>
+    <div class="field-group"><label>E-post</label><input type="email" value="${r.email}" id="sb-cemail" ${canEdit?'':'readonly'}></div>
+    <div class="field-group"><label>Telefon</label><input type="tel" value="${r.phone}" id="sb-cphone" ${canEdit?'':'readonly'}></div>
     <div class="sb-section">
       <h4>Kommande händelser</h4>
       <ul class="mini-list">${upcoming.length ? upcoming.map(e=>{
@@ -155,7 +156,7 @@ function sidebarContact(r) {
     ${icalHtml}
   </div>
   <div class="sidebar-footer">
-    <button class="btn-save" id="btn-save" onclick="saveContact(${r.id})" data-is-new="${r._isNew?'1':''}">Spara</button>
+    ${canEdit ? `<button class="btn-save" id="btn-save" onclick="saveContact(${r.id})" data-is-new="${r._isNew?'1':''}">Spara</button>` : ''}
   </div>`;
 }
 
@@ -197,9 +198,27 @@ function saveContact(id) {
   }
   const c = db.contacts.find(x=>x.id===id);
   if (!c) return;
-  c.name = document.getElementById('sb-cname').value;
-  c.email = document.getElementById('sb-cemail').value;
-  c.phone = document.getElementById('sb-cphone').value;
+  const newName = document.getElementById('sb-cname').value;
+  const newEmail = document.getElementById('sb-cemail').value;
+  const newPhone = document.getElementById('sb-cphone').value;
+
+  // Member mode: use scoped endpoint for own contact
+  if (isMemberMode && id === memberContactId) {
+    fetch('/api/me/contact', { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify({ name: newName, email: newEmail, phone: newPhone }) })
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(data => {
+        c.name = newName; c.email = newEmail; c.phone = newPhone;
+        if (data.version) dbVersion = data.version;
+        showToast('Sparat!', 'ok');
+        applyFilters(); renderSidebar(c);
+      })
+      .catch(err => showToast('Kunde inte spara: ' + err.message, 'error'));
+    return;
+  }
+
+  c.name = newName;
+  c.email = newEmail;
+  c.phone = newPhone;
   persist('contacts');
   const useModal = ['teams','mailbot'].includes(currentTab);
   if (useModal) {

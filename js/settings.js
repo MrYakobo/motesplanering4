@@ -8,6 +8,14 @@ function openSettings() {
     <h4 style="font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">Organisation</h4>
     <div class="field-group"><label>Namn</label><input id="set-org-name" value="${escAttr(s.orgName||'')}" placeholder="T.ex. Exempelkyrkan"></div>
     <div class="field-group"><label>Logotyp-URL</label><input id="set-org-logo" value="${escAttr(s.orgLogo||'')}" placeholder="https://..."></div>
+    <div class="field-group"><label>Bas-URL</label><input id="set-base-url" value="${escAttr(s.baseUrl||'')}" placeholder="https://schema.example.com"></div>
+
+    <h4 style="font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb">Medlemslänkar</h4>
+    <p style="font-size:12px;color:#6b7280;margin-bottom:8px">Generera personliga inloggningslänkar för alla kontakter. Länkarna skickas automatiskt i påminnelsemail.</p>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn-ghost" onclick="generateMemberTokens()" style="font-size:12px;padding:5px 12px">Generera saknade tokens</button>
+      <span id="token-status" style="font-size:11px;color:#6b7280">${(db.contacts||[]).filter(c=>c.token).length} av ${(db.contacts||[]).length} har token</span>
+    </div>
 
     <h4 style="font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb">SMTP (e-post)</h4>
     <div class="field-group"><label>Host</label><input id="set-smtp-host" value="${escAttr(smtp.host||'')}"></div>
@@ -50,6 +58,7 @@ function saveSettings() {
   if (!db.settings) db.settings = {};
   db.settings.orgName = document.getElementById('set-org-name').value;
   db.settings.orgLogo = document.getElementById('set-org-logo').value;
+  db.settings.baseUrl = document.getElementById('set-base-url').value.replace(/\/+$/, '');
   db.settings.smtp = {
     host: document.getElementById('set-smtp-host').value,
     port: parseInt(document.getElementById('set-smtp-port').value) || 587,
@@ -216,4 +225,18 @@ function initTheme() {
   const id = (db.settings && db.settings.accentColor) || 'indigo';
   applyTheme(id);
   renderThemeSwatches();
+}
+
+function generateMemberTokens() {
+  fetch('/api/generate-tokens', { method: 'POST', headers: getAuthHeaders() })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok) { showToast('Kunde inte generera tokens', 'error'); return; }
+      if (data.version) dbVersion = data.version;
+      showToast(data.generated + ' nya tokens genererade', 'ok');
+      fetch(API, { headers: getAuthHeaders() }).then(r=>r.json()).then(d => { db = d; dbVersion = db._version||0; });
+      const el = document.getElementById('token-status');
+      if (el) el.textContent = 'Alla har nu token';
+    })
+    .catch(err => showToast('Fel: ' + err.message, 'error'));
 }

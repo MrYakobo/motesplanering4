@@ -428,7 +428,8 @@ body.nameplate-fullscreen #namnskyltar-area { position: fixed; inset: 0; z-index
       <input type="search" id="search-input" placeholder="Sök…" oninput="applyFilters()">
       <select id="filter-select" onchange="applyFilters()" style="display:none"></select>
       <button class="btn" id="btn-new" onclick="newRecord()" style="display:none">+ New</button>
-      <button class="btn-ghost" id="btn-generate" onclick="openGenModal()" style="display:none">⚡ Generate</button>
+      <button class="btn-ghost" id="btn-generate" onclick="openGenModal()" style="display:none"><i data-lucide="repeat" style="width:14px;height:14px;vertical-align:middle"></i> Generera</button>
+      <button class="btn-ghost" id="btn-subscribe" onclick="openSubscribeModal()" style="display:none"><i data-lucide="calendar-plus" style="width:14px;height:14px;vertical-align:middle"></i> Prenumerera</button>
     </div>
     <div class="stats-bar" id="stats-bar"></div>
     <div class="table-wrap" id="table-area">
@@ -494,6 +495,17 @@ body.nameplate-fullscreen #namnskyltar-area { position: fixed; inset: 0; z-index
 <div class="modal-overlay" id="detail-modal" onclick="if(event.target===this)closeDetailModal()">
   <div class="modal" style="width:600px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column">
     <div id="detail-modal-content" style="display:flex;flex-direction:column;overflow:hidden;flex:1"></div>
+  </div>
+</div>
+
+<!-- Subscribe Modal -->
+<div class="modal-overlay" id="subscribe-modal" onclick="if(event.target===this)closeSubscribeModal()">
+  <div class="modal" style="width:420px">
+    <div class="modal-header">
+      <h3>Prenumerera på kategori</h3>
+      <button class="sidebar-close" onclick="closeSubscribeModal()">×</button>
+    </div>
+    <div id="subscribe-modal-content" style="padding:16px"></div>
   </div>
 </div>
 

@@ -395,3 +395,40 @@ function updateWeekTodayVisibility() {
     btn.querySelector('button').textContent = (above ? '↑' : '↓') + ' Idag';
   }
 }
+
+// ── CATEGORY SUBSCRIBE ────────────────────────────────────────────────────────
+function slugifyCategory(name) {
+  return (name || '').toLowerCase().replace(/[åä]/g,'a').replace(/ö/g,'o').replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+function openSubscribeModal() {
+  const cats = (db.categories || []).filter(c => !c.hidden);
+  const modal = document.getElementById('subscribe-modal');
+  const content = document.getElementById('subscribe-modal-content');
+  if (!cats.length) {
+    content.innerHTML = '<p style="color:#9ca3af;font-size:13px">Inga kategorier finns.</p>';
+    modal.classList.add('open');
+    return;
+  }
+  content.innerHTML = '<p style="font-size:13px;color:#6b7280;margin-bottom:12px">Välj en kategori att prenumerera på i din kalenderapp.</p>' +
+    cats.map(c => {
+      const slug = slugifyCategory(c.name);
+      const url = location.origin + '/api/cal/cat/' + slug + '.ics';
+      const webcal = url.replace(/^https?:/, 'webcal:');
+      return `<div style="border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span class="badge" style="${catBadgeStyle(c.name)};font-size:12px">${esc(c.name)}</span>
+          <span style="flex:1"></span>
+          <a href="${escAttr(webcal)}" class="btn" style="text-decoration:none;font-size:11px;padding:4px 10px;display:inline-flex;align-items:center;gap:4px"><i data-lucide="calendar-plus" style="width:12px;height:12px"></i> Öppna</a>
+          <button class="btn-ghost" onclick="navigator.clipboard.writeText('${escAttr(url)}');showToast('Länk kopierad!','ok')" style="padding:4px 8px" data-tip="Kopiera länk"><i data-lucide="copy" style="width:12px;height:12px"></i></button>
+        </div>
+        <input type="text" value="${escAttr(url)}" readonly onclick="this.select()" style="width:100%;font-size:11px;background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;border-radius:4px;padding:4px 8px;box-sizing:border-box">
+      </div>`;
+    }).join('');
+  modal.classList.add('open');
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+}
+
+function closeSubscribeModal() {
+  document.getElementById('subscribe-modal').classList.remove('open');
+}
