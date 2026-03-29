@@ -20,12 +20,16 @@ nav .logout { color: #f87171; }
 .nav-dropdown { position: relative; }
 .nav-dropdown-menu { display: none; position: absolute; top: 100%; left: 0; background: #1a1a2e; border: 1px solid #2d2d4e; border-radius: 6px; padding: 4px; min-width: 140px; z-index: 200; box-shadow: 0 8px 24px rgba(0,0,0,.4); flex-direction: column; }
 .nav-dropdown:hover .nav-dropdown-menu { display: flex; }
+.user-avatar { width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;font-size:16px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid transparent;padding:0;letter-spacing:-.02em;transition:border-color .15s; }
+.user-avatar:hover { border-color:var(--accent-mid); }
+#nav-user .nav-dropdown-menu { display:none; }
+#nav-user.open .nav-dropdown-menu { display:flex; }
 .nav-dropdown-menu button { color: #ccc; text-align: left; padding: 7px 12px; border-radius: 4px; width: 100%; }
 .nav-dropdown-menu button:hover { background: #2d2d4e; color: #fff; }
 .nav-dropdown-menu button.active { background: var(--accent); color: #fff; }
 .workspace { display: flex; flex: 1; overflow: hidden; }
 .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: #fff; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
+.toolbar { display: flex; display:none; align-items: center; gap: 8px; padding: 10px 16px; background: #fff; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
 .toolbar h2 { font-size: 15px; font-weight: 600; }
 .toolbar input[type=search] { border: 1px solid #d1d5db; border-radius: 6px; padding: 5px 10px; font-size: 13px; width: 200px; outline: none; }
 .toolbar input[type=search]:focus { border-color: var(--accent); }
@@ -415,7 +419,10 @@ body.nameplate-fullscreen #namnskyltar-area { position: fixed; inset: 0; z-index
     </div>
   </div>
   <input type="date" id="sim-date" onchange="setSimDate(this.value)" style="border:1px solid #444;background:#2d2d4e;color:#ccc;border-radius:6px;padding:4px 8px;font-size:12px">
-  <button class="logout" id="btn-logout" onclick="doLogout()">Logga ut</button>
+  <div class="nav-dropdown" id="nav-user">
+    <button id="user-avatar" class="user-avatar" style="display:none"></button>
+    <div class="nav-dropdown-menu" id="user-menu" style="right:0;left:auto;min-width:280px;padding:0;border-radius:12px;overflow:hidden"></div>
+  </div>
 </nav>
 
 <div class="workspace">
@@ -442,6 +449,7 @@ body.nameplate-fullscreen #namnskyltar-area { position: fixed; inset: 0; z-index
     <div class="mailbot-wrap" id="mailbot-area" style="display:none"></div>
     <div class="mailbot-wrap" id="namnskyltar-area" style="display:none"></div>
     <div class="mailbot-wrap" id="sunday-area" style="display:none"></div>
+    <div id="landing-area" style="display:none;min-height: 100%;"></div>
   </div>
   <div class="sidebar" id="sidebar">
     <div id="sidebar-content" style="display:flex;flex-direction:column;height:100%">

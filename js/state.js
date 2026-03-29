@@ -188,4 +188,11 @@ const tabConfig = {
     filter:null,
     stats:()=>'',
   },
+  home: {
+    label:'Hem',
+    desc:'',
+    cols:[],
+    filter:null,
+    stats:()=>'',
+  },
 };

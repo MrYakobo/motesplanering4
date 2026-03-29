@@ -163,7 +163,9 @@ function doLogin() {
 
 function doLogout() {
   authHeader = '';
+  memberToken = '';
   localStorage.removeItem('authHeader');
+  localStorage.removeItem('memberToken');
   location.reload();
 }
 
@@ -241,6 +243,7 @@ function loadApp() {
       isViewerMode = db.contacts && db.contacts.length > 0 && !('email' in db.contacts[0]);
       if (isViewerMode) applyViewerMode();
       else if (isMemberMode) applyMemberMode();
+      else if (authHeader) setupUserAvatar('Admin', 'admin');
       if (typeof initTheme === 'function') initTheme();
       loadAssignments();
       document.getElementById('sim-date').value = simDate || localDate(new Date());
@@ -279,13 +282,10 @@ function applyViewerMode() {
   });
   const themeMenu = document.getElementById('nav-theme');
   if (themeMenu) themeMenu.style.display = 'none';
-  // Replace logout with login button
-  const logoutBtn = document.getElementById('btn-logout');
-  if (logoutBtn) {
-    logoutBtn.textContent = 'Logga in';
-    logoutBtn.className = '';
-    logoutBtn.style.cssText = 'background:none;border:none;color:'+acMid()+';padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px';
-    logoutBtn.onclick = function() { showLogin(); };
+  // Hide user menu, show login link instead
+  const userNav = document.getElementById('nav-user');
+  if (userNav) {
+    userNav.innerHTML = '<button onclick="showLogin()" style="color:'+acMid()+';font-size:13px;padding:6px 12px;border:none;background:none;cursor:pointer">Logga in</button>';
   }
   // Move viewer-relevant buttons to nav as top-level
   const outputsBtn = document.getElementById('tab-outputs');
@@ -296,15 +296,79 @@ function applyViewerMode() {
     const btn = document.getElementById(id);
     if (btn) nav.insertBefore(btn, spacer);
   });
+  // Add home button
+  const homeBtn = document.createElement('button');
+  homeBtn.id = 'tab-home';
+  homeBtn.onclick = function() { switchTab('home'); };
+  homeBtn.innerHTML = '<i data-lucide="home" style="width:14px;height:14px"></i> Hem';
+  nav.insertBefore(homeBtn, nav.querySelector('#tab-slides'));
   const dropdown = document.getElementById('nav-outputs');
   if (dropdown) dropdown.style.display = 'none';
   // Hide mailbot — viewer shouldn't send emails
   const mailBtn = document.getElementById('tab-mailbot');
   if (mailBtn) mailBtn.style.display = 'none';
-  // Default to slides tab
-  if (!location.hash || location.hash === '#events') {
-    switchTab('slides');
+  // Show landing page or default to slides
+  if (!location.hash || location.hash === '#' || location.hash === '#events') {
+    switchTab('home');
   }
+}
+
+function renderLanding() {
+  const area = document.getElementById('landing-area');
+  if (!area) return;
+  const orgName = (db.settings && db.settings.orgName) || 'Mötesplanering';
+  const orgLogo = (db.settings && db.settings.orgLogo) || '';
+  const logoHtml = orgLogo ? '<img src="' + orgLogo + '" style="height:72px;width:auto;margin-bottom:16px;opacity:.9" alt="">' : '';
+
+  const todayStr = getTodayStr();
+  const todayEvents = (db.events||[]).filter(function(e) { return e.date === todayStr; }).sort(function(a,b) { return (a.time||'').localeCompare(b.time||''); });
+  const nextEvent = todayEvents[0];
+  const nextLabel = nextEvent ? esc(nextEvent.title) + ' kl ' + (nextEvent.time||'') : 'Inga händelser idag';
+
+  const cardStyle = 'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px;cursor:pointer;transition:all .15s;text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;min-width:160px;flex:1';
+  const cardHover = 'onmouseover="this.style.background=\'rgba(255,255,255,.12)\';this.style.borderColor=\'rgba(255,255,255,.15)\'" onmouseout="this.style.background=\'rgba(255,255,255,.06)\';this.style.borderColor=\'rgba(255,255,255,.08)\'"';
+
+  area.innerHTML = '<div style="min-height:100%;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;flex-direction:column;align-items:center;padding:60px 24px 40px;overflow-y:auto;font-family:system-ui,sans-serif">' +
+    '<div style="text-align:center;max-width:600px;width:100%">' +
+    logoHtml +
+    '<h1 style="font-size:clamp(32px,5vw,48px);font-weight:800;color:#fff;margin-bottom:6px;letter-spacing:-.03em">' + esc(orgName) + '</h1>' +
+    '<p style="font-size:15px;color:rgba(255,255,255,.4);margin-bottom:48px">Mötesplanering & volontärschema</p>' +
+
+    // Today highlight
+    '<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:14px 20px;margin-bottom:40px;display:inline-flex;align-items:center;gap:10px">' +
+    '<i data-lucide="clock" style="width:18px;height:18px;color:' + ac() + '"></i>' +
+    '<span style="font-size:14px;color:rgba(255,255,255,.7)">' + nextLabel + '</span>' +
+    '</div>' +
+
+    // Action cards
+    '<div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:48px">' +
+    '<a href="#sunday" style="' + cardStyle + '" ' + cardHover + '>' +
+    '<i data-lucide="clipboard-list" style="width:28px;height:28px;color:' + ac() + '"></i>' +
+    '<span style="font-size:14px;font-weight:600;color:#fff">Dagens tjänstgöring</span>' +
+    '<span style="font-size:11px;color:rgba(255,255,255,.35)">Vem gör vad idag</span></a>' +
+
+    '<a href="#slides" style="' + cardStyle + '" ' + cardHover + '>' +
+    '<i data-lucide="monitor" style="width:28px;height:28px;color:' + ac() + '"></i>' +
+    '<span style="font-size:14px;font-weight:600;color:#fff">Bildspel</span>' +
+    '<span style="font-size:11px;color:rgba(255,255,255,.35)">Veckans program på storskärm</span></a>' +
+
+    '<a href="#namnskyltar" style="' + cardStyle + '" ' + cardHover + '>' +
+    '<i data-lucide="id-card" style="width:28px;height:28px;color:' + ac() + '"></i>' +
+    '<span style="font-size:14px;font-weight:600;color:#fff">Namnskyltar</span>' +
+    '<span style="font-size:11px;color:rgba(255,255,255,.35)">Fullskärm med namn & roll</span></a>' +
+    '</div>' +
+
+    // Features
+    '<div style="display:flex;gap:32px;flex-wrap:wrap;justify-content:center;margin-bottom:40px">' +
+    '<div style="text-align:center;width:120px"><i data-lucide="calendar" style="width:20px;height:20px;color:rgba(255,255,255,.3);margin-bottom:6px"></i><div style="font-size:12px;color:rgba(255,255,255,.5)">Kalender</div></div>' +
+    '<div style="text-align:center;width:120px"><i data-lucide="users" style="width:20px;height:20px;color:rgba(255,255,255,.3);margin-bottom:6px"></i><div style="font-size:12px;color:rgba(255,255,255,.5)">Volontärer</div></div>' +
+    '<div style="text-align:center;width:120px"><i data-lucide="mail" style="width:20px;height:20px;color:rgba(255,255,255,.3);margin-bottom:6px"></i><div style="font-size:12px;color:rgba(255,255,255,.5)">Påminnelser</div></div>' +
+    '<div style="text-align:center;width:120px"><i data-lucide="shuffle" style="width:20px;height:20px;color:rgba(255,255,255,.3);margin-bottom:6px"></i><div style="font-size:12px;color:rgba(255,255,255,.5)">Auto-fördelning</div></div>' +
+    '</div>' +
+
+    '</div></div>';
+
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
 }
 
 function applyMemberMode() {
@@ -318,15 +382,140 @@ function applyMemberMode() {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
-  // Show member identity in nav
   const me = db.contacts?.find(c => c.id === memberContactId);
-  const logoutBtn = document.getElementById('btn-logout');
-  if (logoutBtn && me) {
-    logoutBtn.textContent = me.name.split(' ')[0] + ' — Logga ut';
-    logoutBtn.onclick = function() {
-      memberToken = '';
-      localStorage.removeItem('memberToken');
-      location.reload();
-    };
+  if (me) setupUserAvatar(me.name, 'member');
+}
+
+function setupUserAvatar(fullName, role) {
+  const avatar = document.getElementById('user-avatar');
+  if (!avatar) return;
+  const parts = fullName.split(' ').filter(Boolean);
+  const initials = parts.length >= 2 ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase() : (parts[0] || '?').slice(0,2).toUpperCase();
+  avatar.textContent = initials;
+  avatar.style.display = '';
+  avatar.onclick = function(e) {
+    e.stopPropagation();
+    document.getElementById('nav-user').classList.toggle('open');
+  };
+  document.addEventListener('click', function(e) {
+    const nav = document.getElementById('nav-user');
+    if (nav && !nav.contains(e.target)) nav.classList.remove('open');
+  });
+
+  const menu = document.getElementById('user-menu');
+  if (!menu) return;
+  menu.style.cssText = 'right:0;left:auto;min-width:280px;padding:0;border-radius:12px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.5)';
+
+  let html = '';
+  // Profile header with large avatar
+  html += '<div style="padding:20px;display:flex;align-items:center;gap:14px;border-bottom:1px solid #2d2d4e">';
+  html += '<div style="width:56px;height:56px;border-radius:50%;background:' + ac() + ';color:#fff;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + initials + '</div>';
+  html += '<div><div style="font-size:16px;font-weight:600;color:#fff">' + esc(fullName) + '</div>';
+  html += '<div style="font-size:12px;color:#9ca3af">' + (role === 'admin' ? 'Administratör' : 'Medlem') + '</div></div>';
+  html += '</div>';
+
+  // Menu items
+  html += '<div style="padding:6px">';
+  if (role === 'member') {
+    html += '<button onclick="showMyEvents();document.getElementById(\'nav-user\').classList.remove(\'open\')" style="width:100%;text-align:left;padding:10px 14px;font-size:13px;color:#ccc;display:flex;align-items:center;gap:10px;border-radius:6px"><i data-lucide="calendar-check" style="width:16px;height:16px"></i> Mina händelser</button>';
+    html += '<button onclick="editMyDetails();document.getElementById(\'nav-user\').classList.remove(\'open\')" style="width:100%;text-align:left;padding:10px 14px;font-size:13px;color:#ccc;display:flex;align-items:center;gap:10px;border-radius:6px"><i data-lucide="user-pen" style="width:16px;height:16px"></i> Redigera mina uppgifter</button>';
   }
+  if (role === 'admin') {
+    html += '<button onclick="openSettings();document.getElementById(\'nav-user\').classList.remove(\'open\')" style="width:100%;text-align:left;padding:10px 14px;font-size:13px;color:#ccc;display:flex;align-items:center;gap:10px;border-radius:6px"><i data-lucide="settings" style="width:16px;height:16px"></i> Inställningar</button>';
+  }
+  html += '</div>';
+
+  // Logout
+  html += '<div style="padding:6px;border-top:1px solid #2d2d4e">';
+  html += '<button onclick="doLogout()" style="width:100%;text-align:left;padding:10px 14px;font-size:13px;color:#f87171;display:flex;align-items:center;gap:10px;border-radius:6px"><i data-lucide="log-out" style="width:16px;height:16px"></i> Logga ut</button>';
+  html += '</div>';
+
+  menu.innerHTML = html;
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+}
+
+function editMyDetails() {
+  const c = db.contacts?.find(x => x.id === memberContactId);
+  if (!c) return;
+  const modal = document.getElementById('detail-modal');
+  document.getElementById('detail-modal-content').innerHTML =
+    '<div class="sidebar-header"><h3>Mina uppgifter</h3><button class="sidebar-close" onclick="closeDetailModal()">×</button></div>' +
+    '<div class="sidebar-body">' +
+    '<div class="field-group"><label>Namn</label><input type="text" value="' + escAttr(c.name) + '" id="my-name"></div>' +
+    '<div class="field-group"><label>E-post</label><input type="email" value="' + escAttr(c.email || '') + '" id="my-email"></div>' +
+    '<div class="field-group"><label>Telefon</label><input type="tel" value="' + escAttr(c.phone || '') + '" id="my-phone"></div>' +
+    '</div>' +
+    '<div class="sidebar-footer"><button class="btn" onclick="saveMyDetails()">Spara</button></div>';
+  modal.classList.add('open');
+}
+
+function saveMyDetails() {
+  const body = JSON.stringify({
+    name: document.getElementById('my-name').value,
+    email: document.getElementById('my-email').value,
+    phone: document.getElementById('my-phone').value,
+  });
+  fetch(API + 'me/contact', { method: 'PUT', headers: getAuthHeaders(), body })
+    .then(r => { if (!r.ok) throw new Error('Kunde inte spara'); return r.json(); })
+    .then(data => {
+      if (data.ok) {
+        const c = db.contacts?.find(x => x.id === memberContactId);
+        if (c) { c.name = data.contact.name; c.email = data.contact.email; c.phone = data.contact.phone; }
+        closeDetailModal();
+        setupUserAvatar(c.name, 'member');
+        showToast('Uppgifter sparade', 'ok');
+      }
+    })
+    .catch(err => showToast(err.message, 'error'));
+}
+
+function showMyEvents() {
+  const cid = memberContactId;
+  if (!cid) return;
+  const todayStr = getTodayStr();
+  const upcoming = (db.events||[])
+    .filter(e => e.date >= todayStr)
+    .filter(e => {
+      const asgn = assignments[e.id] || {};
+      return Object.values(asgn).some(val => {
+        if (val.type === 'contact') return (val.ids||[]).includes(cid);
+        if (val.type === 'team') { const team = (db.teams||[]).find(t=>t.id===val.id); return team && team.members.includes(cid); }
+        return false;
+      });
+    })
+    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time))
+    .slice(0, 20);
+
+  const listHtml = upcoming.length > 0
+    ? upcoming.map(e => {
+        const asgn = assignments[e.id]||{};
+        const tasks = Object.entries(asgn).filter(([tid,val]) => {
+          if (val.type==='contact') return (val.ids||[]).includes(cid);
+          if (val.type==='team') { const team=(db.teams||[]).find(t=>t.id===val.id); return team&&team.members.includes(cid); }
+          return false;
+        }).map(([tid])=>(db.tasks||[]).find(t=>t.id===parseInt(tid))?.name).filter(Boolean).join(', ');
+        return '<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px">' +
+          '<span style="min-width:80px;color:#6b7280">' + e.date + '</span>' +
+          '<span style="flex:1;color:#374151;font-weight:500">' + esc(e.title) + '</span>' +
+          '<span style="color:' + ac() + ';font-size:12px">' + esc(tasks) + '</span></div>';
+      }).join('')
+    : '<p style="color:#9ca3af;font-size:13px">Inga kommande tilldelningar</p>';
+
+  const me = db.contacts?.find(c => c.id === cid);
+  const icalSlug = me ? slugifyEmail(me.email) : '';
+  const icalUrl = icalSlug ? (location.origin + '/api/cal/' + icalSlug + '.ics') : '';
+  const webcalUrl = icalUrl ? icalUrl.replace(/^https?:/, 'webcal:') : '';
+  const calLink = icalUrl
+    ? '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;display:flex;align-items:center;gap:8px">' +
+      '<a href="' + webcalUrl + '" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:' + ac() + ';text-decoration:none"><i data-lucide="calendar-plus" style="width:14px;height:14px"></i> Lägg till i kalenderapp</a>' +
+      '<button onclick="navigator.clipboard.writeText(\'' + escAttr(icalUrl) + '\');showToast(\'Kopierad!\',\'ok\')" style="background:none;border:none;color:#9ca3af;cursor:pointer;font-size:11px" data-tip="Kopiera iCal-länk"><i data-lucide="copy" style="width:12px;height:12px"></i></button>' +
+      '</div>'
+    : '';
+
+  const modal = document.getElementById('detail-modal');
+  document.getElementById('detail-modal-content').innerHTML =
+    '<div class="sidebar-header"><h3>Mina händelser</h3><button class="sidebar-close" onclick="closeDetailModal()">×</button></div>' +
+    '<div class="sidebar-body">' + listHtml + calLink + '</div>';
+  modal.classList.add('open');
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
 }

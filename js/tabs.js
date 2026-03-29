@@ -45,7 +45,8 @@ function switchTab(tab, skipHash) {
   const isNamn = tab === 'namnskyltar';
   const isCats = tab === 'categories';
   const isSunday = tab === 'sunday';
-  const isSpecial = isSlides || isExport || isTeams || isMailbot || isCats || isNamn || isSunday;
+  const isHome = tab === 'home';
+  const isSpecial = isSlides || isExport || isTeams || isMailbot || isCats || isNamn || isSunday || isHome;
   const isEvents = tab === 'events';
   document.getElementById('table-area').style.display = isSpecial ? 'none' : '';
   document.getElementById('slides-area').style.display = isSlides ? '' : 'none';
@@ -55,13 +56,14 @@ function switchTab(tab, skipHash) {
   document.getElementById('mailbot-area').style.display = isMailbot ? '' : 'none';
   document.getElementById('namnskyltar-area').style.display = isNamn ? '' : 'none';
   document.getElementById('sunday-area').style.display = isSunday ? '' : 'none';
+  document.getElementById('landing-area').style.display = isHome ? '' : 'none';
   document.getElementById('search-input').style.display = isSpecial ? 'none' : '';
   document.getElementById('btn-generate').style.display = isEvents ? '' : 'none';
   document.getElementById('btn-subscribe').style.display = isEvents ? '' : 'none';
   document.getElementById('view-toggle').style.display = isEvents ? '' : 'none';
   document.getElementById('stats-bar').style.display = isSpecial ? 'none' : '';
   if (!isEvents) currentView = 'list';
-  document.getElementById('sidebar').style.display = (isSlides || isTeams || isMailbot || isCats || isNamn || isSunday) ? 'none' : '';
+  document.getElementById('sidebar').style.display = (isTeams || isMailbot || isCats || isNamn || isSunday || isHome) ? 'none' : '';
 
   if (isSlides) { renderSlides(); renderSlidesSidebar(); if (!skipHash) updateHash(); return; }
   if (isExport) { renderExport(); renderSidebar(null); if (!skipHash) updateHash(); return; }
@@ -70,6 +72,7 @@ function switchTab(tab, skipHash) {
   if (isMailbot) { renderMailbot(); if (!skipHash) updateHash(); return; }
   if (isNamn) { renderNamnskyltar(); if (!skipHash) updateHash(); return; }
   if (isSunday) { renderSunday(); if (!skipHash) updateHash(); return; }
+  if (isHome) { renderLanding(); if (!skipHash) updateHash(); return; }
   renderFilter();
   renderYearPicker();
   applyFilters();
