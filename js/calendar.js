@@ -6,6 +6,34 @@ let dragEventId = null;
 let calScrollInit = false;
 let listScrolled = false;
 
+function fitCalendarHeight() {
+  var vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  var nav = document.getElementById('mobile-bottom-nav');
+  var navH = nav ? nav.getBoundingClientRect().height : 0;
+  var h = Math.floor(vh - navH);
+  var scroll = document.getElementById('cal-scroll-area');
+  if (!scroll) return;
+  scroll.style.height = h + 'px';
+  scroll.style.maxHeight = h + 'px';
+  var sections = scroll.querySelectorAll('.cal-month-section');
+  sections.forEach(function(s) {
+    s.style.height = h + 'px';
+    s.style.maxHeight = h + 'px';
+  });
+  // Debug overlay — remove after fixing
+  var dbg = document.getElementById('cal-debug');
+  if (!dbg) { dbg = document.createElement('div'); dbg.id = 'cal-debug'; dbg.style.cssText = 'position:fixed;top:0;left:0;z-index:9999;background:rgba(0,0,0,.8);color:#0f0;font:11px monospace;padding:4px 8px;pointer-events:none'; document.body.appendChild(dbg); }
+  dbg.textContent = 'vvH:' + vh + ' iH:' + window.innerHeight + ' navH:' + navH + ' h:' + h + ' scrollH:' + scroll.offsetHeight + ' secH:' + (sections[0] ? sections[0].offsetHeight : '?');
+}
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', function() {
+    if (window.innerWidth <= 480 && document.getElementById('cal-scroll-area')) fitCalendarHeight();
+  });
+}
+window.addEventListener('resize', function() {
+  if (window.innerWidth <= 480 && document.getElementById('cal-scroll-area')) fitCalendarHeight();
+});
+
 // Range: render from 1 year before to 1 year after today
 function getCalRange() {
   const today = getToday();
@@ -25,7 +53,7 @@ function getCalContainer() {
 function evBadge(ev, extraCls) {
   return `<div class="${extraCls || 'cal-ev'}" style="${catCalClass(ev.category)}" draggable="true" data-ev-id="${ev.id}"
     onclick="event.stopPropagation();openDetailModal(${ev.id})"
-    data-tip="${esc(ev.time || '')} ${esc(ev.title)}">${ev.time || ''} ${esc(ev.title)}</div>`;
+    data-tip="${esc(ev.time || '')} ${esc(ev.title)}"><span class="cal-ev-time">${ev.time || ''} </span>${esc(ev.title)}</div>`;
 }
 
 function groupByDate(events) {
@@ -152,10 +180,16 @@ function renderCalendar() {
   html += '</div>';
   const oldScroll = document.getElementById('cal-scroll-area');
   const savedScrollTop = oldScroll ? oldScroll.scrollTop : null;
+  const savedScrollLeft = oldScroll ? oldScroll.scrollLeft : null;
 
   const c = getCalContainer();
   c.innerHTML = html;
   initDragDrop(c);
+
+  // On mobile, measure actual available height and set it explicitly
+  if (window.innerWidth <= 480) {
+    requestAnimationFrame(function() { fitCalendarHeight(); });
+  }
 
   if (!calScrollInit) {
     calScrollInit = true;
@@ -166,13 +200,16 @@ function renderCalendar() {
       if (todayCell) {
         const monthSection = todayCell.closest('.cal-month-section');
         if (monthSection) {
-          monthSection.scrollIntoView({ block: 'start', behavior: 'instant' });
+          monthSection.scrollIntoView({ block: 'start', inline: 'start', behavior: 'instant' });
         }
       }
     });
   } else if (savedScrollTop !== null) {
     const scrollArea = document.getElementById('cal-scroll-area');
-    if (scrollArea) scrollArea.scrollTop = savedScrollTop;
+    if (scrollArea) {
+      scrollArea.scrollTop = savedScrollTop;
+      scrollArea.scrollLeft = savedScrollLeft;
+    }
   }
 }
 
@@ -239,6 +276,7 @@ function renderWeekView() {
   html += '</div></div>';
   const oldWeekScroll = document.getElementById('week-scroll-area');
   const savedWeekTop = oldWeekScroll ? oldWeekScroll.scrollTop : null;
+  const savedWeekLeft = oldWeekScroll ? oldWeekScroll.scrollLeft : null;
 
   const c = getCalContainer();
   c.innerHTML = html;
@@ -262,11 +300,18 @@ function renderWeekView() {
       const scrollArea = document.getElementById('week-scroll-area');
       if (!scrollArea) return;
       const todayCol = scrollArea.querySelector('.week-col.today');
-      if (todayCol) todayCol.scrollIntoView({ block: 'center', behavior: 'instant' });
+      if (todayCol) {
+        const weekSection = todayCol.closest('.week-section');
+        if (weekSection) weekSection.scrollIntoView({ block: 'start', inline: 'start', behavior: 'instant' });
+        else todayCol.scrollIntoView({ block: 'center', behavior: 'instant' });
+      }
     });
   } else if (savedWeekTop !== null) {
     const scrollArea = document.getElementById('week-scroll-area');
-    if (scrollArea) scrollArea.scrollTop = savedWeekTop;
+    if (scrollArea) {
+      scrollArea.scrollTop = savedWeekTop;
+      scrollArea.scrollLeft = savedWeekLeft;
+    }
   }
 }
 

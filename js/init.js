@@ -7,8 +7,7 @@ let _suppressHash = false;
 function updateHash(replace) {
   if (_suppressHash) return;
   let hash = '#' + currentTab;
-  if (currentTab === 'events' && currentView === 'monster') hash = '#schema';
-  else if (currentTab === 'events' && currentView === 'calendar') hash += '/calendar';
+  if (currentTab === 'events' && currentView === 'calendar') hash += '/calendar';
   else if (currentTab === 'events' && currentView === 'week') hash += '/week';
   else if (currentTab === 'events' && currentView === 'year') hash += '/year';
   if (currentView !== 'monster' && selectedId) hash += '/' + selectedId;
@@ -29,21 +28,6 @@ function applyHash() {
   const [hashPath, queryStr] = raw.split('?');
   const parts = hashPath.split('/');
   let tab = parts[0];
-
-  // Handle #schema as events/monster
-  if (tab === 'schema') {
-    tab = 'events';
-    currentView = 'monster';
-    const params = new URLSearchParams(queryStr || '');
-    const q = params.get('q') || '';
-    const searchEl = document.getElementById('search-input');
-    if (searchEl && q) searchEl.value = q;
-    _suppressHash = true;
-    switchTab('events', true);
-    setView('monster');
-    _suppressHash = false;
-    return;
-  }
 
   if (!tabConfig[tab]) return;
 
@@ -257,6 +241,14 @@ function loadApp() {
       applyFilters();
       _suppressHash = false;
       applyHash();
+      if (window.innerWidth <= 480) {
+        createMobileBottomNav();
+        // Re-highlight active tab on bottom nav
+        document.querySelectorAll('#mobile-bottom-nav button').forEach(b=>b.classList.remove('active'));
+        const mobId = currentTab === 'schema' ? 'mob-schema' : 'mob-' + currentTab;
+        const mobBtn = document.getElementById(mobId);
+        if (mobBtn) mobBtn.classList.add('active');
+      }
     })
     .catch(err => {
       showToast('Kunde inte ladda data: ' + err.message, 'error');
@@ -268,9 +260,149 @@ function loadApp() {
 // Try loading — if 401, show login
 loadApp();
 
+function createMobileBottomNav() {
+  if (document.getElementById('mobile-bottom-nav')) return;
+  const nav = document.createElement('div');
+  nav.id = 'mobile-bottom-nav';
+  nav.style.display = 'none'; // CSS shows it at ≤480px
+  const tabs = isViewerMode
+    ? [
+        {id:'home', icon:'home', label:'Hem'},
+        {id:'slides', icon:'monitor', label:'Slides'},
+        {id:'namnskyltar', icon:'id-card', label:'Skyltar'},
+        {id:'sunday', icon:'clipboard-list', label:'Söndag'},
+      ]
+    : [
+        {id:'events', icon:'calendar', label:'Händelser'},
+        {id:'schema', icon:'table', label:'Schema'},
+        {id:'events/calendar', icon:'calendar-days', label:'Månadsvy', action: function() { switchTab('events'); setView('calendar'); closeMobileMore(); }},
+        {id:'events/week', icon:'calendar-range', label:'Veckovy', action: function() { switchTab('events'); setView('week'); closeMobileMore(); }},
+        {id:'more', icon:'menu', label:'Mer'},
+      ];
+  tabs.forEach(function(t) {
+    const btn = document.createElement('button');
+    btn.id = 'mob-' + t.id.replace('/','_');
+    btn.innerHTML = '<i data-lucide="' + t.icon + '"></i><span>' + t.label + '</span>';
+    if (t.id === 'more') {
+      btn.onclick = function() { toggleMobileMore(); };
+    } else if (t.action) {
+      btn.onclick = t.action;
+    } else {
+      btn.onclick = function() { switchTab(t.id); closeMobileMore(); };
+    }
+    nav.appendChild(btn);
+  });
+  // Move user avatar into bottom nav
+  const userNav = document.getElementById('nav-user');
+  if (userNav) {
+    const avatarWrap = document.createElement('button');
+    avatarWrap.id = 'mob-user';
+    avatarWrap.style.cssText = 'flex:none;width:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;padding:2px 0';
+    const avatar = document.getElementById('user-avatar');
+    if (avatar && avatar.style.display !== 'none') {
+      const av = avatar.cloneNode(true);
+      av.id = 'mob-user-avatar';
+      av.removeAttribute('onclick');
+      avatarWrap.appendChild(av);
+    } else {
+      avatarWrap.innerHTML = '<i data-lucide="user" style="width:14px;height:14px;color:#9ca3af"></i>';
+    }
+    avatarWrap.onclick = function(e) {
+      e.stopPropagation();
+      toggleMobileUserMenu();
+    };
+    nav.appendChild(avatarWrap);
+  }
+  document.body.appendChild(nav);
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+}
+
+function toggleMobileMore() {
+  let sheet = document.getElementById('mobile-more-sheet');
+  if (sheet) { closeMobileMore(); return; }
+  sheet = document.createElement('div');
+  sheet.id = 'mobile-more-sheet';
+  sheet.style.cssText = 'position:fixed;bottom:44px;left:0;right:0;z-index:39;background:#1a1a2e;border-top:1px solid #2d2d4e;padding:8px;display:flex;flex-direction:column;gap:2px;max-height:60vh;overflow-y:auto';
+  const items = [
+    {id:'contacts', icon:'users', label:'Kontakter'},
+    {id:'teams', icon:'users-round', label:'Team'},
+    {id:'categories', icon:'tags', label:'Kategorier'},
+    {id:'slides', icon:'monitor', label:'Slides'},
+    {id:'export', icon:'file-text', label:'Månadsblad'},
+    {id:'mailbot', icon:'mail', label:'Påminnelsemail'},
+    {id:'namnskyltar', icon:'id-card', label:'Namnskyltar'},
+    {id:'sunday', icon:'clipboard-list', label:'Söndag'},
+  ];
+  items.forEach(function(t) {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'background:none;border:none;color:#ccc;padding:10px 14px;font-size:14px;text-align:left;display:flex;align-items:center;gap:10px;border-radius:6px;cursor:pointer;width:100%';
+    btn.innerHTML = '<i data-lucide="' + t.icon + '" style="width:18px;height:18px"></i> ' + t.label;
+    btn.onclick = function() { switchTab(t.id); closeMobileMore(); };
+    sheet.appendChild(btn);
+  });
+  // Backdrop
+  const backdrop = document.createElement('div');
+  backdrop.id = 'mobile-more-backdrop';
+  backdrop.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:44px;z-index:38;background:rgba(0,0,0,.3)';
+  backdrop.onclick = closeMobileMore;
+  document.body.appendChild(backdrop);
+  document.body.appendChild(sheet);
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+}
+
+function closeMobileMore() {
+  const sheet = document.getElementById('mobile-more-sheet');
+  const backdrop = document.getElementById('mobile-more-backdrop');
+  if (sheet) sheet.remove();
+  if (backdrop) backdrop.remove();
+}
+
+function toggleMobileUserMenu() {
+  let sheet = document.getElementById('mobile-user-sheet');
+  if (sheet) { closeMobileUserMenu(); return; }
+  closeMobileMore();
+  const menu = document.getElementById('user-menu');
+  if (!menu) return;
+  sheet = document.createElement('div');
+  sheet.id = 'mobile-user-sheet';
+  sheet.style.cssText = 'position:fixed;bottom:44px;left:0;right:0;z-index:39;background:#1a1a2e;border-top:1px solid #2d2d4e;padding:0;max-height:60vh;overflow-y:auto';
+  sheet.innerHTML = menu.innerHTML;
+  // Ensure all buttons have correct styling outside nav-dropdown context
+  sheet.querySelectorAll('button').forEach(function(btn) {
+    btn.style.background = 'none';
+    btn.style.border = 'none';
+    btn.style.cursor = 'pointer';
+  });
+  // Wire up button clicks to also close the sheet
+  sheet.querySelectorAll('button').forEach(function(btn) {
+    const orig = btn.getAttribute('onclick');
+    if (orig) {
+      btn.removeAttribute('onclick');
+      btn.addEventListener('click', function() {
+        closeMobileUserMenu();
+        new Function(orig)();
+      });
+    }
+  });
+  var backdrop = document.createElement('div');
+  backdrop.id = 'mobile-user-backdrop';
+  backdrop.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:44px;z-index:38;background:rgba(0,0,0,.3)';
+  backdrop.onclick = closeMobileUserMenu;
+  document.body.appendChild(backdrop);
+  document.body.appendChild(sheet);
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+}
+
+function closeMobileUserMenu() {
+  var sheet = document.getElementById('mobile-user-sheet');
+  var backdrop = document.getElementById('mobile-user-backdrop');
+  if (sheet) sheet.remove();
+  if (backdrop) backdrop.remove();
+}
+
 function applyViewerMode() {
   // Hide admin nav items
-  ['nav-events-group','tab-schedule','tab-contacts','tab-tasks','tab-teams'].forEach(id => {
+  ['nav-events-group','tab-schema','tab-contacts','tab-tasks','tab-teams'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -437,16 +569,10 @@ function setupUserAvatar(fullName, role) {
 function editMyDetails() {
   const c = db.contacts?.find(x => x.id === memberContactId);
   if (!c) return;
-  const modal = document.getElementById('detail-modal');
-  document.getElementById('detail-modal-content').innerHTML =
-    '<div class="sidebar-header"><h3>Mina uppgifter</h3><button class="sidebar-close" onclick="closeDetailModal()">×</button></div>' +
-    '<div class="sidebar-body">' +
-    '<div class="field-group"><label>Namn</label><input type="text" value="' + escAttr(c.name) + '" id="my-name"></div>' +
-    '<div class="field-group"><label>E-post</label><input type="email" value="' + escAttr(c.email || '') + '" id="my-email"></div>' +
-    '<div class="field-group"><label>Telefon</label><input type="tel" value="' + escAttr(c.phone || '') + '" id="my-phone"></div>' +
-    '</div>' +
-    '<div class="sidebar-footer"><button class="btn" onclick="saveMyDetails()">Spara</button></div>';
-  modal.classList.add('open');
+  const body = UI.field('Namn', UI.input('my-name', c.name)) +
+    UI.field('E-post', UI.input('my-email', c.email || '', {type:'email'})) +
+    UI.field('Telefon', UI.input('my-phone', c.phone || '', {type:'tel'}));
+  UI.openModal('Mina uppgifter', body, UI.button('Spara', 'saveMyDetails()'));
 }
 
 function saveMyDetails() {

@@ -45,7 +45,9 @@ function renderTeamBoard() {
         <button class="card-remove" onclick="event.stopPropagation();removeFromTeam(${team.id},${c.id})"><i data-lucide="x" style="width:12px;height:12px"></i></button>
       </div>`;
     });
-    html += `</div></div>`;
+    html += `</div>
+      <button class="team-add-member-btn" onclick="openTeamMemberPicker(${team.id})" style="border:none;border-top:1px solid #e5e7eb;padding:8px 12px;font-size:12px;color:${ac()};cursor:pointer;text-align:left;background:none;width:100%;display:flex;align-items:center;gap:4px"><i data-lucide="plus-circle" style="width:12px;height:12px"></i> Lägg till medlem</button>
+    </div>`;
   });
 
   // "+ Nytt team" column
@@ -195,13 +197,42 @@ function initTeamBoardDrag() {
   });
 }
 
+function openTeamMemberPicker(teamId) {
+  const team = db.teams.find(t => t.id === teamId);
+  if (!team) return;
+  const existing = new Set(team.members);
+  const available = db.contacts.filter(c => !existing.has(c.id)).sort((a,b) => a.name.localeCompare(b.name));
+
+  let html = '<div style="margin-bottom:12px"><input type="text" id="team-picker-search" placeholder="Sök person…" oninput="filterTeamPicker()" style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:13px"></div>';
+  html += '<div id="team-picker-list" style="max-height:400px;overflow-y:auto">';
+  available.forEach(c => {
+    html += '<button data-name="' + c.name.toLowerCase() + '" onclick="addMemberFromPicker(' + teamId + ',' + c.id + ')" style="display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;padding:10px 8px;font-size:13px;color:#374151;cursor:pointer;border-radius:6px;border-bottom:1px solid #f0f0f0;text-align:left">' +
+      UI.avatar(c.name, 28) + ' ' + esc(c.name) + '</button>';
+  });
+  html += '</div>';
+
+  UI.openModal('Lägg till i Team ' + team.number, html);
+}
+
+function filterTeamPicker() {
+  const q = (document.getElementById('team-picker-search')?.value || '').toLowerCase();
+  document.querySelectorAll('#team-picker-list button').forEach(btn => {
+    btn.style.display = btn.dataset.name.includes(q) ? '' : 'none';
+  });
+}
+
+function addMemberFromPicker(teamId, contactId) {
+  const team = db.teams.find(t => t.id === teamId);
+  if (!team) return;
+  if (!team.members.includes(contactId)) team.members.push(contactId);
+  persist('teams');
+  closeDetailModal();
+  renderTeamBoard();
+}
+
 function newContactFromTeams() {
   const maxId = (db.contacts || []).reduce((m, c) => Math.max(m, c.id), 0) + 1;
   const c = { id: maxId, name: '', email: '', phone: '', _isNew: true };
-  const modal = document.getElementById('detail-modal');
-  document.getElementById('detail-modal-content').innerHTML = sidebarContact(c);
-  modal.classList.add('open');
-  initSidebarTracking();
-  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  UI.openModalRaw(sidebarContact(c));
   document.getElementById('sb-cname')?.focus();
 }

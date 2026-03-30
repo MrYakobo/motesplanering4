@@ -148,7 +148,7 @@ const tabConfig = {
     cols:[
       {key:'taskId', label:'Uppgift', render:v=>db.tasks?.find(t=>t.id===v)?.name||v},
       {key:'number', label:'Team #', render:v=>v},
-      {key:'members',label:'Medlemmar',render:v=>v.map(id=>db.contacts?.find(c=>c.id===id)?.name).join(', ')||'<span style="color:#9ca3af">—</span>'},
+      {key:'members',label:'Medlemmar',render:v=>(v||[]).map(id=>db.contacts?.find(c=>c.id===id)?.name).filter(Boolean).join(', ')||'<span style="color:#9ca3af">—</span>'},
     ],
     filter:null,
     stats:d=>`<span class="stat">Totalt: <strong>${d.length}</strong> team</span>`,
@@ -184,6 +184,13 @@ const tabConfig = {
   sunday: {
     label:'Söndag',
     desc:'Tjänstgöringslista för dagens händelser',
+    cols:[],
+    filter:null,
+    stats:()=>'',
+  },
+  schema: {
+    label:'Schema',
+    desc:'Tilldela personer och team till händelser',
     cols:[],
     filter:null,
     stats:()=>'',

@@ -1,0 +1,478 @@
+/* ── MOBILE RESPONSIVE STYLES ──────────────────────────────────────────────── */
+/* Breakpoints: ≤768px (tablet), ≤480px (phone) */
+
+/* ── TABLET & BELOW ───────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* NAV: horizontal scroll, smaller padding */
+  nav {
+    padding: 0 8px;
+    gap: 2px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  nav .brand { margin-right: 8px; font-size: 14px; flex-shrink: 0; }
+  nav button { padding: 6px 8px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+
+  /* WORKSPACE: stack vertically */
+  .workspace { flex-direction: column; }
+
+  /* SIDEBAR: hidden by default, full-width overlay when open */
+  .sidebar {
+    display: none !important;
+    position: fixed;
+    inset: 0;
+    width: 100% !important;
+    max-width: 100vw;
+    overflow: hidden;
+    z-index: 50;
+    margin-right: 0;
+    border-left: none;
+  }
+  .sidebar.mobile-open {
+    display: flex !important;
+    height: 100%;
+  }
+
+  /* TOOLBAR */
+  .toolbar {
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    gap: 6px;
+  }
+  .toolbar input[type=search] { width: 100%; order: 10; }
+
+  /* STATS BAR */
+  .stats-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 6px 12px;
+  }
+
+  /* TABLES: horizontal scroll */
+  .table-wrap { padding-right: 0; }
+  .table-wrap table { table-layout: fixed; word-wrap: break-word; }
+  table { font-size: 10px; }
+  thead th { padding: 7px 10px; font-size: 11px; }
+  tbody td { padding: 7px 10px; }
+
+  /* MONSTER TABLE */
+  .monster thead th { min-width: 100px; padding: 6px 4px; }
+  .monster tbody td { padding: 4px; }
+  .monster thead th.th-event { min-width: 140px; }
+  .monster .th-task-type {display: none;}
+
+  /* CALENDAR VIEW */
+  .cal-grid { grid-template-columns: repeat(7, 1fr); }
+  .cal-wk { display: none; }
+  .cal-cell { min-height: 70px; padding: 3px 0; }
+  .cal-ev { font-size: 8px !important; -webkit-line-clamp: 1; }
+  .cal-month-label { font-size: 15px; padding: 8px 12px; }
+  .cal-header { font-size: 10px; padding: 6px 3px; }
+  .cal-wk { font-size: 10px; }
+  .cal-day-num { font-size: 11px; }
+
+  /* WEEK VIEW */
+  .week-grid { grid-template-columns: repeat(7, minmax(80px, 1fr)); }
+  .week-col { min-height: 60px; padding: 4px; }
+  .week-ev { padding: 4px 6px; font-size: 11px; }
+  .week-col-header { font-size: 10px; }
+  .week-col-header .week-date { font-size: 12px; }
+
+  /* YEAR VIEW */
+  .year-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 16px; }
+  .year-month-title { font-size: 15px; }
+  .year-mini-grid { font-size: 11px; }
+
+  /* TEAM BOARD */
+  .team-board { display: block !important; overflow-y: auto; overflow-x: hidden; }
+  .team-col { min-width: 100% !important; max-width: 100% !important; margin-top: 20px; margin-bottom: 2 }
+  .team-col.pool-col { min-width: 100% !important; max-width: 100% !important; }
+  .team-board-toolbar { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+
+  /* MODALS */
+  .modal { width: 95vw !important; max-width: 95vw !important; max-height: 90vh; margin: 8px; }
+  .modal-header { padding: 12px 16px; }
+  .modal-header h3 { font-size: 15px; }
+  .modal-body { padding: 14px; }
+  .modal-footer { padding: 10px 14px; }
+
+  /* GENERATE MODAL: stack preview below */
+  #gen-modal .modal > div[style*="display:flex"] {
+    flex-direction: column !important;
+  }
+  #gen-modal #gen-preview-area {
+    width: 100% !important;
+    border-right: none !important;
+    border-top: 1px solid #e5e7eb;
+    max-height: 200px;
+  }
+  .gen-range { flex-wrap: wrap; gap: 8px; }
+  .gen-row { flex-wrap: wrap; }
+  .gen-row input.gen-title { width: 140px; }
+
+  /* EXPORT */
+  .export-wrap { padding: 16px; }
+  .export-preview { padding: 16px; max-width: 100%; }
+  .export-toolbar { flex-wrap: wrap; }
+
+  /* MAILBOT */
+  .mb-summary { gap: 8px; }
+  .mb-card { min-width: 120px; padding: 12px 14px; }
+  .mb-card-num { font-size: 22px; }
+  .mb-event-header { flex-wrap: wrap; gap: 6px; padding: 8px 10px; }
+  .mb-people { padding: 6px 10px; }
+
+  /* POPOVER PANELS */
+  .pop-panel { min-width: 180px; max-height: 320px; }
+  .pop-label { max-width: 110px; }
+
+  /* SLIDES */
+  .slide-columns { flex-direction: column; gap: 2vh; padding: 0 3vw 2vh; overflow-y: auto; }
+  .slide-col { flex: none; }
+  .slide-week-header { margin-bottom: 16px; }
+
+  /* CONTEXT MENU */
+  .ctx-menu { max-width: 90vw; }
+
+  /* SIM DATE INPUT */
+  #sim-date { display: none; }
+}
+
+/* ── PHONE ────────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+
+  body { font-size: 13px; height: 100dvh; height: -webkit-fill-available; }
+
+  /* NAV: compact, wrap to hamburger-style rows */
+  nav { height: auto; min-height: 44px; flex-wrap: wrap; padding: 4px 8px; }
+  nav .brand { font-size: 13px; margin-right: 6px; }
+  nav button { padding: 5px 6px; font-size: 11px; gap: 3px; }
+  nav button i { width: 12px !important; height: 12px !important; }
+  nav .spacer { display: none; }
+  #nav-theme { display: none; }
+  #sim-date { display: none; }
+
+  /* Hide text labels on nav, keep icons */
+  #tab-contacts,
+  #tab-tasks,
+  #tab-teams { font-size: 0; gap: 0; }
+  #tab-contacts i,
+  #tab-tasks i,
+  #tab-teams i { font-size: initial; }
+
+  /* SIDEBAR: full screen takeover */
+  .sidebar { border-radius: 0; }
+  .sidebar.mobile-open {
+    height: calc(100% - 44px - env(safe-area-inset-bottom, 0px));
+  }
+  .sidebar-body { padding: 12px; overflow-x: hidden; }
+  .sidebar-body input,
+  .sidebar-body textarea,
+  .sidebar-body select { max-width: 100%; box-sizing: border-box; }
+  .sidebar-footer { padding: 10px 12px; }
+  .field-group input,
+  .field-group textarea,
+  .field-group select { font-size: 16px; /* prevents iOS zoom */ }
+
+  /* TOOLBAR */
+  .toolbar { display: none !important; }
+  .toolbar h2 { font-size: 14px; }
+
+  /* STATS BAR */
+  .stats-bar { display: none !important; }
+
+  /* TABLES */
+  thead th { padding: 6px 8px; }
+  tbody td { padding: 6px 8px; }
+
+  /* CALENDAR: horizontal swipe with snap, one month per screen */
+  .cal-scroll {
+    position: fixed !important;
+    left: 0;
+    right: 0;
+    top: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: flex;
+    flex-direction: row;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    z-index: 10;
+  }
+  .cal-month-section {
+    flex: 0 0 100%;
+    width: 100%;
+    scroll-snap-align: start;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .cal-grid {
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: auto repeat(6, 1fr);
+    flex: 1;
+  }
+  .cal-wk { display: none; }
+  .cal-cell { min-height: 0; height: auto; padding: 1px 0; overflow: hidden; }
+  .cal-ev { font-size: 6px; padding: 1px 0; }
+  .cal-ev .cal-ev-time { display: none; }
+  .cal-day-num { font-size: 7px; }
+  .cal-header { font-size: 6px; padding: 2px 0; height: auto; }
+  .cal-month-label { font-size: 10px; padding: 4px 8px; position: static; flex-shrink: 0; }
+
+  /* WEEK VIEW: horizontal swipe with snap, one week per screen */
+  .week-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    height: 100%;
+  }
+  .week-container {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+  }
+  .week-section {
+    flex: 0 0 100%;
+    width: 100%;
+    min-height: 100%;
+    scroll-snap-align: start;
+    overflow-y: auto;
+  }
+  .week-section-header { position: static; }
+  .week-grid { grid-template-columns: 1fr !important; }
+  .week-day-hdr { display: none; }
+  .week-col { min-height: auto; padding: 8px; border-bottom: 1px solid #e5e7eb; }
+  .week-col-header { font-size: 12px; margin-bottom: 6px; }
+  .week-col-header .week-date { font-size: 14px; }
+
+  /* YEAR VIEW: single column */
+  .year-grid { grid-template-columns: 1fr; gap: 12px; padding: 12px; }
+
+  /* TEAM BOARD */
+  .team-card { padding: 8px 10px; font-size: 13px; }
+  .team-col-header { padding: 8px 10px; }
+
+  /* MODALS */
+  .modal { width: 100vw !important; max-width: 100vw !important; max-height: 100vh; margin: 0; border-radius: 0 !important; }
+  .modal-overlay.open { align-items: flex-end; }
+
+  /* EXPORT */
+  .export-preview { border-radius: 8px; padding: 12px; }
+
+  /* MAILBOT */
+  .mb-summary { flex-direction: column; }
+  .mb-card { min-width: 100%; }
+  .mb-event-header { flex-direction: column; align-items: flex-start; }
+
+  /* BUTTONS: larger touch targets */
+  .btn, .btn-ghost, .btn-danger, .btn-save { padding: 8px 16px; font-size: 14px; min-height: 40px; }
+
+  /* POPOVER: full-width on phone */
+  .pop-panel {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-height: 60vh;
+    border-radius: 12px 12px 0 0 !important;
+    z-index: 100 !important;
+  }
+
+  /* SLIDES: simplified */
+  .slide-columns { padding: 0 2vw 1vh; }
+  .slide-footer { padding: 1vh 2vw; }
+
+  /* USER AVATAR */
+  .user-avatar { width: 32px; height: 32px; font-size: 13px; }
+
+  /* SCROLL TO TODAY */
+  .scroll-today button { padding: 8px 20px; font-size: 13px; }
+}
+
+/* ── TOUCH IMPROVEMENTS ───────────────────────────────────────────────────── */
+@media (hover: none) and (pointer: coarse) {
+  /* Disable double-tap to zoom */
+  *, *::before, *::after { touch-action: manipulation; }
+
+  /* Disable hover effects that don't work well on touch */
+  .nav-dropdown:hover .nav-dropdown-menu { display: none; }
+  .nav-dropdown.open .nav-dropdown-menu { display: flex; }
+
+  /* Larger tap targets */
+  nav button { min-height: 36px; }
+  .cell-pick { min-height: 36px; padding: 6px 8px; }
+  .pop-label { min-height: 36px; display: flex; align-items: center; }
+  .pop-panel label { padding: 8px 6px; }
+  .ctx-menu button { padding: 10px 12px; }
+  .team-card { padding: 10px 12px; }
+  .pool-card { padding: 8px 10px; }
+  tbody tr { cursor: default; }
+
+  /* Prevent text selection on drag targets */
+  .cal-ev, .week-ev, .team-card, .pool-card {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* ── MOBILE SIDEBAR BACK BUTTON ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .mobile-open .sidebar-header h3 {
+    text-align: center;
+    flex: 1;
+  }
+  .mobile-open .sidebar-close {
+    position: absolute;
+    right: 16px;
+  }
+  .mobile-back {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    white-space: nowrap;
+  }
+  .mobile-open .mobile-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+/* ── BOTTOM NAV BAR (phone) ───────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Hide top nav entirely, show bottom bar */
+  nav {
+    display: none !important;
+  }
+
+  /* Bottom tab bar */
+  #mobile-bottom-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    background: #1a1a2e;
+    border-top: 1px solid #2d2d4e;
+    padding: 6px 0;
+    padding-bottom: env(safe-area-inset-bottom, 4px);
+  }
+  #mobile-bottom-nav button {
+    flex: 1;
+    background: none;
+    border: none;
+    color: #9ca3af;
+    font-size: 9px;
+    padding: 2px 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    cursor: pointer;
+  }
+  #mobile-bottom-nav button.active { color: var(--accent); }
+  #mobile-bottom-nav button i { width: 14px; height: 14px; }
+
+  /* Add bottom padding to workspace so content isn't hidden behind bottom nav */
+  .workspace { padding-bottom: 48px; }
+
+  /* Tooltip: hide on mobile */
+  .ktooltip { display: none !important; }
+
+  /* User avatar in bottom nav */
+  #mob-user {
+    flex: none !important;
+    width: 32px;
+  }
+  #mobile-bottom-nav .user-avatar {
+    width: 36px;
+    height: 26px;
+    font-size: 10px;
+    font-weight: 700;
+    border: 1px solid var(--accent-mid);
+    padding: 0;
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* Reposition user dropdown above bottom nav since top nav is hidden */
+  #nav-user.open .nav-dropdown-menu {
+    display: flex;
+    position: fixed;
+    bottom: 48px;
+    bottom: calc(48px + env(safe-area-inset-bottom, 0px));
+    right: 4px;
+    top: auto;
+    left: auto;
+    z-index: 200;
+  }
+}
+
+/* ── HIDE EXTRA EVENT COLUMNS ON PHONE ────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Hide columns: day(2), category(4), description(5), infolink(6) — keep date(1) and title(3) */
+  /* The arrow column is col 1, date is col 2, day is col 3, title is col 4, etc. */
+  #table-body tr td:nth-child(3),
+  #table-body tr td:nth-child(5),
+  #table-body tr td:nth-child(6),
+  #table-body tr td:nth-child(7),
+  #table-head tr th:nth-child(3),
+  #table-head tr th:nth-child(5),
+  #table-head tr th:nth-child(6),
+  #table-head tr th:nth-child(7) {
+    display: none;
+  }
+}
+
+/* ── FIX SCROLL-TO-TODAY BUTTON POSITION ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .scroll-today { bottom: 20px; }
+  .scroll-today button { box-shadow: 0 4px 16px rgba(0,0,0,.3); }
+}
+@media (max-width: 480px) {
+  .scroll-today { bottom: 48px; } /* above bottom nav bar */
+}
+
+/* ── FIX SCROLL-INTO-VIEW OFFSET ──────────────────────────────────────────── */
+/* Account for sticky toolbar + stats bar when scrollIntoView targets a row */
+tbody tr, .today-line, .cal-month-section, .week-section {
+  scroll-margin-top: 100px;
+}
+@media (max-width: 480px) {
+  tbody tr, .today-line, .cal-month-section, .week-section {
+    scroll-margin-top: 10px;
+  }
+}
+
+/* ── SCHEMA VIEW FIRST COLUMN ON MOBILE ───────────────────────────────────── */
+@media (max-width: 768px) {
+  #schema-area .td-event {
+    max-width: 33vw;
+    white-space: normal !important;
+    word-break: break-word;
+    font-size: 11px;
+  }
+  #schema-area th.th-event {
+    max-width: 33vw;
+  }
+}
+
+/* ── TEAM VIEW MOBILE ─────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .team-col.pool-col { display: none !important; }
+  .team-add-member-btn { display: flex !important; }
+}

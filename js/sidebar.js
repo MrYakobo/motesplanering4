@@ -1,14 +1,26 @@
 // ── SIDEBAR ───────────────────────────────────────────────────────────────────
 function renderSidebar(record) {
   const el = document.getElementById('sidebar-content');
+  const sidebar = document.getElementById('sidebar');
   if (!record) {
     el.innerHTML = `<div class="empty-sidebar">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
       <p style="font-size:13px">Välj en rad för att se detaljer</p></div>`;
+    if (sidebar) sidebar.classList.remove('mobile-open');
     return;
   }
+  if (sidebar) sidebar.classList.add('mobile-open');
   const builders = { events:sidebarEvent, contacts:sidebarContact, tasks:sidebarTask, teams:sidebarTeam };
   if (builders[currentTab]) el.innerHTML = builders[currentTab](record);
+  // Inject mobile back button
+  const header = el.querySelector('.sidebar-header');
+  if (header && !header.querySelector('.mobile-back')) {
+    const backBtn = document.createElement('button');
+    backBtn.className = 'mobile-back';
+    backBtn.innerHTML = '← Tillbaka';
+    backBtn.onclick = function() { renderSidebar(null); selectedId = null; renderTable(); updateHash(); };
+    header.prepend(backBtn);
+  }
   initSidebarTracking();
   lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
 }
@@ -163,11 +175,7 @@ function sidebarContact(r) {
 function openContactModal(id) {
   const c = db.contacts.find(x=>x.id===id);
   if (!c) return;
-  const modal = document.getElementById('detail-modal');
-  document.getElementById('detail-modal-content').innerHTML = sidebarContact(c);
-  modal.classList.add('open');
-  initSidebarTracking();
-  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  UI.openModalRaw(sidebarContact(c));
 }
 
 function closeContactDetail() {

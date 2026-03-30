@@ -14,11 +14,7 @@ function newRecord() {
 function newContact() {
   const maxId = db.contacts.reduce((m,c) => Math.max(m,c.id), 0) + 1;
   const draft = {id:maxId, name:'', email:'', phone:'', _isNew:true};
-  const modal = document.getElementById('detail-modal');
-  document.getElementById('detail-modal-content').innerHTML = sidebarContact(draft);
-  modal.classList.add('open');
-  initSidebarTracking();
-  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  UI.openModalRaw(sidebarContact(draft));
   const btn = document.getElementById('btn-save');
   if (btn) btn.classList.add('dirty');
 }
@@ -26,11 +22,7 @@ function newContact() {
 function newTask() {
   const maxId = db.tasks.reduce((m,t) => Math.max(m,t.id), 0) + 1;
   const draft = {id:maxId, name:'', teamTask:false, mailbot:false, phrase:'', _isNew:true};
-  const modal = document.getElementById('detail-modal');
-  document.getElementById('detail-modal-content').innerHTML = sidebarTask(draft);
-  modal.classList.add('open');
-  initSidebarTracking();
-  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  UI.openModalRaw(sidebarTask(draft));
   const btn = document.getElementById('btn-save');
   if (btn) btn.classList.add('dirty');
 }
@@ -38,11 +30,7 @@ function newTask() {
 function newEventOnDate(dateStr) {
   const maxId = db.events.reduce((m,e) => Math.max(m,e.id), 0) + 1;
   const draft = {id:maxId, title:'', category:'Weekday', date:dateStr, time:'10:00', description:'', volunteers:0, promoSlides:[], infoLink:'', expectedTasks:[], _isNew:true};
-  const modal = document.getElementById('detail-modal');
-  document.getElementById('detail-modal-content').innerHTML = sidebarEvent(draft);
-  modal.classList.add('open');
-  initSidebarTracking();
-  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  UI.openModalRaw(sidebarEvent(draft));
   const btn = document.getElementById('btn-save');
   if (btn) btn.classList.add('dirty');
 }

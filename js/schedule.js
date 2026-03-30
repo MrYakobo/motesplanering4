@@ -61,6 +61,91 @@ function renderMonster() {
   }
 }
 
+function renderSchema() {
+  // Use all events (not just filtered by search) that have expected tasks
+  const q = document.getElementById('search-input')?.value?.toLowerCase() || '';
+  const allEvents = [...(db.events||[])].sort((a,b) => (a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
+  const visibleEvents = allEvents.filter(ev => {
+    if (!(ev.expectedTasks||[]).length) return false;
+    if (q) return ev.title.toLowerCase().includes(q) || ev.date.includes(q) || (ev.category||'').toLowerCase().includes(q);
+    return true;
+  });
+  const tasks = db.tasks;
+  const todayStr = getTodayStr();
+
+  // Stats
+  const warns = visibleEvents.reduce((n,ev) => {
+    if (ev.date < todayStr) return n;
+    return n + (ev.expectedTasks||[]).filter(tid => !assignments[ev.id]?.[tid]).length;
+  }, 0);
+  updateScheduleBadge(warns);
+  const warnStat = warns > 0 ? ` <span class="stat warn-count">⚠ ${warns} saknas</span>` : '';
+  document.getElementById('stats-bar').innerHTML = `<span class="stat">Totalt: <strong>${visibleEvents.length}</strong></span>${warnStat}`;
+  document.getElementById('stats-bar').style.display = '';
+
+  let html = '<table style="width:auto;min-width:100%"><thead id="schema-head"><tr>';
+  html += `<th class="th-event" style="font-size:10px;position:sticky;left:0;z-index:4;background:#f9fafb">Datum / Händelse</th>`;
+  html += tasks.map(t => {
+    const autoBtn = t.teamTask
+      ? UI.button('Fördela', 'event.stopPropagation();autoDistributeTeams('+t.id+')', {style:'background:'+acLight()+';border:1px solid '+acMid()+';color:'+ac()+';font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-left:4px', icon:'shuffle', iconSize:11, tip:'Fördela team jämnt'})
+      : UI.button('Fördela', 'event.stopPropagation();autoDistributePersons('+t.id+')', {style:'background:'+acLight()+';border:1px solid '+acMid()+';color:'+ac()+';font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-left:4px', icon:'shuffle', iconSize:11, tip:'Fördela personer jämnt'});
+    return `<th style="min-width:120px;padding:7px 6px"><div class="th-task-label">${t.name}${autoBtn}</div><div class="th-task-type">${t.teamTask?'<i data-lucide="users" style="width:10px;height:10px;vertical-align:middle"></i> team':'<i data-lucide="user" style="width:10px;height:10px;vertical-align:middle"></i> person'}</div></th>`;
+  }).join('');
+  html += '</tr></thead><tbody id="schema-body">';
+
+  html += visibleEvents.map(ev => {
+    const reqTasks = ev.expectedTasks || [];
+    const isPast = ev.date < todayStr;
+    const opacityStyle = isPast ? 'opacity:0.5;' : '';
+    const cells = tasks.map(task => {
+      const asgn = assignments[ev.id]?.[task.id];
+      const isRequired = reqTasks.includes(task.id);
+      const isMissing = isRequired && !asgn && !isPast;
+      const warnCls = isMissing ? ' cell-warn' : '';
+      if (task.teamTask) {
+        const teams = db.teams.filter(t=>t.taskId===task.id);
+        const selTeam = asgn ? teams.find(t=>t.id===asgn.id) : null;
+        const label = selTeam ? `Team ${selTeam.number}` : '—';
+        const membersTip = selTeam ? (selTeam.members||[]).map(mid=>db.contacts.find(c=>c.id===mid)?.name).filter(Boolean).join(', ') : '';
+        const uid = `tpop_${ev.id}_${task.id}`;
+        return `<td style="padding:5px 6px" onclick="event.stopPropagation()"><div class="pop-cell">
+          <div class="pop-label ${!selTeam?'unset':''}${warnCls}" id="lbl_${uid}" onclick="openTeamPop('${uid}',${ev.id},${task.id})"${membersTip?` data-tip="${escAttr(membersTip)}"`:''} >${label}</div>
+          <div class="pop-panel" id="pan_${uid}"></div>
+        </div></td>`;
+      } else {
+        const ids = asgn?.ids || [];
+        const label = ids.length===0 ? '—' : ids.map(id=>db.contacts.find(c=>c.id===id)?.name.split(' ')[0]).join(', ');
+        const uid = `pop_${ev.id}_${task.id}`;
+        return `<td style="padding:5px 6px" onclick="event.stopPropagation()"><div class="pop-cell">
+          <div class="pop-label ${ids.length===0?'unset':''}${warnCls}" id="lbl_${uid}" onclick="openPop('${uid}',${ev.id},${task.id})">${label}</div>
+          <div class="pop-panel" id="pan_${uid}"></div>
+        </div></td>`;
+      }
+    }).join('');
+    const missingTasks = isPast ? [] : reqTasks.filter(tid => !assignments[ev.id]?.[tid]);
+    const warnCount = missingTasks.length;
+    const missingNames = missingTasks.map(tid => db.tasks.find(t=>t.id===tid)?.name).filter(Boolean).join(', ');
+    const warnBadge = warnCount > 0 ? ` <span class="warn-count" data-tip="Saknas: ${missingNames}">⚠ ${warnCount}</span>` : '';
+    return `<tr onclick="openDetailModal(${ev.id})" style="${opacityStyle}">
+      <td class="td-event" style="position:sticky;left:0;background:#fff;z-index:1;font-weight:500;white-space:nowrap;padding:5px 6px">${ev.date} ${ev.time||''}<br><span style="font-size:12px;color:#6b7280">${esc(ev.title)}</span>${warnBadge}</td>${cells}</tr>`;
+  }).join('') || `<tr><td colspan="${tasks.length+1}" style="padding:24px;text-align:center;color:#9ca3af">Inga resultat</td></tr>`;
+
+  html += '</tbody></table>';
+  document.getElementById('schema-area').innerHTML = html;
+  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+
+  // Scroll to today
+  requestAnimationFrame(() => {
+    const area = document.getElementById('schema-area');
+    const rows = area?.querySelectorAll('tbody tr');
+    if (!rows) return;
+    for (const row of rows) {
+      const dateText = row.querySelector('.td-event')?.textContent || '';
+      if (dateText >= todayStr) { row.scrollIntoView({ block: 'start', behavior: 'instant' }); break; }
+    }
+  });
+}
+
 function setTeamAssign(eid, tid, val) {
   if (!val) delete assignments[eid][tid];
   else assignments[eid][tid] = {type:'team', id:parseInt(val)};
@@ -70,11 +155,7 @@ function setTeamAssign(eid, tid, val) {
 function openTeamSidebar(teamId) {
   const team = db.teams.find(t=>t.id===teamId);
   if (!team) return;
-  const modal = document.getElementById('detail-modal');
-  document.getElementById('detail-modal-content').innerHTML = sidebarTeam(team);
-  modal.classList.add('open');
-  initSidebarTracking();
-  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  UI.openModalRaw(sidebarTeam(team));
 }
 
 function togglePerson(eid, tid, cid, checked) {
@@ -134,26 +215,19 @@ function showAutoDistPreview(taskId) {
     `<option value="${i}" ${i === autoDistStartIdx ? 'selected' : ''}>Team ${t.number}</option>`
   ).join('');
 
-  const modal = document.getElementById('detail-modal');
-  document.getElementById('detail-modal-content').innerHTML = `
-    <div class="sidebar-header">
-      <h3>Fördela ${esc(task?.name || '')}</h3>
-      <button class="sidebar-close" onclick="closeDetailModal()">×</button>
-    </div>
-    <div class="sidebar-body" style="overflow-y:auto">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-        <span style="font-size:13px;color:#374151">Börja med:</span>
-        <select onchange="autoDistStartIdx=parseInt(this.value);showAutoDistPreview(${taskId})" style="border:1px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:13px">${teamOptions}</select>
-        <span style="font-size:12px;color:#9ca3af">${candidates.length} händelser · ${teams.length} team</span>
-      </div>
-      <div style="max-height:400px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;padding:8px">${listHtml}</div>
-    </div>
-    <div class="sidebar-footer">
-      <button class="btn-ghost" onclick="closeDetailModal()">Avbryt</button>
-      <button class="btn" onclick="executeAutoDistribute(${taskId});closeDetailModal()">Tilldela ${candidates.length} händelser</button>
-    </div>`;
-  modal.classList.add('open');
-  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  const body = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+    <span style="font-size:13px;color:#374151">Börja med:</span>
+    <select onchange="autoDistStartIdx=parseInt(this.value);showAutoDistPreview(${taskId})" style="border:1px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:13px">${teamOptions}</select>
+    <span style="font-size:12px;color:#9ca3af">${candidates.length} händelser · ${teams.length} team</span>
+  </div>
+  <div style="max-height:400px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;padding:8px">${listHtml}</div>`;
+
+  UI.openModal(
+    'Fördela ' + esc(task?.name || ''),
+    body,
+    UI.button('Avbryt', 'closeDetailModal()', {ghost:true}) + ' ' +
+    UI.button('Tilldela ' + candidates.length + ' händelser', 'executeAutoDistribute('+taskId+');closeDetailModal()')
+  );
 }
 
 function executeAutoDistribute(taskId) {
@@ -248,32 +322,23 @@ function showPersonDistPreview(taskId) {
     `<option value="${i}" ${i === personDistStartIdx ? 'selected' : ''}>${esc(p.name)}</option>`
   ).join('');
 
-  const modal = document.getElementById('detail-modal');
-  document.getElementById('detail-modal-content').innerHTML = `
-    <div class="sidebar-header">
-      <h3>Fördela ${esc(task?.name || '')}</h3>
-      <button class="sidebar-close" onclick="closeDetailModal()">×</button>
-    </div>
-    <div class="sidebar-body" style="overflow-y:auto">
-      <div style="margin-bottom:12px">
-        <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:6px">Välj personer att rotera (senaste 6 mån):</div>
-        <div style="max-height:180px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;padding:6px">${personChecks}</div>
-      </div>
-      ${selected.length > 0 ? `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-        <span style="font-size:13px;color:#374151">Börja med:</span>
-        <select onchange="personDistStartIdx=parseInt(this.value);showPersonDistPreview(${taskId})" style="border:1px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:13px">${startOptions}</select>
-        <span style="font-size:12px;color:#9ca3af">${candidates.length} händelser · ${selected.length} personer</span>
-      </div>
-      <div style="max-height:400px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;padding:8px">${listHtml}</div>
-      ` : '<p style="font-size:13px;color:#9ca3af;margin-top:8px">Välj minst en person för att se fördelning</p>'}
-    </div>
-    <div class="sidebar-footer">
-      <button class="btn-ghost" onclick="closeDetailModal()">Avbryt</button>
-      ${selected.length > 0 ? `<button class="btn" onclick="executePersonDistribute(${taskId});closeDetailModal()">Tilldela ${candidates.length} händelser</button>` : ''}
-    </div>`;
-  modal.classList.add('open');
-  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  const body = `<div style="margin-bottom:12px">
+    <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:6px">Välj personer att rotera (senaste 6 mån):</div>
+    <div style="max-height:180px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;padding:6px">${personChecks}</div>
+  </div>
+  ${selected.length > 0 ? `
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+    <span style="font-size:13px;color:#374151">Börja med:</span>
+    <select onchange="personDistStartIdx=parseInt(this.value);showPersonDistPreview(${taskId})" style="border:1px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:13px">${startOptions}</select>
+    <span style="font-size:12px;color:#9ca3af">${candidates.length} händelser · ${selected.length} personer</span>
+  </div>
+  <div style="max-height:400px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;padding:8px">${listHtml}</div>
+  ` : '<p style="font-size:13px;color:#9ca3af;margin-top:8px">Välj minst en person för att se fördelning</p>'}`;
+
+  const footer = UI.button('Avbryt', 'closeDetailModal()', {ghost:true}) +
+    (selected.length > 0 ? ' ' + UI.button('Tilldela ' + candidates.length + ' händelser', 'executePersonDistribute('+taskId+');closeDetailModal()') : '');
+
+  UI.openModal('Fördela ' + esc(task?.name || ''), body, footer);
 }
 
 function executePersonDistribute(taskId) {

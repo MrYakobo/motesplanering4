@@ -2,18 +2,28 @@
 function switchTab(tab, skipHash) {
   if (slideTimer) { clearTimeout(slideTimer); slideTimer = null; }
   if (slideClockTimer) { clearInterval(slideClockTimer); slideClockTimer = null; }
+  // Close mobile sidebar/popups when switching tabs
+  var sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.classList.remove('mobile-open');
+  closeMobileMore();
+  if (typeof closeMobileUserMenu === 'function') closeMobileUserMenu();
   currentTab = tab; selectedId = null; sortCol = null; sortDir = 1;
+  if (tab === 'events' && currentView === 'monster') currentView = 'list';
   document.querySelectorAll('nav button[id^=tab-]').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('tab-'+tab)?.classList.add('active');
+  // Update mobile bottom nav
+  document.querySelectorAll('#mobile-bottom-nav button').forEach(b=>b.classList.remove('active'));
+  const mobBtn = document.getElementById('mob-' + tab);
+  if (mobBtn) mobBtn.classList.add('active');
   // Highlight "Outputs" parent when an output tab is active
   const outBtn = document.getElementById('tab-outputs');
   if (outBtn) outBtn.classList.toggle('active', outputTabs.includes(tab));
   // Highlight "Händelser" parent when events or categories is active
   const evBtn = document.getElementById('tab-events');
   if (evBtn) evBtn.classList.toggle('active', tab === 'events' || tab === 'categories');
-  // Highlight Schema nav button when in monster view
-  const schBtn = document.getElementById('tab-schedule');
-  if (schBtn) schBtn.classList.toggle('active', tab === 'events' && currentView === 'monster');
+  // Highlight Schema nav button
+  const schBtn = document.getElementById('tab-schema');
+  if (schBtn) schBtn.classList.toggle('active', tab === 'schema');
   // Highlight Kategorier sub-link
   const catSub = document.getElementById('tab-categories');
   if (catSub) catSub.classList.toggle('active', tab === 'categories');
@@ -46,9 +56,10 @@ function switchTab(tab, skipHash) {
   const isCats = tab === 'categories';
   const isSunday = tab === 'sunday';
   const isHome = tab === 'home';
-  const isSpecial = isSlides || isExport || isTeams || isMailbot || isCats || isNamn || isSunday || isHome;
+  const isSchema = tab === 'schema';
+  const isSpecial = isSlides || isExport || isTeams || isMailbot || isCats || isNamn || isSunday || isHome || isSchema;
   const isEvents = tab === 'events';
-  document.getElementById('table-area').style.display = isSpecial ? 'none' : '';
+  document.getElementById('table-area').style.display = (isSpecial) ? 'none' : '';
   document.getElementById('slides-area').style.display = isSlides ? '' : 'none';
   document.getElementById('export-area').style.display = isExport ? '' : 'none';
   document.getElementById('team-board-area').style.display = isTeams ? '' : 'none';
@@ -56,14 +67,15 @@ function switchTab(tab, skipHash) {
   document.getElementById('mailbot-area').style.display = isMailbot ? '' : 'none';
   document.getElementById('namnskyltar-area').style.display = isNamn ? '' : 'none';
   document.getElementById('sunday-area').style.display = isSunday ? '' : 'none';
+  document.getElementById('schema-area').style.display = isSchema ? '' : 'none';
   document.getElementById('landing-area').style.display = isHome ? '' : 'none';
-  document.getElementById('search-input').style.display = isSpecial ? 'none' : '';
+  document.getElementById('search-input').style.display = (isSpecial && !isSchema) ? 'none' : '';
   document.getElementById('btn-generate').style.display = isEvents ? '' : 'none';
   document.getElementById('btn-subscribe').style.display = isEvents ? '' : 'none';
   document.getElementById('view-toggle').style.display = isEvents ? '' : 'none';
-  document.getElementById('stats-bar').style.display = isSpecial ? 'none' : '';
-  if (!isEvents) currentView = 'list';
-  document.getElementById('sidebar').style.display = (isTeams || isMailbot || isCats || isNamn || isSunday || isHome) ? 'none' : '';
+  document.getElementById('stats-bar').style.display = isSchema ? '' : (isSpecial ? 'none' : '');
+  if (tab !== 'events') currentView = 'list';
+  document.getElementById('sidebar').style.display = (isTeams || isMailbot || isCats || isNamn || isSunday || isHome || isSchema) ? 'none' : '';
 
   if (isSlides) { renderSlides(); renderSlidesSidebar(); if (!skipHash) updateHash(); return; }
   if (isExport) { renderExport(); renderSidebar(null); if (!skipHash) updateHash(); return; }
@@ -73,6 +85,7 @@ function switchTab(tab, skipHash) {
   if (isNamn) { renderNamnskyltar(); if (!skipHash) updateHash(); return; }
   if (isSunday) { renderSunday(); if (!skipHash) updateHash(); return; }
   if (isHome) { renderLanding(); if (!skipHash) updateHash(); return; }
+  if (isSchema) { renderSchema(); if (!skipHash) updateHash(); return; }
   renderFilter();
   renderYearPicker();
   applyFilters();
@@ -84,14 +97,18 @@ function setView(v) {
   currentView = v;
   calScrollInit = false;
   listScrolled = false;
-  document.querySelector('.table-wrap').classList.toggle('monster', v==='monster');
-  const calViews = ['monster','calendar','week','year'];
+  document.querySelector('.table-wrap').classList.toggle('monster', false);
+  const calViews = ['calendar','week','year'];
   document.getElementById('sidebar').style.display = calViews.includes(v) ? 'none' : '';
   // Toggle nav highlights
-  const schBtn = document.getElementById('tab-schedule');
-  if (schBtn) schBtn.classList.toggle('active', v === 'monster');
   const evBtn = document.getElementById('tab-events');
-  if (evBtn) evBtn.classList.toggle('active', v !== 'monster');
+  if (evBtn) evBtn.classList.toggle('active', true);
+  const schBtn = document.getElementById('tab-schema');
+  if (schBtn) schBtn.classList.remove('active');
+  // Update mobile bottom nav
+  document.querySelectorAll('#mobile-bottom-nav button').forEach(b=>b.classList.remove('active'));
+  const mobBtn = document.getElementById('mob-events');
+  if (mobBtn) mobBtn.classList.add('active');
   // Highlight the correct sub-link in the Händelser dropdown
   const viewToSub = {list:'tab-ev-list', calendar:'tab-ev-calendar', week:'tab-ev-week', year:'tab-ev-year'};
   ['tab-ev-list','tab-ev-calendar','tab-ev-week','tab-ev-year','tab-categories'].forEach(id => {
@@ -161,6 +178,7 @@ function setYear(y) {
 
 function applyFilters() {
   if (currentTab === 'slides') return;
+  if (currentTab === 'schema') { renderSchema(); updateHash(true); return; }
   const q = document.getElementById('search-input').value.toLowerCase();
   const sel = document.getElementById('filter-select');
   const fv = sel.style.display!=='none' ? sel.value : 'All';

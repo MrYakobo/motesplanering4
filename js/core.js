@@ -26,11 +26,7 @@ function selectRow(id) {
 function openDetailModal(id) {
   const ev = db.events.find(e=>e.id===id);
   if (!ev) return;
-  const modal = document.getElementById('detail-modal');
-  document.getElementById('detail-modal-content').innerHTML = sidebarEvent(ev);
-  modal.classList.add('open');
-  initSidebarTracking();
-  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  UI.openModalRaw(sidebarEvent(ev));
 }
 
 function closeDetailModal() {
@@ -116,18 +112,12 @@ function deleteTaskWithPreview(taskId) {
     : `<p style="font-size:13px;color:#374151;margin-bottom:12px">Detta påverkar <strong>${affectedEvents.length}</strong> händelser och <strong>${affectedPersons.size}</strong> personer:</p>
        <div style="max-height:300px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;padding:8px">${listHtml}</div>`;
 
-  const modal = document.getElementById('detail-modal');
-  document.getElementById('detail-modal-content').innerHTML = `
-    <div class="sidebar-header">
-      <h3>Ta bort "${esc(task.name)}"?</h3>
-      <button class="sidebar-close" onclick="closeDetailModal()">×</button>
-    </div>
-    <div class="sidebar-body">${summary}</div>
-    <div class="sidebar-footer">
-      <button class="btn-ghost" onclick="closeDetailModal()">Avbryt</button>
-      <button class="btn-danger" onclick="executeDeleteTask(${taskId});closeDetailModal()">Ta bort uppgift</button>
-    </div>`;
-  modal.classList.add('open');
+  UI.openModal(
+    'Ta bort "' + esc(task.name) + '"?',
+    summary,
+    UI.button('Avbryt', 'closeDetailModal()', {ghost:true}) + ' ' +
+    UI.button('Ta bort uppgift', 'executeDeleteTask('+taskId+');closeDetailModal()', {danger:true})
+  );
 }
 
 function executeDeleteTask(taskId) {
