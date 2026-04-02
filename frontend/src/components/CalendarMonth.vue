@@ -79,20 +79,19 @@ function weekNumber(d: Date) {
 const MAX_VIS = 3
 
 function goToday() {
-  const el = scrollRef.value?.querySelector('.month-today') as HTMLElement
-  if (el) {
-    const section = el.closest('.month-section') as HTMLElement
-    if (section) section.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  const idx = months.value.findIndex(m => m.year === today.value.getFullYear() && m.month === today.value.getMonth())
+  if (idx >= 0) {
+    const sections = scrollRef.value?.querySelectorAll('.month-section')
+    if (sections?.[idx]) (sections[idx] as HTMLElement).scrollIntoView({ block: 'start', behavior: 'smooth' })
   }
 }
 
 onMounted(() => {
-  // Use a short delay to ensure all month sections are rendered before scrolling
   setTimeout(() => {
-    const el = scrollRef.value?.querySelector('.month-today') as HTMLElement
-    if (el) {
-      const section = el.closest('.month-section') as HTMLElement
-      if (section) section.scrollIntoView({ block: 'start', behavior: 'instant' })
+    const idx = months.value.findIndex(m => m.year === today.value.getFullYear() && m.month === today.value.getMonth())
+    if (idx >= 0) {
+      const sections = scrollRef.value?.querySelectorAll('.month-section')
+      if (sections?.[idx]) (sections[idx] as HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' })
     }
   }, 50)
 })
