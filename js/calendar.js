@@ -20,10 +20,6 @@ function fitCalendarHeight() {
     s.style.height = h + 'px';
     s.style.maxHeight = h + 'px';
   });
-  // Debug overlay — remove after fixing
-  var dbg = document.getElementById('cal-debug');
-  if (!dbg) { dbg = document.createElement('div'); dbg.id = 'cal-debug'; dbg.style.cssText = 'position:fixed;top:0;left:0;z-index:9999;background:rgba(0,0,0,.8);color:#0f0;font:11px monospace;padding:4px 8px;pointer-events:none'; document.body.appendChild(dbg); }
-  dbg.textContent = 'vvH:' + vh + ' iH:' + window.innerHeight + ' navH:' + navH + ' h:' + h + ' scrollH:' + scroll.offsetHeight + ' secH:' + (sections[0] ? sections[0].offsetHeight : '?');
 }
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', function() {

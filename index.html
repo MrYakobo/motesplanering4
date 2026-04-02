@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Mötesplanering</title>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
@@ -11,7 +11,7 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root { --accent: #4f46e5; --accent-hover: #4338ca; --accent-light: #ede9fe; --accent-mid: #a78bfa; --accent-text: #4f46e5; }
-body { font-family: system-ui, sans-serif; font-size: 14px; background: #f4f5f7; color: #1a1a2e; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+body { font-family: system-ui, sans-serif; font-size: 14px; background: #f4f5f7; color: #1a1a2e; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
 nav { display: flex; align-items: center; background: #1a1a2e; color: #fff; padding: 0 16px; height: 44px; gap: 4px; flex-shrink: 0; }
 nav .brand { font-weight: 700; font-size: 15px; margin-right: 16px; color: var(--accent-mid); }
 nav button { background: none; border: none; color: #ccc; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; }
@@ -163,14 +163,14 @@ body.slides-fullscreen .toolbar,
 body.slides-fullscreen .stats-bar,
 body.slides-fullscreen .sidebar,
 body.slides-fullscreen .sim-warning { display: none !important; }
-body.slides-fullscreen .workspace { height: 100vh; }
+body.slides-fullscreen .workspace { height: 100vh; height: 100dvh; }
 body.slides-fullscreen .slides-wrap { position: fixed; inset: 0; z-index: 999; }
 body.sunday-fullscreen nav,
 body.sunday-fullscreen .toolbar,
 body.sunday-fullscreen .stats-bar,
 body.sunday-fullscreen .sidebar,
 body.sunday-fullscreen .sim-warning { display: none !important; }
-body.sunday-fullscreen .workspace { height: 100vh; }
+body.sunday-fullscreen .workspace { height: 100vh; height: 100dvh; }
 body.sunday-fullscreen #sunday-area { position: fixed; inset: 0; z-index: 999; display: flex !important; }
 body.sunday-fullscreen #sunday-area > div { width: 100%; height: 100%; }
 body.nameplate-fullscreen nav,
@@ -178,7 +178,7 @@ body.nameplate-fullscreen .toolbar,
 body.nameplate-fullscreen .stats-bar,
 body.nameplate-fullscreen .sidebar,
 body.nameplate-fullscreen .sim-warning { display: none !important; }
-body.nameplate-fullscreen .workspace { height: 100vh; }
+body.nameplate-fullscreen .workspace { height: 100vh; height: 100dvh; }
 body.nameplate-fullscreen #namnskyltar-area { position: fixed; inset: 0; z-index: 999; background: #111; display: flex !important; align-items: flex-end; justify-content: flex-start; }
 .nameplate-full { padding: 4vw 5vw; color: #fff; }
 .nameplate-full .np-name { font-family: system-ui, sans-serif; font-size: min(8vw, 96px); font-weight: 800; text-transform: uppercase; letter-spacing: .05em; line-height: 1.1; white-space: nowrap; }
