@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useStore } from '../composables/useStore'
 import { useToday } from '../composables/useToday'
 import { useFullscreen } from '../composables/useFullscreen'
@@ -7,7 +7,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Maximize, Minimize } from 'lucide-vue-next'
 
 const { db, assignments } = useStore()
-const { isFullscreen, syncFromRoute } = useFullscreen()
+const { isFullscreen, toggle: toggleFullscreen, syncFromRoute } = useFullscreen()
 const route = useRoute()
 const router = useRouter()
 
@@ -33,18 +33,6 @@ function selectTask(taskId: number | null) {
   selectedTaskId.value = taskId
   const slug = taskId ? slugify(db.tasks.find(t => t.id === taskId)?.name || '') : null
   const fs = isFullscreen.value ? '/fullscreen' : ''
-  const path = slug ? `/namnskyltar/${slug}${fs}` : `/namnskyltar${fs}`
-  router.replace(path)
-}
-
-// Keep fullscreen URL in sync when toggling
-function toggleFullscreen() {
-  toggle()
-  // After toggle, update URL to reflect new state
-  const slug = selectedTaskId.value
-    ? slugify(db.tasks.find(t => t.id === selectedTaskId.value)?.name || '')
-    : null
-  const fs = !isFullscreen.value ? '/fullscreen' : '' // inverted because toggle already flipped
   const path = slug ? `/namnskyltar/${slug}${fs}` : `/namnskyltar${fs}`
   router.replace(path)
 }

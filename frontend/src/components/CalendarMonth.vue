@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, nextTick, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useCategories } from '../composables/useCategories'
 import { useToday, localDateStr } from '../composables/useToday'
 import type { Event } from '../types'
@@ -87,13 +87,14 @@ function goToday() {
 }
 
 onMounted(() => {
-  nextTick(() => {
+  // Use a short delay to ensure all month sections are rendered before scrolling
+  setTimeout(() => {
     const el = scrollRef.value?.querySelector('.month-today') as HTMLElement
     if (el) {
       const section = el.closest('.month-section') as HTMLElement
       if (section) section.scrollIntoView({ block: 'start', behavior: 'instant' })
     }
-  })
+  }, 50)
 })
 
 // Expand overflow for a date
