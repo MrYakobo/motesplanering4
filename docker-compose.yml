@@ -7,9 +7,8 @@ services:
       - .env
     volumes:
       - ./server.js:/app/server.js
-      - ./index.html:/app/index.html
-      - ./js:/app/js
       - ./lib:/app/lib
+      - ./frontend/dist:/app/frontend/dist
       - ./data_prod.json:/app/data_prod.json
       - ./backups:/app/backups
       - ./uploads:/app/uploads
