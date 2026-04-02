@@ -4,7 +4,7 @@ import { useToday, localDateStr } from '../composables/useToday'
 import type { Event } from '../types'
 
 const props = defineProps<{ events: Event[] }>()
-const emit = defineEmits<{ switchWeek: [date: string] }>()
+const emit = defineEmits<{ selectDate: [date: string] }>()
 
 const { today, todayStr } = useToday()
 
@@ -55,7 +55,6 @@ function daysForWeek(weekMon: Date) {
   return days
 }
 
-// Current week range for highlighting
 const currentWeekMon = computed(() => {
   const d = new Date(today.value)
   const day = d.getDay()
@@ -79,54 +78,53 @@ function isCurrentWeek(weekMon: Date) {
 
 onMounted(() => {
   nextTick(() => {
-    const el = scrollRef.value?.querySelector('.year-today') as HTMLElement
-    if (el) el.scrollIntoView({ block: 'center', behavior: 'instant' })
+    // Scroll to current year
+    const currentYearIdx = years.value.indexOf(today.value.getFullYear())
+    if (currentYearIdx >= 0) {
+      const sections = scrollRef.value?.querySelectorAll('.year-section')
+      if (sections?.[currentYearIdx]) {
+        (sections[currentYearIdx] as HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' })
+      }
+    }
   })
 })
 </script>
 
 <template>
-  <div ref="scrollRef" class="flex-1 overflow-y-auto p-4">
-    <div v-for="yr in years" :key="yr" class="mb-8">
-      <div class="text-xl font-extrabold text-gray-800 px-2 mb-3">{{ yr }}</div>
-      <div class="grid grid-cols-4 gap-4">
-        <div v-for="m in 12" :key="m" class="bg-white rounded-lg border border-gray-100 p-2">
-          <div class="text-xs font-bold text-gray-600 mb-1 capitalize">{{ monthNames[m - 1] }}</div>
+  <div ref="scrollRef" class="flex-1 overflow-y-auto snap-y snap-mandatory">
+    <div v-for="yr in years" :key="yr" class="year-section snap-start h-full min-h-full flex flex-col px-4 py-3">
+      <div class="text-xl font-extrabold text-gray-800 px-2 mb-3 shrink-0">{{ yr }}</div>
+      <div class="grid grid-cols-4 gap-3 flex-1 content-start">
+        <div v-for="m in 12" :key="m" class="bg-white rounded-lg border border-gray-100 px-2 py-1.5">
+          <div class="text-[11px] font-bold text-gray-600 mb-0.5 capitalize">{{ monthNames[m - 1] }}</div>
           <!-- Mini header -->
-          <div class="grid grid-cols-[20px_repeat(7,1fr)] text-[8px] text-gray-400 font-semibold">
+          <div class="year-grid text-[7px] text-gray-400 font-semibold">
             <div class="text-center">v</div>
             <div v-for="dh in dayHeaders" :key="dh" class="text-center">{{ dh }}</div>
           </div>
           <!-- Mini weeks -->
           <div
             v-for="(weekMon, wi) in weeksForMonth(yr, m - 1)" :key="wi"
-            class="grid grid-cols-[20px_repeat(7,1fr)]"
+            class="year-grid"
           >
             <div
-              class="text-[8px] text-center"
+              class="text-[7px] text-center leading-[18px]"
               :class="isCurrentWeek(weekMon) ? 'text-accent font-bold' : 'text-gray-300'"
             >
               {{ weekNumber(weekMon) }}
             </div>
             <div
               v-for="day in daysForWeek(weekMon)" :key="dateStr(day)"
-              class="text-[10px] text-center py-px cursor-pointer rounded-sm hover:bg-gray-100 transition-colors"
+              class="text-[10px] text-center leading-[18px] cursor-pointer rounded-sm hover:bg-gray-100 transition-colors"
               :class="{
                 'opacity-20': day.getMonth() !== m - 1,
-                'year-today text-accent font-bold ring-1 ring-accent rounded-sm': dateStr(day) === todayStr,
+                'year-today bg-accent text-white font-bold rounded-sm': dateStr(day) === todayStr,
                 'text-gray-600': dateStr(day) !== todayStr && day.getMonth() === m - 1,
-                'font-semibold': eventDates.has(dateStr(day)) && day.getMonth() === m - 1,
+                'font-semibold text-accent': eventDates.has(dateStr(day)) && day.getMonth() === m - 1 && dateStr(day) !== todayStr,
               }"
-              @click="emit('switchWeek', dateStr(day))"
+              @click="emit('selectDate', dateStr(day))"
             >
-              <span
-                v-if="eventDates.has(dateStr(day)) && day.getMonth() === m - 1"
-                class="relative"
-              >
-                {{ day.getDate() }}
-                <span class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent"></span>
-              </span>
-              <span v-else>{{ day.getDate() }}</span>
+              {{ day.getDate() }}
             </div>
           </div>
         </div>
@@ -134,3 +132,10 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.year-grid {
+  display: grid;
+  grid-template-columns: 18px repeat(7, 1fr);
+}
+</style>

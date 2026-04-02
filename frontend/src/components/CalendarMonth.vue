@@ -4,7 +4,7 @@ import { useCategories } from '../composables/useCategories'
 import { useToday, localDateStr } from '../composables/useToday'
 import type { Event } from '../types'
 
-const props = defineProps<{ events: Event[] }>()
+const props = defineProps<{ events: Event[]; highlightDate?: string | null }>()
 const emit = defineEmits<{ select: [id: number]; create: [date: string]; move: [id: number, date: string] }>()
 
 const { catStyle } = useCategories()
@@ -122,7 +122,18 @@ function goToday() {
 
 onMounted(() => {
   setTimeout(() => {
-    const idx = months.value.findIndex(m => m.year === today.value.getFullYear() && m.month === today.value.getMonth())
+    // If a highlight date is provided, scroll to that month
+    const targetDate = props.highlightDate || null
+    let targetYear: number, targetMonth: number
+    if (targetDate) {
+      const d = new Date(targetDate + 'T00:00:00')
+      targetYear = d.getFullYear()
+      targetMonth = d.getMonth()
+    } else {
+      targetYear = today.value.getFullYear()
+      targetMonth = today.value.getMonth()
+    }
+    const idx = months.value.findIndex(m => m.year === targetYear && m.month === targetMonth)
     if (idx >= 0) {
       const sections = scrollRef.value?.querySelectorAll('.month-section')
       if (sections?.[idx]) (sections[idx] as HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' })
@@ -163,12 +174,13 @@ function toggleExpand(ds: string) {
             </div>
             <div
               v-for="day in daysForWeek(weekMon)" :key="dateStr(day)"
-              class="cal-day-col border-l border-gray-100 px-0.5 py-0.5 cursor-pointer transition-colors hover:bg-gray-50 overflow-hidden"
+              class="cal-day-col bg-white/80 border-l border-t border-gray-200 px-0.5 py-0.5 cursor-pointer transition-colors hover:bg-gray-50 overflow-hidden"
               :class="{
                 'opacity-30': day.getMonth() !== m.month,
                 'month-today ring-2 ring-accent ring-inset': dateStr(day) === todayStr,
                 'bg-accent/5': dateStr(day) === todayStr,
                 'bg-accent/10 ring-2 ring-accent/30 ring-inset': dragOverDate === dateStr(day),
+                'ring-2 ring-amber-400 ring-inset bg-amber-50': props.highlightDate === dateStr(day) && dateStr(day) !== todayStr,
               }"
               @click="emit('create', dateStr(day))"
               @dragover="onDragOver($event, dateStr(day))"
@@ -176,8 +188,8 @@ function toggleExpand(ds: string) {
               @drop="onDrop($event, dateStr(day))"
             >
               <div
-                class="text-[11px] font-medium mb-0.5 px-0.5"
-                :class="dateStr(day) === todayStr ? 'text-accent font-bold' : 'text-gray-500'"
+                class="text-[11px] mb-0.5 px-0.5"
+                :class="dateStr(day) === todayStr ? 'text-accent font-bold' : 'font-medium text-gray-500'"
               >
                 {{ day.getDate() === 1 && day.getMonth() === m.month
                   ? `1 ${monthNames[day.getMonth()].slice(0,3)}`

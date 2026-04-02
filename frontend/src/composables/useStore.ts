@@ -141,7 +141,7 @@ function getAssignmentLabel(eid: number, tid: number): string {
 
 function isCatPublic(catName: string): boolean {
   const cat = db.categories.find(c => c.name === catName)
-  return !cat || !(cat as any).hidden
+  return !cat || !cat.hidden
 }
 
 function getPublicEvents(): Event[] {

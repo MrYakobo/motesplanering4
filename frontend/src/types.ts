@@ -36,6 +36,7 @@ export interface Team {
 export interface Category {
   name: string
   color: string
+  hidden?: boolean
 }
 
 export interface Assignment {

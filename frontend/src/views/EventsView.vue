@@ -20,6 +20,7 @@ const { show: toast } = useToast()
 
 const editingEvent = ref<Event | null>(null)
 const generateOpen = ref(false)
+const highlightDate = ref<string | null>(null)
 
 // ── Propagation state ────────────────────────────────────────────────────────
 const propagateOpen = ref(false)
@@ -70,8 +71,9 @@ function newEvent(date?: string) {
   }
 }
 
-function onCalendarSwitchWeek(_dateStr: string) {
-  setView('week')
+function onCalendarSwitchWeek(dateStr: string) {
+  highlightDate.value = dateStr
+  setView('calendar')
 }
 
 const views: { id: EventView; icon: any; label: string }[] = [
@@ -216,6 +218,7 @@ async function onMoveEvent(eventId: number, newDate: string) {
     <CalendarMonth
       v-else-if="currentView === 'calendar'"
       :events="filteredEvents"
+      :highlight-date="highlightDate"
       @select="onSelect"
       @create="newEvent"
       @move="onMoveEvent"
@@ -234,7 +237,7 @@ async function onMoveEvent(eventId: number, newDate: string) {
     <CalendarYear
       v-else-if="currentView === 'year'"
       :events="filteredEvents"
-      @switch-week="onCalendarSwitchWeek"
+      @select-date="onCalendarSwitchWeek"
     />
 
     <RecordModal
