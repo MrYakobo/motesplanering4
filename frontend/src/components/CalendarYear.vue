@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
-import { useToday } from '../composables/useToday'
+import { useToday, localDateStr } from '../composables/useToday'
 import type { Event } from '../types'
 
 const props = defineProps<{ events: Event[] }>()
@@ -19,7 +19,7 @@ const years = computed(() => {
   return [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1]
 })
 
-function dateStr(d: Date) { return d.toISOString().slice(0, 10) }
+function dateStr(d: Date) { return localDateStr(d) }
 
 function weekNumber(d: Date) {
   const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))

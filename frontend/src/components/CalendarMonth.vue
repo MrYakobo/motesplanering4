@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, nextTick, onMounted } from 'vue'
 import { useCategories } from '../composables/useCategories'
-import { useToday } from '../composables/useToday'
+import { useToday, localDateStr } from '../composables/useToday'
 import type { Event } from '../types'
 
 const props = defineProps<{ events: Event[] }>()
@@ -66,7 +66,7 @@ function daysForWeek(weekMon: Date) {
 }
 
 function dateStr(d: Date) {
-  return d.toISOString().slice(0, 10)
+  return localDateStr(d)
 }
 
 function weekNumber(d: Date) {

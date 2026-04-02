@@ -1,5 +1,14 @@
 import { ref, computed } from 'vue'
 
+// ── Local date helper ────────────────────────────────────────────────────────
+/** Format a Date as YYYY-MM-DD in local timezone (not UTC) */
+export function localDateStr(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 // ── Simulated date ───────────────────────────────────────────────────────────
 // Global reactive state — shared across all components
 const simDate = ref<string | null>(localStorage.getItem('simDate'))
@@ -10,11 +19,7 @@ export function useToday() {
     simDate.value ? new Date(simDate.value + 'T00:00:00') : new Date()
   )
 
-  /** The effective "today" as YYYY-MM-DD string */
-  const todayStr = computed(() => {
-    const d = today.value
-    return d.toISOString().slice(0, 10)
-  })
+  const todayStr = computed(() => localDateStr(today.value))
 
   /** Whether a simulated date is active */
   const isSimulated = computed(() => !!simDate.value)

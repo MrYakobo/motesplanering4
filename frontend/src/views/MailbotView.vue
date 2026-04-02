@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useStore } from '../composables/useStore'
-import { useToday } from '../composables/useToday'
+import { useToday, localDateStr } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
 import { useApi } from '../composables/useApi'
 import { Mail, AlertTriangle, CheckCircle, Zap, Send } from 'lucide-vue-next'
@@ -23,7 +23,7 @@ const upcomingEvents = computed(() =>
 function futureDate(days: number) {
   const d = new Date(todayDate.value)
   d.setDate(d.getDate() + days)
-  return d.toISOString().slice(0, 10)
+  return localDateStr(d)
 }
 
 function getAssignedPeople(eid: number) {

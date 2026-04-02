@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, nextTick, onMounted, onUnmounted } from 'vue'
 import { useStore } from '../composables/useStore'
-import { useToday } from '../composables/useToday'
+import { useToday, localDateStr } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
 import { Shuffle, Users, User } from 'lucide-vue-next'
 import RecordModal from '../components/RecordModal.vue'
@@ -174,7 +174,7 @@ function autoDistributePersons(taskId: number) {
   // Build pool from recent 6 months
   const sixAgo = new Date(todayStr.value + 'T00:00:00')
   sixAgo.setMonth(sixAgo.getMonth() - 6)
-  const cutoff = sixAgo.toISOString().slice(0, 10)
+  const cutoff = localDateStr(sixAgo)
   const recentIds = new Set<number>()
   db.events.forEach(ev => {
     if (ev.date < cutoff || ev.date >= todayStr.value) return

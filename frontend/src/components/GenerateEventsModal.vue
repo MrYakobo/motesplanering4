@@ -2,7 +2,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { X, Plus, Trash2, RefreshCw } from 'lucide-vue-next'
 import { useStore } from '../composables/useStore'
-import { useToday } from '../composables/useToday'
+import { useToday, localDateStr } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
 import type { RecurringPatterns, Event } from '../types'
 
@@ -15,8 +15,8 @@ const { show: toast } = useToast()
 
 const dayLabels = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'] as const
 
-const fromDate = ref(todayDate.value.toISOString().slice(0, 10))
-const toDate = ref(new Date(todayDate.value.getFullYear(), todayDate.value.getMonth() + 3, todayDate.value.getDate()).toISOString().slice(0, 10))
+const fromDate = ref(localDateStr(todayDate.value))
+const toDate = ref(localDateStr(new Date(todayDate.value.getFullYear(), todayDate.value.getMonth() + 3, todayDate.value.getDate())))
 
 const patterns = reactive<RecurringPatterns>({})
 
@@ -64,7 +64,7 @@ const preview = computed(() => {
       if (e.filter === 'ODD' && wn % 2 === 0) continue
       if (e.filter === 'EVEN' && wn % 2 !== 0) continue
       results.push({
-        date: d.toISOString().slice(0, 10),
+        date: localDateStr(d),
         time: e.time || '',
         title: e.title,
         category: e.category || '',
