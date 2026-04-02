@@ -6,3 +6,8 @@
   --color-accent-light: #ede9fe;
   --color-accent-mid: #a78bfa;
 }
+
+@media (max-width: 480px) {
+  /* Add bottom padding for mobile bottom nav */
+  body { padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px)); }
+}

@@ -10,11 +10,12 @@ import {
   Calendar, Table, Users, ListChecks, UsersRound,
   Home, Monitor, IdCard, ClipboardList, User,
   PackageOpen, FileText, Mail, ChevronDown,
+  CalendarDays, Menu, Tags,
 } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
-const { isViewer, isMember } = useStore()
+const { isViewer, isMember, setView } = useStore()
 const { todayStr, isSimulated, simDate, setSimDate, clearSimDate } = useToday()
 
 const showLogin = ref(false)
@@ -48,6 +49,24 @@ const viewerTabs = [
 ]
 
 const isOutputActive = () => outputTabs.some(t => isActive(t.path))
+
+const moreOpen = ref(false)
+
+const moreItems = [
+  { path: '/contacts', label: 'Kontakter', icon: Users },
+  { path: '/teams', label: 'Team', icon: UsersRound },
+  { path: '/categories', label: 'Kategorier', icon: Tags },
+  { path: '/slides', label: 'Slides', icon: Monitor },
+  { path: '/export', label: 'Månadsblad', icon: FileText },
+  { path: '/mailbot', label: 'Påminnelsemail', icon: Mail },
+  { path: '/namnskyltar', label: 'Namnskyltar', icon: IdCard },
+  { path: '/sunday', label: 'Söndag', icon: ClipboardList },
+]
+
+function goMobile(path: string) {
+  moreOpen.value = false
+  router.push(path)
+}
 
 function onLoginSuccess() {
   showLogin.value = false
@@ -153,6 +172,49 @@ function onLoginSuccess() {
       @close="showSettings = false"
     />
   </nav>
+
+  <!-- Mobile bottom nav (≤480px) -->
+  <div class="mob-nav">
+    <template v-if="isViewer || isMember">
+      <button v-for="tab in viewerTabs" :key="tab.path" @click="go(tab.path)" :class="{ active: isActive(tab.path) }">
+        <component :is="tab.icon" :size="16" /><span>{{ tab.label }}</span>
+      </button>
+    </template>
+    <template v-else>
+      <button @click="goMobile('/events')" :class="{ active: isActive('/events') }">
+        <Calendar :size="16" /><span>Händelser</span>
+      </button>
+      <button @click="goMobile('/schema')" :class="{ active: isActive('/schema') }">
+        <Table :size="16" /><span>Schema</span>
+      </button>
+      <button @click="goMobile('/events'); setView('calendar')" :class="{ active: false }">
+        <CalendarDays :size="16" /><span>Månadsvy</span>
+      </button>
+      <button @click="moreOpen = !moreOpen" :class="{ active: moreOpen }">
+        <Menu :size="16" /><span>Mer</span>
+      </button>
+    </template>
+  </div>
+
+  <!-- More sheet -->
+  <Teleport to="body">
+    <Transition name="sheet">
+      <div v-if="moreOpen" class="fixed inset-0 z-[38]" @click="moreOpen = false">
+        <div class="absolute inset-0 bg-black/30" />
+        <div class="absolute bottom-[calc(48px+env(safe-area-inset-bottom,0px))] left-0 right-0 bg-[#1a1a2e] border-t border-[#2d2d4e] p-2 flex flex-col gap-0.5 max-h-[60vh] overflow-y-auto z-[39]" @click.stop>
+          <button
+            v-for="item in moreItems" :key="item.path"
+            @click="goMobile(item.path)"
+            class="flex items-center gap-3 px-4 py-2.5 rounded-md text-sm text-gray-300 bg-transparent border-none cursor-pointer hover:bg-[#2d2d4e] hover:text-white transition-colors w-full text-left"
+            :class="{ 'text-white bg-accent/20': isActive(item.path) }"
+          >
+            <component :is="item.icon" :size="18" />
+            {{ item.label }}
+          </button>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -169,4 +231,45 @@ function onLoginSuccess() {
 }
 .nav-drop-item:hover { @apply bg-[#2d2d4e] text-white; }
 .nav-drop-item.active { @apply bg-accent text-white; }
+
+/* Mobile bottom nav — hidden by default, shown at ≤480px */
+.mob-nav {
+  display: none;
+}
+@media (max-width: 480px) {
+  nav { display: none !important; }
+  .mob-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    background: #1a1a2e;
+    border-top: 1px solid #2d2d4e;
+    padding: 4px 0;
+    padding-bottom: env(safe-area-inset-bottom, 4px);
+  }
+  .mob-nav button {
+    flex: 1;
+    background: none;
+    border: none;
+    color: #9ca3af;
+    font-size: 9px;
+    padding: 4px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    cursor: pointer;
+    transition: color 0.12s ease;
+  }
+  .mob-nav button.active { color: var(--accent); }
+  .mob-nav button:active { transform: scale(0.9); }
+}
+
+/* Sheet transition */
+.sheet-enter-active { transition: opacity 0.15s ease; }
+.sheet-leave-active { transition: opacity 0.12s ease; }
+.sheet-enter-from, .sheet-leave-to { opacity: 0; }
 </style>
