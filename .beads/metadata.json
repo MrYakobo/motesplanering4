@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "motesplanering4",
+  "project_id": "16cc602e-37d7-4fc1-af77-fd07243dcb97"
+}
