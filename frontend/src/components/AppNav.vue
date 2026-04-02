@@ -9,6 +9,7 @@ import SettingsModal from './SettingsModal.vue'
 import {
   Calendar, Table, Users, ListChecks, UsersRound,
   Home, Monitor, IdCard, ClipboardList,
+  PackageOpen, FileText, Mail, ChevronDown,
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -19,7 +20,7 @@ const { todayStr, isSimulated, simDate, setSimDate, clearSimDate } = useToday()
 const showLogin = ref(false)
 const showSettings = ref(false)
 
-const isActive = (path: string) => route.path === path
+const isActive = (path: string) => route.path.startsWith(path)
 const go = (path: string) => router.push(path)
 
 const adminTabs = [
@@ -30,12 +31,22 @@ const adminTabs = [
   { path: '/teams', label: 'Team', icon: UsersRound },
 ]
 
+const outputTabs = [
+  { path: '/slides', label: 'Slides', icon: Monitor },
+  { path: '/export', label: 'Månadsblad', icon: FileText },
+  { path: '/mailbot', label: 'Påminnelsemail', icon: Mail },
+  { path: '/namnskyltar', label: 'Namnskyltar', icon: IdCard },
+  { path: '/sunday', label: 'Söndag', icon: ClipboardList },
+]
+
 const viewerTabs = [
   { path: '/home', label: 'Hem', icon: Home },
   { path: '/slides', label: 'Slides', icon: Monitor },
   { path: '/namnskyltar', label: 'Skyltar', icon: IdCard },
   { path: '/sunday', label: 'Söndag', icon: ClipboardList },
 ]
+
+const isOutputActive = () => outputTabs.some(t => isActive(t.path))
 
 function onLoginSuccess() {
   showLogin.value = false
@@ -71,6 +82,30 @@ function onLoginSuccess() {
         <component :is="tab.icon" :size="14" />
         {{ tab.label }}
       </button>
+
+      <!-- Outputs dropdown -->
+      <div class="nav-dropdown group relative">
+        <button
+          class="nav-btn"
+          :class="{ active: isOutputActive() }"
+        >
+          <PackageOpen :size="14" />
+          Utdata
+          <ChevronDown :size="11" class="opacity-60" />
+        </button>
+        <div class="nav-dropdown-menu hidden group-hover:flex flex-col absolute top-full left-0 bg-[#1a1a2e] border border-[#2d2d4e] rounded-md p-1 min-w-[160px] z-[200] shadow-[0_8px_24px_rgba(0,0,0,.4)]">
+          <button
+            v-for="tab in outputTabs"
+            :key="tab.path"
+            @click="go(tab.path)"
+            class="nav-drop-item"
+            :class="{ active: isActive(tab.path) }"
+          >
+            <component :is="tab.icon" :size="14" />
+            {{ tab.label }}
+          </button>
+        </div>
+      </div>
     </template>
 
     <span class="flex-1" />
@@ -127,4 +162,10 @@ function onLoginSuccess() {
 }
 .nav-btn:hover { @apply bg-[#2d2d4e] text-white; }
 .nav-btn.active { @apply bg-accent text-white; }
+.nav-drop-item {
+  @apply flex items-center gap-2 px-3 py-1.5 rounded text-[13px] text-gray-400
+         cursor-pointer border-none bg-transparent transition-colors w-full text-left;
+}
+.nav-drop-item:hover { @apply bg-[#2d2d4e] text-white; }
+.nav-drop-item.active { @apply bg-accent text-white; }
 </style>
