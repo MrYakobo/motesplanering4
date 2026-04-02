@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useStore } from '../composables/useStore'
 import { useToday } from '../composables/useToday'
 import UserMenu from './UserMenu.vue'
 import LoginModal from './LoginModal.vue'
 import SettingsModal from './SettingsModal.vue'
+import { useApi } from '../composables/useApi'
 import {
   Calendar, Table, Users, ListChecks, UsersRound,
   Home, Monitor, IdCard, ClipboardList, User,
@@ -15,14 +16,26 @@ import {
 
 const router = useRouter()
 const route = useRoute()
-const { isViewer, isMember, setView } = useStore()
+const { isViewer, isMember, isAdmin, db, memberContactId } = useStore()
 const { todayStr, isSimulated, simDate, setSimDate, clearSimDate } = useToday()
 
 const showLogin = ref(false)
 const showSettings = ref(false)
+const moreOpen = ref(false)
+const mobUserOpen = ref(false)
 
 const isActive = (path: string) => route.path.startsWith(path)
 const go = (path: string) => router.push(path)
+
+const userInitials = computed(() => {
+  if (isAdmin.value) return 'AD'
+  if (isMember.value) {
+    const c = db.contacts.find(x => x.id === memberContactId.value)
+    const parts = (c?.name || 'M').split(' ').filter(Boolean)
+    return parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase()
+  }
+  return '?'
+})
 
 const adminTabs = [
   { path: '/events', label: 'Händelser', icon: Calendar },
@@ -56,8 +69,6 @@ const memberTabs = [
 ]
 
 const isOutputActive = () => outputTabs.some(t => isActive(t.path))
-
-const moreOpen = ref(false)
 
 const moreItems = [
   { path: '/contacts', label: 'Kontakter', icon: Users },
@@ -188,19 +199,26 @@ function onLoginSuccess() {
       </button>
     </template>
     <template v-else>
-      <button @click="goMobile('/events')" :class="{ active: isActive('/events') }">
+      <button @click="goMobile('/events')" :class="{ active: route.path === '/events' }">
         <Calendar :size="16" /><span>Händelser</span>
       </button>
       <button @click="goMobile('/schema')" :class="{ active: isActive('/schema') }">
         <Table :size="16" /><span>Schema</span>
       </button>
-      <button @click="goMobile('/events'); setView('calendar')" :class="{ active: false }">
-        <CalendarDays :size="16" /><span>Månadsvy</span>
+      <button @click="goMobile('/calendar')" :class="{ active: route.path === '/calendar' }">
+        <CalendarDays :size="16" /><span>Månad</span>
       </button>
       <button @click="moreOpen = !moreOpen" :class="{ active: moreOpen }">
         <Menu :size="16" /><span>Mer</span>
       </button>
     </template>
+    <!-- User avatar -->
+    <button v-if="!isViewer" class="mob-user-btn" @click.stop="mobUserOpen = !mobUserOpen">
+      <span class="mob-avatar">{{ userInitials }}</span>
+    </button>
+    <button v-else @click="showLogin = true" class="mob-user-btn">
+      <User :size="16" />
+    </button>
   </div>
 
   <!-- More sheet -->
@@ -218,6 +236,26 @@ function onLoginSuccess() {
             <component :is="item.icon" :size="18" />
             {{ item.label }}
           </button>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Mobile user sheet -->
+    <Transition name="sheet">
+      <div v-if="mobUserOpen" class="fixed inset-0 z-[38]" @click="mobUserOpen = false">
+        <div class="absolute inset-0 bg-black/30" />
+        <div class="absolute bottom-[calc(48px+env(safe-area-inset-bottom,0px))] left-0 right-0 bg-[#1a1a2e] border-t border-[#2d2d4e] overflow-hidden z-[39]" @click.stop>
+          <div class="p-4 flex items-center gap-3 border-b border-[#2d2d4e]">
+            <div class="w-10 h-10 rounded-full bg-accent text-white text-sm font-bold flex items-center justify-center shrink-0">{{ userInitials }}</div>
+            <div>
+              <div class="text-white font-semibold text-sm">{{ isAdmin ? 'Admin' : 'Medlem' }}</div>
+              <div class="text-gray-400 text-xs">{{ isAdmin ? 'Administratör' : 'Medlem' }}</div>
+            </div>
+          </div>
+          <div class="p-1.5">
+            <button v-if="isAdmin" @click="showSettings = true; mobUserOpen = false" class="mob-sheet-btn">Inställningar</button>
+            <button @click="useApi().logout()" class="mob-sheet-btn text-red-400">Logga ut</button>
+          </div>
         </div>
       </div>
     </Transition>
@@ -273,10 +311,41 @@ function onLoginSuccess() {
   }
   .mob-nav button.active { color: var(--accent); }
   .mob-nav button:active { transform: scale(0.9); }
+  .mob-nav .mob-user-btn {
+    flex: none;
+    width: 40px;
+    padding: 4px 0;
+  }
+  .mob-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+  }
 }
 
 /* Sheet transition */
 .sheet-enter-active { transition: opacity 0.15s ease; }
 .sheet-leave-active { transition: opacity 0.12s ease; }
 .sheet-enter-from, .sheet-leave-to { opacity: 0; }
+.mob-sheet-btn {
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #ccc;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
 </style>

@@ -278,8 +278,8 @@ onMounted(() => {
     </div>
 
     <!-- Grid -->
-    <div ref="gridRef" class="flex-1 overflow-auto">
-      <table class="border-collapse" style="width:auto;min-width:100%">
+    <div ref="gridRef" class="flex-1 overflow-auto" style="-webkit-overflow-scrolling:touch">
+      <table class="border-collapse" style="width:max-content;min-width:100%">
         <thead>
           <tr>
             <th class="sticky top-0 left-0 z-[5] bg-gray-50 border-b-2 border-gray-200 px-2 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">

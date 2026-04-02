@@ -19,6 +19,19 @@ const { catStyle } = useCategories()
 
 const scrollRef = ref<HTMLElement | null>(null)
 const hasScrolled = ref(false)
+const todayDirection = ref<'above' | 'below' | 'visible'>('below')
+
+function updateTodayVisibility() {
+  const container = scrollRef.value
+  if (!container) return
+  const el = container.querySelector('.today-row, .today-sep') as HTMLElement
+  if (!el) { todayDirection.value = 'below'; return }
+  const cRect = container.getBoundingClientRect()
+  const eRect = el.getBoundingClientRect()
+  if (eRect.bottom < cRect.top) todayDirection.value = 'above'
+  else if (eRect.top > cRect.bottom) todayDirection.value = 'below'
+  else todayDirection.value = 'visible'
+}
 
 const hasTodayEvent = computed(() => props.events.some(e => e.date === todayStr.value))
 
@@ -53,6 +66,8 @@ onMounted(() => {
     hasScrolled.value = true
     const el = scrollRef.value?.querySelector('.today-row, .today-sep') as HTMLElement
     if (el) el.scrollIntoView({ block: 'start', behavior: 'instant' })
+    scrollRef.value?.addEventListener('scroll', updateTodayVisibility)
+    updateTodayVisibility()
   })
 })
 </script>
@@ -120,10 +135,11 @@ onMounted(() => {
     </div>
     <!-- Floating scroll-to-today button -->
     <button
+      v-show="todayDirection !== 'visible'"
       @click="scrollToToday"
       class="absolute bottom-4 right-4 bg-accent text-white text-xs px-3 py-1.5 rounded-full shadow-lg cursor-pointer hover:bg-accent-hover transition-colors z-20"
     >
-      ↕ Idag
+      {{ todayDirection === 'above' ? '↑' : '↓' }} Idag
     </button>
   </div>
 </template>

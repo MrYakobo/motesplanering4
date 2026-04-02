@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useStore } from '../composables/useStore'
 import { useToday } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
+import { useRoute } from 'vue-router'
 import EventList from '../components/EventList.vue'
 import RecordModal from '../components/RecordModal.vue'
 import EventForm from '../components/EventForm.vue'
@@ -17,6 +18,12 @@ import GenerateEventsModal from '../components/GenerateEventsModal.vue'
 const { db, selectedId, searchQuery, persist, assignments, currentView, setView } = useStore()
 const { todayStr } = useToday()
 const { show: toast } = useToast()
+const route = useRoute()
+
+// Sync view from route meta (for /calendar and /year routes)
+watch(() => route.meta.view, (v) => {
+  if (v === 'calendar' || v === 'year') setView(v as EventView)
+}, { immediate: true })
 
 const editingEvent = ref<Event | null>(null)
 const generateOpen = ref(false)
