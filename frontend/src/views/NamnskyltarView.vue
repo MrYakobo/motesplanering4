@@ -6,7 +6,7 @@ import { useFullscreen } from '../composables/useFullscreen'
 import { useRoute, useRouter } from 'vue-router'
 import { Maximize, Minimize } from 'lucide-vue-next'
 
-const { db, assignments } = useStore()
+const { db, assignments, getPublicEvents } = useStore()
 const { isFullscreen, toggle: toggleFullscreen, syncFromRoute } = useFullscreen()
 const route = useRoute()
 const router = useRouter()
@@ -38,7 +38,7 @@ function selectTask(taskId: number | null) {
 }
 
 const todayEvents = computed(() =>
-  db.events.filter(e => e.date === today.value).sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+  getPublicEvents().filter(e => e.date === today.value).sort((a, b) => (a.time || '').localeCompare(b.time || ''))
 )
 
 const assignedPeople = computed(() => {

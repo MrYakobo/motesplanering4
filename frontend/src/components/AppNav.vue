@@ -42,6 +42,13 @@ const outputTabs = [
 
 const viewerTabs = [
   { path: '/home', label: 'Hem', icon: Home },
+  { path: '/slides', label: 'Slides', icon: Monitor },
+  { path: '/namnskyltar', label: 'Skyltar', icon: IdCard },
+  { path: '/sunday', label: 'Söndag', icon: ClipboardList },
+]
+
+const memberTabs = [
+  { path: '/home', label: 'Hem', icon: Home },
   { path: '/my', label: 'Mitt schema', icon: User },
   { path: '/slides', label: 'Slides', icon: Monitor },
   { path: '/namnskyltar', label: 'Skyltar', icon: IdCard },
@@ -80,7 +87,7 @@ function onLoginSuccess() {
 
     <template v-if="isViewer || isMember">
       <button
-        v-for="tab in viewerTabs"
+        v-for="tab in (isMember ? memberTabs : viewerTabs)"
         :key="tab.path"
         @click="go(tab.path)"
         class="nav-btn"
@@ -176,7 +183,7 @@ function onLoginSuccess() {
   <!-- Mobile bottom nav (≤480px) -->
   <div class="mob-nav">
     <template v-if="isViewer || isMember">
-      <button v-for="tab in viewerTabs" :key="tab.path" @click="go(tab.path)" :class="{ active: isActive(tab.path) }">
+      <button v-for="tab in (isMember ? memberTabs : viewerTabs)" :key="tab.path" @click="go(tab.path)" :class="{ active: isActive(tab.path) }">
         <component :is="tab.icon" :size="16" /><span>{{ tab.label }}</span>
       </button>
     </template>

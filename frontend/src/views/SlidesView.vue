@@ -6,7 +6,7 @@ import { useFullscreen } from '../composables/useFullscreen'
 import { Maximize, Minimize } from 'lucide-vue-next'
 import SlidesSidebar from '../components/SlidesSidebar.vue'
 
-const { db, isAdmin } = useStore()
+const { db, isAdmin, getPublicEvents } = useStore()
 const { today } = useToday()
 const { isFullscreen, toggle } = useFullscreen()
 
@@ -28,7 +28,7 @@ const weekEvents = computed(() => {
   sun.setDate(mon.getDate() + 6)
   const monStr = localDateStr(mon)
   const sunStr = localDateStr(sun)
-  return db.events
+  return getPublicEvents()
     .filter(e => e.date >= monStr && e.date <= sunStr)
     .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')))
 })

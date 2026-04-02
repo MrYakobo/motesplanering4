@@ -5,12 +5,12 @@ import { useToday } from '../composables/useToday'
 import { useFullscreen } from '../composables/useFullscreen'
 import { Maximize, Minimize } from 'lucide-vue-next'
 
-const { db, assignments } = useStore()
+const { db, assignments, getPublicEvents } = useStore()
 const { isFullscreen, toggle } = useFullscreen()
 const { todayStr: today } = useToday()
 
 const todayEvents = computed(() =>
-  db.events
+  getPublicEvents()
     .filter(e => e.date === today.value)
     .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
 )

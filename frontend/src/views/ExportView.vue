@@ -5,7 +5,7 @@ import { useToday } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
 import { useApi } from '../composables/useApi'
 
-const { db } = useStore()
+const { db, getPublicEvents } = useStore()
 const { todayStr, today: todayDate } = useToday()
 const { show: toast } = useToast()
 const api = useApi()
@@ -23,7 +23,7 @@ const endDate = computed(() => {
 })
 
 const filteredEvents = computed(() =>
-  db.events
+  getPublicEvents()
     .filter(e => e.date >= todayStr.value && e.date <= endDate.value)
     .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')))
 )
