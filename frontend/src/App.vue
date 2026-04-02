@@ -1,12 +1,19 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useStore } from './composables/useStore'
 import AppNav from './components/AppNav.vue'
 import ToastContainer from './components/ToastContainer.vue'
 
-const { loading, loadApp } = useStore()
+const { loading, loadApp, isViewer } = useStore()
+const router = useRouter()
 
-onMounted(() => loadApp())
+onMounted(async () => {
+  await loadApp()
+  if (isViewer.value && router.currentRoute.value.path === '/events') {
+    router.replace('/home')
+  }
+})
 </script>
 
 <template>
