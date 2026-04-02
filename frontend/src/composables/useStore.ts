@@ -13,6 +13,7 @@ const db = reactive<Database>({
   teams: [],
   categories: [],
   schedules: {},
+  recurring_events: {},
   settings: {},
   _version: 0,
 })

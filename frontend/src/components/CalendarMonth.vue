@@ -108,69 +108,71 @@ function toggleExpand(ds: string) {
 </script>
 
 <template>
-  <div class="flex-1 overflow-hidden flex flex-col">
-    <div ref="scrollRef" class="flex-1 overflow-y-auto">
+  <div class="flex-1 overflow-hidden flex flex-col relative">
+    <div ref="scrollRef" class="flex-1 overflow-y-auto snap-y snap-mandatory">
       <div
         v-for="m in months" :key="`${m.year}-${m.month}`"
-        class="month-section border-b border-gray-200"
+        class="month-section snap-start h-full min-h-full flex flex-col"
       >
-        <div class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-3 py-1.5 text-sm font-bold text-gray-800 border-b border-gray-100 capitalize">
+        <div class="shrink-0 bg-white/95 backdrop-blur-sm px-3 py-1.5 text-sm font-bold text-gray-800 border-b border-gray-100 capitalize z-10">
           {{ monthNames[m.month] }} <span class="font-normal text-gray-400">{{ m.year }}</span>
         </div>
         <!-- Day headers -->
-        <div class="grid grid-cols-[32px_repeat(7,1fr)] text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100">
-          <div class="px-1 py-1 text-center">v.</div>
-          <div v-for="dh in dayHeaders" :key="dh" class="px-1 py-1 text-center">{{ dh }}</div>
+        <div class="shrink-0 cal-row text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100">
+          <div class="cal-wk-col text-center py-1">v.</div>
+          <div v-for="dh in dayHeaders" :key="dh" class="cal-day-col text-center py-1">{{ dh }}</div>
         </div>
-        <!-- Weeks -->
-        <div
-          v-for="(weekMon, wi) in weeksForMonth(m.year, m.month)" :key="wi"
-          class="grid grid-cols-[32px_repeat(7,1fr)] border-b border-gray-50 min-h-[72px]"
-        >
-          <div class="text-[9px] text-gray-300 font-mono flex items-start justify-center pt-1">
-            {{ weekNumber(weekMon) }}
-          </div>
+        <!-- Weeks — fill remaining height equally -->
+        <div class="flex-1 flex flex-col">
           <div
-            v-for="day in daysForWeek(weekMon)" :key="dateStr(day)"
-            class="border-l border-gray-100 px-0.5 py-0.5 min-h-[72px] cursor-pointer transition-colors hover:bg-gray-50"
-            :class="{
-              'opacity-30': day.getMonth() !== m.month,
-              'month-today': dateStr(day) === todayStr,
-              'bg-accent/5': dateStr(day) === todayStr,
-            }"
-            @click="emit('create', dateStr(day))"
+            v-for="(weekMon, wi) in weeksForMonth(m.year, m.month)" :key="wi"
+            class="cal-row flex-1 border-b border-gray-50 min-h-0"
           >
-            <div
-              class="text-[11px] font-medium mb-0.5 px-0.5"
-              :class="dateStr(day) === todayStr ? 'text-accent font-bold' : 'text-gray-500'"
-            >
-              {{ day.getDate() === 1 && day.getMonth() === m.month
-                ? `1 ${monthNames[day.getMonth()].slice(0,3)}`
-                : day.getDate() }}
+            <div class="cal-wk-col text-[9px] text-gray-300 font-mono flex items-start justify-center pt-1">
+              {{ weekNumber(weekMon) }}
             </div>
             <div
-              v-for="ev in (byDate[dateStr(day)] || []).slice(0, expandedDate === dateStr(day) ? 999 : MAX_VIS)"
-              :key="ev.id"
-              class="text-[10px] leading-tight rounded px-1 py-px mb-px truncate cursor-pointer hover:opacity-80"
-              :style="catStyle(ev.category)"
-              @click.stop="emit('select', ev.id)"
+              v-for="day in daysForWeek(weekMon)" :key="dateStr(day)"
+              class="cal-day-col border-l border-gray-100 px-0.5 py-0.5 cursor-pointer transition-colors hover:bg-gray-50 overflow-hidden"
+              :class="{
+                'opacity-30': day.getMonth() !== m.month,
+                'month-today': dateStr(day) === todayStr,
+                'bg-accent/5': dateStr(day) === todayStr,
+              }"
+              @click="emit('create', dateStr(day))"
             >
-              <span class="text-[9px] opacity-60">{{ ev.time }} </span>{{ ev.title.replace(/<[^>]*>/g, '') }}
-            </div>
-            <div
-              v-if="!expandedDate || expandedDate !== dateStr(day)"
-              v-show="(byDate[dateStr(day)] || []).length > MAX_VIS"
-              class="text-[9px] text-accent cursor-pointer hover:underline px-1"
-              @click.stop="toggleExpand(dateStr(day))"
-            >
-              +{{ (byDate[dateStr(day)] || []).length - MAX_VIS }} till
-            </div>
-            <div
-              v-if="expandedDate === dateStr(day) && (byDate[dateStr(day)] || []).length > MAX_VIS"
-              class="text-[9px] text-gray-400 cursor-pointer hover:underline px-1"
-              @click.stop="toggleExpand(dateStr(day))"
-            >
-              visa färre
+              <div
+                class="text-[11px] font-medium mb-0.5 px-0.5"
+                :class="dateStr(day) === todayStr ? 'text-accent font-bold' : 'text-gray-500'"
+              >
+                {{ day.getDate() === 1 && day.getMonth() === m.month
+                  ? `1 ${monthNames[day.getMonth()].slice(0,3)}`
+                  : day.getDate() }}
+              </div>
+              <div
+                v-for="ev in (byDate[dateStr(day)] || []).slice(0, expandedDate === dateStr(day) ? 999 : MAX_VIS)"
+                :key="ev.id"
+                class="text-[10px] leading-tight rounded px-1 py-px mb-px truncate cursor-pointer hover:opacity-80"
+                :style="catStyle(ev.category)"
+                @click.stop="emit('select', ev.id)"
+              >
+                <span class="text-[9px] opacity-60 mr-0.5">{{ ev.time }}</span>{{ ev.title.replace(/<[^>]*>/g, '') }}
+              </div>
+              <div
+                v-if="!expandedDate || expandedDate !== dateStr(day)"
+                v-show="(byDate[dateStr(day)] || []).length > MAX_VIS"
+                class="text-[9px] text-accent cursor-pointer hover:underline px-1"
+                @click.stop="toggleExpand(dateStr(day))"
+              >
+                +{{ (byDate[dateStr(day)] || []).length - MAX_VIS }} till
+              </div>
+              <div
+                v-if="expandedDate === dateStr(day) && (byDate[dateStr(day)] || []).length > MAX_VIS"
+                class="text-[9px] text-gray-400 cursor-pointer hover:underline px-1"
+                @click.stop="toggleExpand(dateStr(day))"
+              >
+                visa färre
+              </div>
             </div>
           </div>
         </div>
@@ -185,3 +187,18 @@ function toggleExpand(ds: string) {
     </button>
   </div>
 </template>
+
+<style scoped>
+.cal-row {
+  display: grid;
+  grid-template-columns: 32px repeat(7, 1fr);
+}
+.cal-wk-col {
+  min-width: 32px;
+  max-width: 32px;
+}
+.cal-day-col {
+  min-width: 0;
+  width: 100%;
+}
+</style>

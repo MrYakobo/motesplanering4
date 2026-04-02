@@ -8,13 +8,15 @@ import EventForm from '../components/EventForm.vue'
 import CalendarMonth from '../components/CalendarMonth.vue'
 import CalendarWeek from '../components/CalendarWeek.vue'
 import CalendarYear from '../components/CalendarYear.vue'
-import { PlusCircle, List, CalendarDays, CalendarRange, Grid3x3 } from 'lucide-vue-next'
+import { PlusCircle, List, CalendarDays, CalendarRange, Grid3x3, RefreshCw } from 'lucide-vue-next'
 import type { Event, EventView } from '../types'
+import GenerateEventsModal from '../components/GenerateEventsModal.vue'
 
 const { db, selectedId, searchQuery, persist, assignments, currentView, setView } = useStore()
 const { show: toast } = useToast()
 
 const editingEvent = ref<Event | null>(null)
+const generateOpen = ref(false)
 
 const modalOpen = computed(() => editingEvent.value !== null)
 

@@ -78,6 +78,18 @@ export interface AppSettings {
   }
 }
 
+export interface RecurringEntry {
+  title: string
+  time: string
+  category?: string
+  filter?: 'ODD' | 'EVEN'
+  expectedTasks?: number[]
+  promoSlides?: string[]
+  infoLink?: string
+}
+
+export type RecurringPatterns = Record<string, RecurringEntry[]>
+
 export interface Database {
   events: Event[]
   contacts: Contact[]
@@ -85,6 +97,7 @@ export interface Database {
   teams: Team[]
   categories: Category[]
   schedules: Record<string, Record<string, Assignment>>
+  recurring_events: RecurringPatterns
   settings: AppSettings
   _version: number
 }
