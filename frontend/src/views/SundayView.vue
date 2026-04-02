@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useStore } from '../composables/useStore'
+import { useToday } from '../composables/useToday'
+import { useFullscreen } from '../composables/useFullscreen'
+import { Maximize, Minimize } from 'lucide-vue-next'
 
 const { db, assignments } = useStore()
-
-const today = new Date().toISOString().slice(0, 10)
+const { isFullscreen, toggle } = useFullscreen()
+const { todayStr: today } = useToday()
 
 const todayEvents = computed(() =>
   db.events
-    .filter(e => e.date === today)
+    .filter(e => e.date === today.value)
     .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
 )
 
@@ -32,7 +35,10 @@ function getAssignments(eid: number) {
 </script>
 
 <template>
-  <div class="flex-1 overflow-y-auto bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] text-white p-6">
+  <div class="flex-1 overflow-y-auto bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] text-white p-6 relative">
+    <button @click="toggle" class="absolute top-4 right-4 p-1.5 rounded-md bg-white/10 text-white/50 hover:text-white hover:bg-white/20 border-none cursor-pointer transition-colors z-10" :title="isFullscreen ? 'Avsluta fullskärm (Esc)' : 'Fullskärm (F)'">
+      <component :is="isFullscreen ? Minimize : Maximize" :size="16" />
+    </button>
     <div class="max-w-2xl mx-auto">
       <h1 class="text-2xl font-extrabold mb-1">Tjänstgöring idag</h1>
       <p class="text-sm text-white/40 mb-8">{{ today }}</p>

@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useStore } from '../composables/useStore'
+import { useToday } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
 
 const { db } = useStore()
+const { todayStr } = useToday()
 const { show: toast } = useToast()
 
-const today = new Date().toISOString().slice(0, 10)
 const monthNames = ['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december']
 
 const upcomingEvents = computed(() =>
   db.events
-    .filter(e => e.date >= today)
+    .filter(e => e.date >= todayStr.value)
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 60)
 )

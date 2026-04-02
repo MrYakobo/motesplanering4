@@ -2,7 +2,7 @@
 
 ## git instructions
 
-dont commit and dont push. i'll do that myself :)
+dont commit and dont push and dont try to pull. i'll do that myself :)
 
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
 

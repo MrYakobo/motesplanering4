@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, nextTick, onMounted, onUnmounted } from 'vue'
 import { useStore } from '../composables/useStore'
+import { useToday } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
 import { Shuffle, Users, User } from 'lucide-vue-next'
 import RecordModal from '../components/RecordModal.vue'
@@ -8,8 +9,7 @@ import type { Event, Task, Team } from '../types'
 
 const { db, assignments, persist, searchQuery, isAdmin } = useStore()
 const { show: toast } = useToast()
-
-const today = new Date().toISOString().slice(0, 10)
+const { todayStr } = useToday()
 const gridRef = ref<HTMLElement | null>(null)
 
 // ── Active popup state ───────────────────────────────────────────────────────

@@ -1,14 +1,33 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useStore } from '../composables/useStore'
+import { useToday } from '../composables/useToday'
+import { useFullscreen } from '../composables/useFullscreen'
+import { useRoute } from 'vue-router'
+import { Maximize, Minimize } from 'lucide-vue-next'
 
 const { db, assignments } = useStore()
+const { isFullscreen, toggle } = useFullscreen()
+const route = useRoute()
 
-const today = new Date().toISOString().slice(0, 10)
+const { todayStr: today } = useToday()
 const selectedTaskId = ref<number | null>(null)
 
+// Sync task from URL slug on mount
+onMounted(() => {
+  const slug = route.params.task as string | undefined
+  if (slug) {
+    const task = db.tasks.find(t => slugify(t.name) === slug)
+    if (task) selectedTaskId.value = task.id
+  }
+})
+
+function slugify(s: string) {
+  return s.toLowerCase().replace(/[^a-zåäö0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
 const todayEvents = computed(() =>
-  db.events.filter(e => e.date === today).sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+  db.events.filter(e => e.date === today.value).sort((a, b) => (a.time || '').localeCompare(b.time || ''))
 )
 
 // Get all people assigned today with their task
@@ -33,7 +52,10 @@ const assignedPeople = computed(() => {
 </script>
 
 <template>
-  <div class="flex-1 bg-[#111] text-white flex flex-col overflow-hidden">
+  <div class="flex-1 bg-[#111] text-white flex flex-col overflow-hidden relative">
+    <button @click="toggle" class="absolute top-3 right-3 p-1.5 rounded-md bg-white/10 text-white/50 hover:text-white hover:bg-white/20 border-none cursor-pointer transition-colors z-10" :title="isFullscreen ? 'Avsluta fullskärm (Esc)' : 'Fullskärm (F)'">
+      <component :is="isFullscreen ? Minimize : Maximize" :size="16" />
+    </button>
     <div class="flex items-center gap-2 p-4 border-b border-gray-800 shrink-0">
       <button
         @click="selectedTaskId = null"

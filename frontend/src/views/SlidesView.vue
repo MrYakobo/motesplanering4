@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useStore } from '../composables/useStore'
+import { useFullscreen } from '../composables/useFullscreen'
+import { Maximize, Minimize } from 'lucide-vue-next'
 
 const { db } = useStore()
+const { isFullscreen, toggle } = useFullscreen()
 
 const dayLabels = ['söndag', 'måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag']
 
@@ -40,9 +43,12 @@ function dayLabel(dateStr: string) {
 </script>
 
 <template>
-  <div class="flex-1 bg-[#111] text-gray-300 flex flex-col overflow-hidden">
+  <div class="flex-1 bg-[#111] text-gray-300 flex flex-col overflow-hidden relative">
     <div class="text-center py-6">
       <h2 class="text-3xl font-extrabold text-white tracking-tight">Veckans program</h2>
+      <button @click="toggle" class="absolute top-4 right-4 p-1.5 rounded-md bg-white/10 text-white/50 hover:text-white hover:bg-white/20 border-none cursor-pointer transition-colors" :title="isFullscreen ? 'Avsluta fullskärm (Esc)' : 'Fullskärm (F)'">
+        <component :is="isFullscreen ? Minimize : Maximize" :size="16" />
+      </button>
     </div>
     <div class="flex flex-1 px-6 pb-6 gap-4 overflow-x-auto">
       <div v-for="[date, events] in byDay" :key="date" class="flex-1 min-w-[140px]">

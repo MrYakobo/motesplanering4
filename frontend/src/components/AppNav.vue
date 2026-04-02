@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useStore } from '../composables/useStore'
+import { useToday } from '../composables/useToday'
 import UserMenu from './UserMenu.vue'
 import LoginModal from './LoginModal.vue'
 import SettingsModal from './SettingsModal.vue'
@@ -12,7 +13,8 @@ import {
 
 const router = useRouter()
 const route = useRoute()
-const { isAdmin, isMember, isViewer } = useStore()
+const { isViewer } = useStore()
+const { todayStr, isSimulated, simDate, setSimDate, clearSimDate } = useToday()
 
 const showLogin = ref(false)
 const showSettings = ref(false)
@@ -72,6 +74,28 @@ function onLoginSuccess() {
     </template>
 
     <span class="flex-1" />
+
+    <!-- Simulated date warning -->
+    <span
+      v-if="isSimulated"
+      class="bg-amber-100 text-amber-800 text-[11px] px-2.5 py-0.5 rounded flex items-center gap-1.5 mr-2"
+    >
+      ⚠ {{ simDate }}
+      <button
+        @click="clearSimDate"
+        class="bg-transparent border border-amber-400 text-amber-800 rounded text-[10px] px-1.5 cursor-pointer hover:bg-amber-200 transition-colors"
+      >
+        Återställ
+      </button>
+    </span>
+
+    <!-- Date picker -->
+    <input
+      type="date"
+      :value="simDate || todayStr"
+      @change="setSimDate(($event.target as HTMLInputElement).value)"
+      class="bg-[#2d2d4e] text-gray-300 border border-[#444] rounded-md px-2 py-0.5 text-xs cursor-pointer outline-none focus:border-accent mr-2"
+    />
 
     <button
       v-if="isViewer"

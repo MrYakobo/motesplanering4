@@ -1,22 +1,22 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useStore } from '../composables/useStore'
+import { useToday } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
 import { Mail, AlertTriangle, CheckCircle } from 'lucide-vue-next'
 
 const { db, assignments } = useStore()
 const { show: toast } = useToast()
-
-const today = new Date().toISOString().slice(0, 10)
+const { today: todayDate, todayStr } = useToday()
 
 const upcomingEvents = computed(() =>
   db.events
-    .filter(e => e.date >= today && e.date <= futureDate(14))
+    .filter(e => e.date >= todayStr.value && e.date <= futureDate(14))
     .sort((a, b) => a.date.localeCompare(b.date))
 )
 
 function futureDate(days: number) {
-  const d = new Date()
+  const d = new Date(todayDate.value)
   d.setDate(d.getDate() + days)
   return d.toISOString().slice(0, 10)
 }
