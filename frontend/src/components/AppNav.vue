@@ -8,13 +8,13 @@ import LoginModal from './LoginModal.vue'
 import SettingsModal from './SettingsModal.vue'
 import {
   Calendar, Table, Users, ListChecks, UsersRound,
-  Home, Monitor, IdCard, ClipboardList,
+  Home, Monitor, IdCard, ClipboardList, User,
   PackageOpen, FileText, Mail, ChevronDown,
 } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
-const { isViewer } = useStore()
+const { isViewer, isMember } = useStore()
 const { todayStr, isSimulated, simDate, setSimDate, clearSimDate } = useToday()
 
 const showLogin = ref(false)
@@ -41,6 +41,7 @@ const outputTabs = [
 
 const viewerTabs = [
   { path: '/home', label: 'Hem', icon: Home },
+  { path: '/my', label: 'Mitt schema', icon: User },
   { path: '/slides', label: 'Slides', icon: Monitor },
   { path: '/namnskyltar', label: 'Skyltar', icon: IdCard },
   { path: '/sunday', label: 'Söndag', icon: ClipboardList },
@@ -58,7 +59,7 @@ function onLoginSuccess() {
   <nav class="flex items-center bg-[#1a1a2e] text-white px-4 h-11 gap-1 shrink-0">
     <span class="font-bold text-sm mr-4 text-purple-400">Mötesplanering</span>
 
-    <template v-if="isViewer">
+    <template v-if="isViewer || isMember">
       <button
         v-for="tab in viewerTabs"
         :key="tab.path"

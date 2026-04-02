@@ -19,6 +19,7 @@ const routes = [
   { path: '/namnskyltar/:task/fullscreen', component: () => import('./views/NamnskyltarView.vue') },
   { path: '/sunday', component: () => import('./views/SundayView.vue') },
   { path: '/sunday/fullscreen', component: () => import('./views/SundayView.vue') },
+  { path: '/my', component: () => import('./views/MyScheduleView.vue') },
 ]
 
 export const router = createRouter({
