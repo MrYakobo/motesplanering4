@@ -63,5 +63,16 @@ export function useApi() {
     return result.version ?? version
   }
 
-  return { fetchDb, checkRole, login, logout, save, authHeader, memberToken }
+  async function upload(file: File): Promise<string> {
+    const h: Record<string, string> = { 'Content-Type': file.type }
+    if (authHeader.value) h['Authorization'] = authHeader.value
+    const res = await fetch('/upload', { method: 'POST', headers: h, body: file })
+    if (res.status === 413) throw new Error('Filen är för stor (max 25 MB)')
+    if (res.status === 401) throw new Error('unauthorized')
+    if (!res.ok) throw new Error(`Upload failed (${res.status})`)
+    const data = await res.json()
+    return data.url
+  }
+
+  return { fetchDb, checkRole, login, logout, save, upload, authHeader, memberToken }
 }
