@@ -1,28 +1,12 @@
 // ── SIDEBAR ───────────────────────────────────────────────────────────────────
+// Sidebar is hidden — renderSidebar now routes through the detail modal
 function renderSidebar(record) {
-  const el = document.getElementById('sidebar-content');
-  const sidebar = document.getElementById('sidebar');
   if (!record) {
-    el.innerHTML = `<div class="empty-sidebar">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-      <p style="font-size:13px">Välj en rad för att se detaljer</p></div>`;
-    if (sidebar) sidebar.classList.remove('mobile-open');
+    closeDetailModal();
     return;
   }
-  if (sidebar) sidebar.classList.add('mobile-open');
   const builders = { events:sidebarEvent, contacts:sidebarContact, tasks:sidebarTask, teams:sidebarTeam };
-  if (builders[currentTab]) el.innerHTML = builders[currentTab](record);
-  // Inject mobile back button
-  const header = el.querySelector('.sidebar-header');
-  if (header && !header.querySelector('.mobile-back')) {
-    const backBtn = document.createElement('button');
-    backBtn.className = 'mobile-back';
-    backBtn.innerHTML = '← Tillbaka';
-    backBtn.onclick = function() { renderSidebar(null); selectedId = null; renderTable(); updateHash(); };
-    header.prepend(backBtn);
-  }
-  initSidebarTracking();
-  lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
+  if (builders[currentTab]) UI.openModalRaw(builders[currentTab](record));
 }
 
 function getAssignmentLabel(eid, tid) {
@@ -88,7 +72,7 @@ function sidebarEvent(r) {
     ${schemaSection}
   </div>
   <div class="sidebar-footer">
-    <button class="btn-save" id="btn-save" onclick="saveEvent(${r.id})" data-is-new="${isNew?'1':''}">Spara</button>
+    <button class="btn-save${isNew?' dirty':''}" id="btn-save" onclick="saveEvent(${r.id})" data-is-new="${isNew?'1':''}">Spara</button>
     <span style="flex:1"></span>
     ${deleteBtn}
   </div>`;
@@ -168,7 +152,7 @@ function sidebarContact(r) {
     ${icalHtml}
   </div>
   <div class="sidebar-footer">
-    ${canEdit ? `<button class="btn-save" id="btn-save" onclick="saveContact(${r.id})" data-is-new="${r._isNew?'1':''}">Spara</button>` : ''}
+    ${canEdit ? `<button class="btn-save${r._isNew?' dirty':''}" id="btn-save" onclick="saveContact(${r.id})" data-is-new="${r._isNew?'1':''}">Spara</button>` : ''}
   </div>`;
 }
 
@@ -218,7 +202,7 @@ function saveContact(id) {
         c.name = newName; c.email = newEmail; c.phone = newPhone;
         if (data.version) dbVersion = data.version;
         showToast('Sparat!', 'ok');
-        applyFilters(); renderSidebar(c);
+        applyFilters(); closeDetailModal();
       })
       .catch(err => showToast('Kunde inte spara: ' + err.message, 'error'));
     return;
@@ -235,7 +219,7 @@ function saveContact(id) {
     if (currentTab === 'mailbot') renderMailbot();
   } else {
     applyFilters();
-    renderSidebar(c);
+    closeDetailModal();
   }
 }
 
@@ -244,7 +228,7 @@ function sidebarTask(r) {
   return `
   <div class="sidebar-header">
     <h3>${isNew ? 'Ny uppgift' : r.name}</h3>
-    <button class="sidebar-close" onclick="${isNew ? 'closeDetailModal()' : 'renderSidebar(null);selectedId=null;renderTable()'}">×</button>
+    <button class="sidebar-close" onclick="${isNew ? 'closeDetailModal()' : 'closeDetailModal()'}">×</button>
   </div>
   <div class="sidebar-body" id="sb-body">
     <div class="field-group"><label>Namn</label><input type="text" value="${r.name}" id="sb-tname"></div>
@@ -255,7 +239,7 @@ function sidebarTask(r) {
     <div class="field-group"><label>Påminnelsefras</label><input type="text" value="${r.phrase}" id="sb-tphrase"></div>
   </div>
   <div class="sidebar-footer">
-    <button class="btn-save" id="btn-save" onclick="saveTask(${r.id})" data-is-new="${isNew?'1':''}">Spara</button>
+    <button class="btn-save${isNew?' dirty':''}" id="btn-save" onclick="saveTask(${r.id})" data-is-new="${isNew?'1':''}">Spara</button>
   </div>`;
 }
 
@@ -283,7 +267,7 @@ function saveTask(id) {
   t.phrase = document.getElementById('sb-tphrase').value;
   persist('tasks');
   applyFilters();
-  renderSidebar(t);
+  closeDetailModal();
 }
 
 function sidebarTeam(r) {
@@ -292,7 +276,7 @@ function sidebarTeam(r) {
   return `
   <div class="sidebar-header">
     <h3>${taskName} — Team ${r.number}</h3>
-    <button class="sidebar-close" onclick="renderSidebar(null);selectedId=null;renderTable()">×</button>
+    <button class="sidebar-close" onclick="closeDetailModal()">×</button>
   </div>
   <div class="sidebar-body" id="sb-body">
     <div class="field-group"><label>Task</label>
@@ -370,5 +354,5 @@ function saveTeam(id) {
   t.members = [...document.querySelectorAll('[data-member-id]')].filter(cb=>cb.checked).map(cb=>parseInt(cb.dataset.memberId));
   persist('teams');
   applyFilters();
-  renderSidebar(t);
+  closeDetailModal();
 }

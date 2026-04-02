@@ -1,8 +1,15 @@
 /* ── MOBILE RESPONSIVE STYLES ──────────────────────────────────────────────── */
 /* Breakpoints: ≤768px (tablet), ≤480px (phone) */
 
+.mobile-back {
+  display: none;;
+}
+
 /* ── TABLET & BELOW ───────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
+  .mobile-back {
+    display: block;
+  }
 
   /* NAV: horizontal scroll, smaller padding */
   nav {
@@ -22,7 +29,7 @@
 
   /* SIDEBAR: hidden by default, full-width overlay when open */
   .sidebar {
-    display: none !important;
+    display: none;
     position: fixed;
     inset: 0;
     width: 100% !important;

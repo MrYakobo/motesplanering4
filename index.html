@@ -7,6 +7,7 @@
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <link href="css/mobile.css" rel="stylesheet">
+<link href="css/polish.css" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root { --accent: #4f46e5; --accent-hover: #4338ca; --accent-light: #ede9fe; --accent-mid: #a78bfa; --accent-text: #4f46e5; }
@@ -388,7 +389,7 @@ body.nameplate-fullscreen #namnskyltar-area { position: fixed; inset: 0; z-index
     <div class="nav-dropdown-menu" id="events-menu">
       <button onclick="switchTab('events');setView('list')" id="tab-ev-list"><i data-lucide="list" style="width:14px;height:14px"></i> Lista</button>
       <button onclick="switchTab('events');setView('calendar')" id="tab-ev-calendar"><i data-lucide="calendar-days" style="width:14px;height:14px"></i> Månad</button>
-      <button onclick="switchTab('events');setView('week')" id="tab-ev-week"><i data-lucide="calendar-range" style="width:14px;height:14px"></i> Vecka</button>
+      <button onclick="switchTab('events');setView('week')" id="tab-ev-week" style="display:none"><i data-lucide="calendar-range" style="width:14px;height:14px"></i> Vecka</button>
       <button onclick="switchTab('events');setView('year')" id="tab-ev-year"><i data-lucide="grid-3x3" style="width:14px;height:14px"></i> År</button>
       <div style="border-top:1px solid #2d2d4e;margin:4px 0"></div>
       <button onclick="switchTab('categories')" id="tab-categories"><i data-lucide="tags" style="width:14px;height:14px"></i> Kategorier</button>
@@ -564,7 +565,10 @@ body.nameplate-fullscreen #namnskyltar-area { position: fixed; inset: 0; z-index
 
   document.addEventListener('mouseover', function(e) {
     const el = e.target.closest('[data-tip]');
-    if (!el) { if (active) { tip.classList.remove('visible'); active = null; } return; }
+    // Hide if inside a dropdown menu
+    if (!el || e.target.closest('.nav-dropdown-menu') || e.target.closest('.ctx-menu')) {
+      tip.classList.remove('visible'); active = null; return;
+    }
     active = el;
     tip.textContent = el.getAttribute('data-tip');
     tip.classList.add('visible');
@@ -572,6 +576,10 @@ body.nameplate-fullscreen #namnskyltar-area { position: fixed; inset: 0; z-index
 
   document.addEventListener('mousemove', function(e) {
     if (!active) return;
+    // Hide if a dropdown is open
+    if (document.querySelector('.nav-dropdown:hover .nav-dropdown-menu')) {
+      tip.classList.remove('visible'); active = null; return;
+    }
     tip.style.left = (e.clientX + 10) + 'px';
     tip.style.top = (e.clientY + 14) + 'px';
   });

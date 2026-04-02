@@ -75,7 +75,7 @@ function switchTab(tab, skipHash) {
   document.getElementById('view-toggle').style.display = isEvents ? '' : 'none';
   document.getElementById('stats-bar').style.display = isSchema ? '' : (isSpecial ? 'none' : '');
   if (tab !== 'events') currentView = 'list';
-  document.getElementById('sidebar').style.display = (isTeams || isMailbot || isCats || isNamn || isSunday || isHome || isSchema) ? 'none' : '';
+  document.getElementById('sidebar').style.display = 'none';
 
   if (isSlides) { renderSlides(); renderSlidesSidebar(); if (!skipHash) updateHash(); return; }
   if (isExport) { renderExport(); renderSidebar(null); if (!skipHash) updateHash(); return; }
@@ -99,7 +99,7 @@ function setView(v) {
   listScrolled = false;
   document.querySelector('.table-wrap').classList.toggle('monster', false);
   const calViews = ['calendar','week','year'];
-  document.getElementById('sidebar').style.display = calViews.includes(v) ? 'none' : '';
+  document.getElementById('sidebar').style.display = 'none';
   // Toggle nav highlights
   const evBtn = document.getElementById('tab-events');
   if (evBtn) evBtn.classList.toggle('active', true);
@@ -130,7 +130,7 @@ function setView(v) {
 const viewLabels = {
   list:     { label: 'Händelser — Lista',   desc: 'Alla händelser i listvy' },
   calendar: { label: 'Händelser — Månad',   desc: 'Månadskalender' },
-  week:     { label: 'Händelser — Vecka',   desc: 'Veckokalender' },
+  // week:     { label: 'Händelser — Vecka',   desc: 'Veckokalender' },
   year:     { label: 'Händelser — År',      desc: 'Årsöversikt' },
   monster:  { label: 'Schema',              desc: 'Tilldela personer och team till händelser' },
 };

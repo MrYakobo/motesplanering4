@@ -9,16 +9,11 @@ const outputTabs = ['slides','export','mailbot','namnskyltar','sunday'];
 function selectRow(id) {
   selectedId = id;
   warningConfigOpen = false;
-  if (currentTab === 'events' && currentView === 'monster') {
-    openDetailModal(id);
-    renderTable();
-  } else {
-    renderTable();
-    renderSidebar(db[currentTab].find(r=>r.id===id));
-    requestAnimationFrame(() => {
-      const row = document.querySelector('#table-body tr.selected');
-      if (row) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    });
+  renderTable();
+  const record = db[currentTab].find(r => r.id === id);
+  if (record) {
+    const builders = { events: sidebarEvent, contacts: sidebarContact, tasks: sidebarTask, teams: sidebarTeam };
+    if (builders[currentTab]) UI.openModalRaw(builders[currentTab](record));
   }
   updateHash();
 }
@@ -59,7 +54,7 @@ function deleteRecord(id, tab) {
   if (tab === 'tasks') { deleteTaskWithPreview(id); return; }
   if (!db[tab]) return;
   db[tab] = db[tab].filter(r=>r.id!==id);
-  if (selectedId === id) { selectedId = null; renderSidebar(null); }
+  if (selectedId === id) { selectedId = null; closeDetailModal(); }
   persist(tab);
   applyFilters();
 }
@@ -131,7 +126,7 @@ function executeDeleteTask(taskId) {
   db.teams = (db.teams || []).filter(t => t.taskId !== taskId);
   // Remove the task itself
   db.tasks = db.tasks.filter(t => t.id !== taskId);
-  if (selectedId === taskId) { selectedId = null; renderSidebar(null); }
+  if (selectedId === taskId) { selectedId = null; closeDetailModal(); }
   persistAssignments();
   persist('tasks');
   persist('events');

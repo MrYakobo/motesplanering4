@@ -71,7 +71,7 @@ class UI {
   static openModal(title, body, footer) {
     const modal = document.getElementById('detail-modal');
     document.getElementById('detail-modal-content').innerHTML = UI.modal(title, body, footer);
-    modal.classList.add('open');
+    requestAnimationFrame(() => modal.classList.add('open'));
     initSidebarTracking();
     lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
   }
@@ -79,7 +79,7 @@ class UI {
   static openModalRaw(html) {
     const modal = document.getElementById('detail-modal');
     document.getElementById('detail-modal-content').innerHTML = html;
-    modal.classList.add('open');
+    requestAnimationFrame(() => modal.classList.add('open'));
     initSidebarTracking();
     lucide.createIcons({nameAttr:'data-lucide', attrs:{class:'lucide-icon'}});
   }

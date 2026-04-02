@@ -90,8 +90,7 @@ function saveEvent(id) {
   } else {
     persist('events');
     applyFilters();
-    if (['monster','calendar','week','year'].includes(currentView)) { closeDetailModal(); }
-    else { renderSidebar(ev); }
+    closeDetailModal();
   }
 }
 
@@ -129,9 +128,7 @@ function executePropagation(apply) {
   overlay.classList.remove('open');
   persist('events');
   applyFilters();
-  const ev = overlay._ev;
-  if (['monster','calendar','week','year'].includes(currentView)) { closeDetailModal(); }
-  else { renderSidebar(ev); }
+  closeDetailModal();
 }
 
 function deleteEvent(id) {

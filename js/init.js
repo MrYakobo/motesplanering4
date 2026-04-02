@@ -276,7 +276,6 @@ function createMobileBottomNav() {
         {id:'events', icon:'calendar', label:'Händelser'},
         {id:'schema', icon:'table', label:'Schema'},
         {id:'events/calendar', icon:'calendar-days', label:'Månadsvy', action: function() { switchTab('events'); setView('calendar'); closeMobileMore(); }},
-        {id:'events/week', icon:'calendar-range', label:'Veckovy', action: function() { switchTab('events'); setView('week'); closeMobileMore(); }},
         {id:'more', icon:'menu', label:'Mer'},
       ];
   tabs.forEach(function(t) {
