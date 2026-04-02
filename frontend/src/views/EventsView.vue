@@ -3,9 +3,10 @@ import { computed, ref } from 'vue'
 import { useStore } from '../composables/useStore'
 import { useToday } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
-import DataTable from '../components/DataTable.vue'
+import EventList from '../components/EventList.vue'
 import RecordModal from '../components/RecordModal.vue'
 import EventForm from '../components/EventForm.vue'
+import PropagateModal from '../components/PropagateModal.vue'
 import CalendarMonth from '../components/CalendarMonth.vue'
 import CalendarWeek from '../components/CalendarWeek.vue'
 import CalendarYear from '../components/CalendarYear.vue'
@@ -19,6 +20,16 @@ const { show: toast } = useToast()
 
 const editingEvent = ref<Event | null>(null)
 const generateOpen = ref(false)
+
+// ── Propagation state ────────────────────────────────────────────────────────
+const propagateOpen = ref(false)
+const propagateEvent = ref<Event | null>(null)
+const propagateOriginalTitle = ref('')
+const propagateChangedFields = ref<string[]>([])
+const propagateFutureCount = ref(0)
+const propagateFutureMatches = ref<Event[]>([])
+
+const SKIP_FIELDS = new Set(['id', 'date', 'time', 'volunteers'])
 
 const modalOpen = computed(() => editingEvent.value !== null)
 
@@ -37,22 +48,6 @@ const filteredEvents = computed(() => {
   }
   return data
 })
-
-const columns = [
-  {
-    key: 'date', label: 'Datum',
-    render: (r: Event) => `<span class="text-xs whitespace-nowrap">${r.date} ${r.time || ''}</span>`,
-  },
-  { key: 'title', label: 'Titel', render: (r: Event) => r.title },
-  {
-    key: 'category', label: 'Kategori',
-    render: () => '', // handled via slot-like approach below — but DataTable uses v-html, so we render inline
-  },
-  {
-    key: 'description', label: 'Beskrivning',
-    render: (r: Event) => r.description || '<span class="text-gray-400">—</span>',
-  },
-]
 
 function onSelect(id: number) {
   const ev = db.events.find(e => e.id === id)
@@ -88,14 +83,66 @@ const views: { id: EventView; icon: any; label: string }[] = [
 
 async function onSave(ev: Event) {
   const idx = db.events.findIndex(e => e.id === ev.id)
-  if (idx >= 0) {
+  const isNew = idx < 0
+
+  if (!isNew) {
+    // Existing event — check for propagatable changes
+    const original = db.events[idx]
+    const oldTitle = original.title
+    const changedFields: string[] = []
+
+    for (const key of Object.keys(ev) as (keyof Event)[]) {
+      if (SKIP_FIELDS.has(key)) continue
+      if (JSON.stringify(original[key]) !== JSON.stringify(ev[key])) {
+        changedFields.push(key)
+      }
+    }
+
+    const futureMatches = db.events.filter(
+      e => e.id !== ev.id && e.title === oldTitle && e.date > original.date
+    )
+
+    if (changedFields.length > 0 && futureMatches.length > 0) {
+      // Save the current event first
+      db.events[idx] = ev
+      // Show propagation modal
+      propagateEvent.value = ev
+      propagateOriginalTitle.value = oldTitle
+      propagateChangedFields.value = changedFields
+      propagateFutureMatches.value = futureMatches
+      propagateFutureCount.value = futureMatches.length
+      propagateOpen.value = true
+      editingEvent.value = null
+      return
+    }
+
     db.events[idx] = ev
   } else {
     db.events.push(ev)
     assignments[ev.id] = {}
   }
+
   await persist('events')
   editingEvent.value = null
+  toast('Händelse sparad')
+}
+
+async function onPropagate(fields: string[]) {
+  const ev = propagateEvent.value!
+  propagateFutureMatches.value.forEach(m => {
+    fields.forEach(f => {
+      const val = (ev as any)[f]
+      ;(m as any)[f] = typeof val === 'object' ? JSON.parse(JSON.stringify(val)) : val
+    })
+  })
+  propagateOpen.value = false
+  await persist('events')
+  toast(`Uppdaterade ${propagateFutureMatches.value.length + 1} händelser`)
+}
+
+async function onPropagateSkip() {
+  propagateOpen.value = false
+  await persist('events')
   toast('Händelse sparad')
 }
 
@@ -150,10 +197,9 @@ async function onDelete(id: number) {
     </div>
 
     <!-- List view -->
-    <DataTable
+    <EventList
       v-if="currentView === 'list'"
-      :columns="columns"
-      :rows="filteredEvents"
+      :events="filteredEvents"
       :selected-id="selectedId"
       @select="onSelect"
     />
@@ -195,5 +241,16 @@ async function onDelete(id: number) {
     </RecordModal>
 
     <GenerateEventsModal :open="generateOpen" @close="generateOpen = false" @generated="() => {}" />
+
+    <PropagateModal
+      :open="propagateOpen"
+      :event="propagateEvent!"
+      :original-title="propagateOriginalTitle"
+      :changed-fields="propagateChangedFields"
+      :future-count="propagateFutureCount"
+      @apply="onPropagate"
+      @skip="onPropagateSkip"
+      @close="onPropagateSkip"
+    />
   </div>
 </template>

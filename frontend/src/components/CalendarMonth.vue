@@ -132,7 +132,7 @@ function toggleExpand(ds: string) {
               class="cal-day-col border-l border-gray-100 px-0.5 py-0.5 cursor-pointer transition-colors hover:bg-gray-50 overflow-hidden"
               :class="{
                 'opacity-30': day.getMonth() !== m.month,
-                'month-today': dateStr(day) === todayStr,
+                'month-today ring-2 ring-accent ring-inset': dateStr(day) === todayStr,
                 'bg-accent/5': dateStr(day) === todayStr,
               }"
               @click="emit('create', dateStr(day))"

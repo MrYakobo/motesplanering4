@@ -104,7 +104,7 @@ onMounted(() => {
             v-for="(day, i) in daysForWeek(mon)" :key="dateStr(day)"
             class="border-l border-gray-100 first:border-l-0 px-1.5 py-1.5 cursor-pointer hover:bg-gray-50 transition-colors"
             :class="{
-              'week-today bg-accent/5': dateStr(day) === todayStr,
+              'week-today bg-accent/5 ring-2 ring-accent ring-inset': dateStr(day) === todayStr,
             }"
             @click="emit('create', dateStr(day))"
           >
