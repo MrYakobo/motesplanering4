@@ -3,6 +3,7 @@ import { computed, ref, nextTick, onMounted } from 'vue'
 import { useToday } from '../composables/useToday'
 import { useCategories } from '../composables/useCategories'
 import { ArrowRight, Ellipsis } from 'lucide-vue-next'
+import ScrollTodayButton from './ScrollTodayButton.vue'
 import type { Event } from '../types'
 
 const props = defineProps<{
@@ -19,19 +20,6 @@ const { catStyle } = useCategories()
 
 const scrollRef = ref<HTMLElement | null>(null)
 const hasScrolled = ref(false)
-const todayDirection = ref<'above' | 'below' | 'visible'>('below')
-
-function updateTodayVisibility() {
-  const container = scrollRef.value
-  if (!container) return
-  const el = container.querySelector('.today-row, .today-sep') as HTMLElement
-  if (!el) { todayDirection.value = 'below'; return }
-  const cRect = container.getBoundingClientRect()
-  const eRect = el.getBoundingClientRect()
-  if (eRect.bottom < cRect.top) todayDirection.value = 'above'
-  else if (eRect.top > cRect.bottom) todayDirection.value = 'below'
-  else todayDirection.value = 'visible'
-}
 
 const hasTodayEvent = computed(() => props.events.some(e => e.date === todayStr.value))
 
@@ -56,18 +44,21 @@ function isToday(ev: Event) {
 }
 
 function scrollToToday() {
-  const el = scrollRef.value?.querySelector('.today-row, .today-sep') as HTMLElement
-  if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  const container = scrollRef.value
+  if (!container) return
+  // Prefer the today row, fall back to the separator
+  const el = (container.querySelector('.today-row') || container.querySelector('.today-sep')) as HTMLElement
+  if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
 }
 
 onMounted(() => {
   nextTick(() => {
     if (hasScrolled.value) return
     hasScrolled.value = true
-    const el = scrollRef.value?.querySelector('.today-row, .today-sep') as HTMLElement
-    if (el) el.scrollIntoView({ block: 'start', behavior: 'instant' })
-    scrollRef.value?.addEventListener('scroll', updateTodayVisibility)
-    updateTodayVisibility()
+    const container = scrollRef.value
+    if (!container) return
+    const el = (container.querySelector('.today-row') || container.querySelector('.today-sep')) as HTMLElement
+    if (el) el.scrollIntoView({ block: 'center', behavior: 'instant' })
   })
 })
 </script>
@@ -89,7 +80,7 @@ onMounted(() => {
         <tbody>
           <template v-for="(ev, idx) in events" :key="ev.id">
             <!-- Today separator line when today has no events -->
-            <tr v-if="todaySepIndex === idx" class="today-sep">
+            <tr v-if="todaySepIndex === idx" class="today-sep" style="scroll-margin-top: 40px">
               <td colspan="6" class="p-0 h-0.5 bg-accent relative">
                 <span class="absolute left-2 -top-2 text-[10px] font-semibold text-accent pointer-events-none">idag</span>
               </td>
@@ -102,7 +93,7 @@ onMounted(() => {
                 'today-row bg-accent-light': isToday(ev),
                 'opacity-50': isPast(ev) && !isToday(ev),
               }"
-              :style="isToday(ev) ? 'scroll-margin-top: 60px' : ''"
+              :style="isToday(ev) ? 'scroll-margin-top: 40px' : ''"
             >
               <!-- Arrow column -->
               <td class="w-5 px-0 text-center align-middle">
@@ -134,12 +125,6 @@ onMounted(() => {
       </table>
     </div>
     <!-- Floating scroll-to-today button -->
-    <button
-      v-show="todayDirection !== 'visible'"
-      @click="scrollToToday"
-      class="absolute bottom-4 right-4 bg-accent text-white text-xs px-3 py-1.5 rounded-full shadow-lg cursor-pointer hover:bg-accent-hover transition-colors z-20"
-    >
-      {{ todayDirection === 'above' ? '↑' : '↓' }} Idag
-    </button>
+    <ScrollTodayButton :scroll-container="scrollRef" target-selector=".today-row, .today-sep" @click="scrollToToday" />
   </div>
 </template>

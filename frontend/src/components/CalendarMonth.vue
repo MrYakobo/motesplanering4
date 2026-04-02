@@ -2,6 +2,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { useCategories } from '../composables/useCategories'
 import { useToday, localDateStr } from '../composables/useToday'
+import ScrollTodayButton from './ScrollTodayButton.vue'
 import type { Event } from '../types'
 
 const props = defineProps<{ events: Event[]; highlightDate?: string | null }>()
@@ -154,6 +155,7 @@ function toggleExpand(ds: string) {
       <div
         v-for="m in months" :key="`${m.year}-${m.month}`"
         class="month-section snap-start h-full min-h-full flex flex-col"
+        :class="{ 'month-current': m.year === today.getFullYear() && m.month === today.getMonth() }"
       >
         <div class="shrink-0 bg-white/95 backdrop-blur-sm px-3 py-1.5 text-sm font-bold text-gray-800 border-b border-gray-100 capitalize z-10">
           {{ monthNames[m.month] }} <span class="font-normal text-gray-400">{{ m.year }}</span>
@@ -205,7 +207,7 @@ function toggleExpand(ds: string) {
                 @dragend="onDragEnd"
                 @click.stop="emit('select', ev.id)"
               >
-                <span class="text-[9px] opacity-60 mr-0.5">{{ ev.time }}</span>{{ ev.title.replace(/<[^>]*>/g, '') }}
+                <span class="text-[9px] opacity-60 mr-0.5 hidden sm:inline">{{ ev.time }}</span>{{ ev.title.replace(/<[^>]*>/g, '') }}
               </div>
               <div
                 v-if="!expandedDate || expandedDate !== dateStr(day)"
@@ -228,12 +230,7 @@ function toggleExpand(ds: string) {
       </div>
     </div>
     <!-- Floating today button -->
-    <button
-      @click="goToday"
-      class="absolute bottom-4 right-4 bg-accent text-white text-xs px-3 py-1.5 rounded-full shadow-lg cursor-pointer hover:bg-accent-hover transition-colors z-20"
-    >
-      ↕ Idag
-    </button>
+    <ScrollTodayButton :scroll-container="scrollRef" target-selector=".month-current" @click="goToday" />
   </div>
 </template>
 

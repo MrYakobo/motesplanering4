@@ -2,6 +2,7 @@
 import { computed, ref, nextTick, onMounted } from 'vue'
 import { useCategories } from '../composables/useCategories'
 import { useToday, localDateStr } from '../composables/useToday'
+import ScrollTodayButton from './ScrollTodayButton.vue'
 import type { Event } from '../types'
 
 const props = defineProps<{ events: Event[] }>()
@@ -166,11 +167,6 @@ onMounted(() => {
         </div>
       </div>
     </div>
-    <button
-      @click="goToday"
-      class="absolute bottom-4 right-4 bg-accent text-white text-xs px-3 py-1.5 rounded-full shadow-lg cursor-pointer hover:bg-accent-hover transition-colors z-20"
-    >
-      ↕ Idag
-    </button>
+    <ScrollTodayButton :scroll-container="scrollRef" target-selector=".week-today" @click="goToday" />
   </div>
 </template>

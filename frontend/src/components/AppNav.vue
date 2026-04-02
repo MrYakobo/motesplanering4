@@ -11,7 +11,7 @@ import {
   Calendar, Table, Users, ListChecks, UsersRound,
   Home, Monitor, IdCard, ClipboardList, User,
   PackageOpen, FileText, Mail, ChevronDown,
-  CalendarDays, Menu, Tags,
+  CalendarDays, Menu, Tags, Settings, LogOut, CalendarClock,
 } from 'lucide-vue-next'
 
 const router = useRouter()
