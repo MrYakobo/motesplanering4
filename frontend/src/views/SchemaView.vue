@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, nextTick, onMounted, onUnmounted } from 'vue'
+import { computed, ref, nextTick, onMounted } from 'vue'
 import { useStore } from '../composables/useStore'
 import { useToday, localDateStr } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
@@ -26,11 +26,14 @@ function togglePop(eid: number, tid: number) {
 
 function closePops() { activePop.value = null }
 
-function onDocClick(e: MouseEvent) {
-  if (!(e.target as HTMLElement).closest('.pop-cell')) closePops()
-}
-onMounted(() => document.addEventListener('click', onDocClick))
-onUnmounted(() => document.removeEventListener('click', onDocClick))
+const activePopEvent = computed(() => activePop.value ? db.events.find(e => e.id === activePop.value!.eid) : null)
+const activePopTask = computed(() => activePop.value ? db.tasks.find(t => t.id === activePop.value!.tid) : null)
+const pickerTitle = computed(() => {
+  if (!activePopEvent.value || !activePopTask.value) return ''
+  return `${activePopTask.value.name} — ${activePopEvent.value.date} ${activePopEvent.value.title}`
+})
+
+// (picker is a modal now, no document click needed)
 
 // ── Filtered events ──────────────────────────────────────────────────────────
 const visibleEvents = computed(() => {
@@ -95,7 +98,7 @@ function pickTeam(eid: number, tid: number, teamId: number | null) {
   if (!teamId) { delete assignments[eid][tid] }
   else { assignments[eid][tid] = { type: 'team', id: teamId } }
   persistAssignments()
-  closePops()
+  activePop.value = null
 }
 
 // ── Person assignment ────────────────────────────────────────────────────────
@@ -278,11 +281,11 @@ onMounted(() => {
     </div>
 
     <!-- Grid -->
-    <div ref="gridRef" class="flex-1 overflow-auto" style="-webkit-overflow-scrolling:touch">
+    <div ref="gridRef" class="flex-1 overflow-auto min-w-0" style="-webkit-overflow-scrolling:touch">
       <table class="border-collapse" style="width:max-content;min-width:100%">
         <thead>
           <tr>
-            <th class="sticky top-0 left-0 z-[5] bg-gray-50 border-b-2 border-gray-200 px-2 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+            <th class="sticky top-0 left-0 z-[5] bg-gray-50 border-b-2 border-gray-200 px-2 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider" style="max-width:45vw">
               Datum / Händelse
             </th>
             <th
@@ -315,7 +318,7 @@ onMounted(() => {
             :key="ev.id"
             :style="{ opacity: ev.date < todayStr ? 0.5 : 1 }"
           >
-            <td class="sticky left-0 bg-white z-[1] font-medium whitespace-nowrap px-2 py-1.5 border-b border-gray-100 td-event">
+            <td class="sticky left-0 bg-white z-[1] font-medium px-2 py-1.5 border-b border-gray-100 td-event" style="max-width:45vw;white-space:normal;word-break:break-word">
               <span class="text-xs">{{ ev.date }} {{ ev.time || '' }}</span><br />
               <span class="text-xs text-gray-500">{{ ev.title }}</span>
               <span v-if="missingCount(ev) > 0" class="text-xs text-amber-500 font-semibold ml-1" :title="'Saknas: ' + missingNames(ev)">
@@ -341,85 +344,6 @@ onMounted(() => {
                 >
                   {{ cellLabel(ev, task) }}
                 </div>
-
-                <!-- Team popup -->
-                <div
-                  v-if="activePop?.eid === ev.id && activePop?.tid === task.id && task.teamTask"
-                  class="absolute top-full mt-1 left-0 z-20 bg-white border-2 border-[var(--accent)] rounded-lg shadow-lg min-w-[220px] max-h-[480px] flex flex-col"
-                >
-                  <div class="overflow-y-auto p-1">
-                    <label class="flex items-center gap-2 px-1.5 py-1 rounded cursor-pointer text-sm text-gray-400 hover:bg-gray-100">
-                      <input
-                        type="radio"
-                        :name="'tpick_' + ev.id + '_' + task.id"
-                        :checked="!assignments[ev.id]?.[task.id]"
-                        @change="pickTeam(ev.id, task.id, null)"
-                      /> —
-                    </label>
-                    <label
-                      v-for="team in db.teams.filter(t => t.taskId === task.id)"
-                      :key="team.id"
-                      class="flex items-center gap-2 px-1.5 py-1 rounded cursor-pointer text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      <input
-                        type="radio"
-                        :name="'tpick_' + ev.id + '_' + task.id"
-                        :checked="assignments[ev.id]?.[task.id]?.id === team.id"
-                        @change="pickTeam(ev.id, task.id, team.id)"
-                        class="accent-[var(--accent)]"
-                      />
-                      <span class="flex-1">
-                        Team {{ team.number }}
-                        <span class="text-[11px] text-gray-400 ml-1">
-                          {{ (team.members || []).map(mid => db.contacts.find(c => c.id === mid)?.name).filter(Boolean).join(', ') }}
-                        </span>
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Person popup -->
-                <div
-                  v-if="activePop?.eid === ev.id && activePop?.tid === task.id && !task.teamTask"
-                  class="absolute top-full mt-1 left-0 z-20 bg-white border-2 border-[var(--accent)] rounded-lg shadow-lg min-w-[220px] max-h-[480px] flex flex-col"
-                >
-                  <input
-                    v-model="popSearch"
-                    type="text"
-                    placeholder="Sök person…"
-                    class="border-none border-b-2 border-b-[var(--accent-light)] px-2.5 py-2 text-sm outline-none rounded-t-lg shrink-0 bg-[var(--accent-light)] focus:shadow-[inset_0_-2px_0_var(--accent)]"
-                  />
-                  <div class="overflow-y-auto p-1 flex-1">
-                    <label
-                      v-for="c in filteredContacts()"
-                      :key="c.id"
-                      class="flex items-center gap-2 px-1.5 py-1 rounded cursor-pointer text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      <input
-                        type="checkbox"
-                        :checked="isPersonChecked(ev.id, task.id, c.id)"
-                        @change="togglePerson(ev.id, task.id, c.id, ($event.target as HTMLInputElement).checked)"
-                        class="accent-[var(--accent)]"
-                      />
-                      {{ c.name }}
-                    </label>
-                  </div>
-                  <div class="border-t border-gray-200">
-                    <div v-if="!addingPerson" class="px-2.5 py-2">
-                      <button @click="startAddPerson" class="text-xs text-[var(--accent)] hover:underline cursor-pointer bg-transparent border-none">+ Lägg till ny person</button>
-                    </div>
-                    <div v-else class="flex gap-1 px-2 py-1.5">
-                      <input
-                        v-model="newPersonName"
-                        type="text"
-                        placeholder="Fullständigt namn"
-                        class="flex-1 border border-gray-300 rounded px-2 py-1 text-xs outline-none"
-                        @keydown.enter="commitAddPerson(ev.id, task.id)"
-                      />
-                      <button @click="commitAddPerson(ev.id, task.id)" class="px-2 py-1 text-xs rounded bg-[var(--accent)] text-white cursor-pointer border-none">Spara</button>
-                    </div>
-                  </div>
-                </div>
               </div>
             </td>
           </tr>
@@ -429,6 +353,82 @@ onMounted(() => {
         </tbody>
       </table>
     </div>
+
+    <!-- Assignment picker modal -->
+    <RecordModal :open="activePop !== null" :title="pickerTitle" @close="closePops">
+      <!-- Team picker -->
+      <template v-if="activePopTask?.teamTask">
+        <div class="space-y-1">
+          <label class="flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer text-sm text-gray-400 hover:bg-gray-100">
+            <input
+              type="radio"
+              :name="'tpick'"
+              :checked="!assignments[activePop!.eid]?.[activePop!.tid]"
+              @change="pickTeam(activePop!.eid, activePop!.tid, null)"
+            /> —
+          </label>
+          <label
+            v-for="team in db.teams.filter(t => t.taskId === activePop!.tid)"
+            :key="team.id"
+            class="flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer text-sm text-gray-700 hover:bg-gray-100"
+          >
+            <input
+              type="radio"
+              :name="'tpick'"
+              :checked="assignments[activePop!.eid]?.[activePop!.tid]?.id === team.id"
+              @change="pickTeam(activePop!.eid, activePop!.tid, team.id)"
+              class="accent-accent"
+            />
+            <span class="flex-1">
+              Team {{ team.number }}
+              <span class="text-xs text-gray-400 ml-1">
+                {{ (team.members || []).map(mid => db.contacts.find(c => c.id === mid)?.name).filter(Boolean).join(', ') }}
+              </span>
+            </span>
+          </label>
+        </div>
+      </template>
+
+      <!-- Person picker -->
+      <template v-else-if="activePop">
+        <input
+          v-model="popSearch"
+          type="text"
+          placeholder="Sök person…"
+          class="w-full border border-gray-300 rounded-md px-2.5 py-2 text-sm outline-none focus:border-accent mb-3"
+        />
+        <div class="max-h-[50vh] overflow-y-auto space-y-0.5">
+          <label
+            v-for="c in filteredContacts()"
+            :key="c.id"
+            class="flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer text-sm text-gray-700 hover:bg-gray-100"
+          >
+            <input
+              type="checkbox"
+              :checked="isPersonChecked(activePop.eid, activePop.tid, c.id)"
+              @change="togglePerson(activePop.eid, activePop.tid, c.id, ($event.target as HTMLInputElement).checked)"
+              class="accent-accent"
+            />
+            {{ c.name }}
+          </label>
+        </div>
+        <div class="border-t border-gray-200 mt-3 pt-3">
+          <div v-if="!addingPerson">
+            <button @click="startAddPerson" class="text-xs text-accent hover:underline cursor-pointer bg-transparent border-none">+ Lägg till ny person</button>
+          </div>
+          <div v-else class="flex gap-2">
+            <input
+              v-model="newPersonName"
+              type="text"
+              placeholder="Fullständigt namn"
+              class="flex-1 border border-gray-300 rounded-md px-2 py-1.5 text-sm outline-none focus:border-accent"
+              @keydown.enter="commitAddPerson(activePop.eid, activePop.tid)"
+            />
+            <button @click="commitAddPerson(activePop.eid, activePop.tid)" class="px-3 py-1.5 text-sm rounded-md bg-accent text-white cursor-pointer border-none">Spara</button>
+          </div>
+        </div>
+      </template>
+    </RecordModal>
 
     <!-- Auto-distribute modal -->
     <RecordModal :open="distModal" :title="'Fördela ' + (distTask?.name || '')" @close="distModal = false">

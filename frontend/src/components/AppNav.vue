@@ -236,6 +236,24 @@ function onLoginSuccess() {
             <component :is="item.icon" :size="18" />
             {{ item.label }}
           </button>
+          <!-- Emulate date -->
+          <div class="flex items-center gap-3 px-4 py-2.5 rounded-md text-sm text-gray-300">
+            <CalendarClock :size="18" class="shrink-0" />
+            <span class="shrink-0">Datum</span>
+            <input
+              type="date"
+              :value="simDate || todayStr"
+              @change="setSimDate(($event.target as HTMLInputElement).value)"
+              class="flex-1 bg-[#2d2d4e] text-gray-300 border border-[#444] rounded-md px-2 py-1 text-xs outline-none focus:border-accent"
+            />
+            <button
+              v-if="isSimulated"
+              @click="clearSimDate"
+              class="text-[10px] text-amber-400 bg-transparent border border-amber-400/40 rounded px-1.5 py-0.5 cursor-pointer hover:bg-amber-400/10 shrink-0"
+            >
+              Återställ
+            </button>
+          </div>
         </div>
       </div>
     </Transition>
@@ -253,8 +271,12 @@ function onLoginSuccess() {
             </div>
           </div>
           <div class="p-1.5">
-            <button v-if="isAdmin" @click="showSettings = true; mobUserOpen = false" class="mob-sheet-btn">Inställningar</button>
-            <button @click="useApi().logout()" class="mob-sheet-btn text-red-400">Logga ut</button>
+            <button v-if="isAdmin" @click="showSettings = true; mobUserOpen = false" class="mob-sheet-btn">
+              <Settings :size="18" /> Inställningar
+            </button>
+            <button @click="useApi().logout()" class="mob-sheet-btn text-red-400">
+              <LogOut :size="18" /> Logga ut
+            </button>
           </div>
         </div>
       </div>
