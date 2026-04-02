@@ -1,23 +1,19 @@
 <script setup lang="ts">
 import { computed, ref, nextTick, onMounted } from 'vue'
 import { useCategories } from '../composables/useCategories'
+import { useToday } from '../composables/useToday'
 import type { Event } from '../types'
 
 const props = defineProps<{ events: Event[] }>()
 const emit = defineEmits<{ select: [id: number]; create: [date: string] }>()
 
 const { catStyle } = useCategories()
+const { today, todayStr } = useToday()
 
-const today = new Date()
 const scrollRef = ref<HTMLElement | null>(null)
 
 const monthNames = ['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december']
 const dayHeaders = ['mån','tis','ons','tor','fre','lör','sön']
-
-const todayStr = computed(() => {
-  const d = new Date()
-  return d.toISOString().slice(0, 10)
-})
 
 const byDate = computed(() => {
   const m: Record<string, Event[]> = {}
@@ -31,8 +27,8 @@ const byDate = computed(() => {
 // Generate months: 1 year before → 1 year after
 const months = computed(() => {
   const result: { year: number; month: number }[] = []
-  const startYear = today.getFullYear() - 1
-  const endYear = today.getFullYear() + 1
+  const startYear = today.value.getFullYear() - 1
+  const endYear = today.value.getFullYear() + 1
   for (let yr = startYear; yr <= endYear; yr++) {
     for (let m = 0; m < 12; m++) {
       result.push({ year: yr, month: m })

@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useStore } from '../composables/useStore'
+import { useToday } from '../composables/useToday'
 import { useFullscreen } from '../composables/useFullscreen'
 import { Maximize, Minimize } from 'lucide-vue-next'
 
 const { db } = useStore()
+const { today } = useToday()
 const { isFullscreen, toggle } = useFullscreen()
 
 const dayLabels = ['söndag', 'måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag']
 
 // Get this week's events (Mon-Sun)
 const weekEvents = computed(() => {
-  const now = new Date()
+  const now = today.value
   const day = now.getDay()
   const mon = new Date(now)
   mon.setDate(now.getDate() - ((day + 6) % 7))

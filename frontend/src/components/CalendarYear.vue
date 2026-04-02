@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
+import { useToday } from '../composables/useToday'
 import type { Event } from '../types'
 
 const props = defineProps<{ events: Event[] }>()
 const emit = defineEmits<{ switchWeek: [date: string] }>()
 
+const { today, todayStr } = useToday()
+
 const scrollRef = ref<HTMLElement | null>(null)
 const monthNames = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec']
 const dayHeaders = ['m','t','o','t','f','l','s']
 
-const todayStr = computed(() => new Date().toISOString().slice(0, 10))
-
 const eventDates = computed(() => new Set(props.events.map(e => e.date)))
 
 const years = computed(() => {
-  const now = new Date()
+  const now = today.value
   return [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1]
 })
 
@@ -56,7 +57,7 @@ function daysForWeek(weekMon: Date) {
 
 // Current week range for highlighting
 const currentWeekMon = computed(() => {
-  const d = new Date()
+  const d = new Date(today.value)
   const day = d.getDay()
   const mon = new Date(d)
   mon.setDate(d.getDate() - ((day + 6) % 7))

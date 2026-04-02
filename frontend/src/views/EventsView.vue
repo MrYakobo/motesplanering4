@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useStore } from '../composables/useStore'
+import { useToday } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
 import DataTable from '../components/DataTable.vue'
 import RecordModal from '../components/RecordModal.vue'
@@ -13,6 +14,7 @@ import type { Event, EventView } from '../types'
 import GenerateEventsModal from '../components/GenerateEventsModal.vue'
 
 const { db, selectedId, searchQuery, persist, assignments, currentView, setView } = useStore()
+const { todayStr } = useToday()
 const { show: toast } = useToast()
 
 const editingEvent = ref<Event | null>(null)
@@ -61,7 +63,7 @@ function newEvent(date?: string) {
   const maxId = db.events.reduce((m, e) => Math.max(m, e.id), 0) + 1
   editingEvent.value = {
     id: maxId,
-    date: date || new Date().toISOString().slice(0, 10),
+    date: date || todayStr.value,
     time: '10:00',
     title: '',
     category: db.categories?.[0]?.name || '',

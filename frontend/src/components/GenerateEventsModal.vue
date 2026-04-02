@@ -2,6 +2,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { X, Plus, Trash2, RefreshCw } from 'lucide-vue-next'
 import { useStore } from '../composables/useStore'
+import { useToday } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
 import type { RecurringPatterns, Event } from '../types'
 
@@ -9,13 +10,13 @@ const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: []; generated: [] }>()
 
 const { db, persist, assignments } = useStore()
+const { today: todayDate } = useToday()
 const { show: toast } = useToast()
 
 const dayLabels = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'] as const
 
-const today = new Date()
-const fromDate = ref(today.toISOString().slice(0, 10))
-const toDate = ref(new Date(today.getFullYear(), today.getMonth() + 3, today.getDate()).toISOString().slice(0, 10))
+const fromDate = ref(todayDate.value.toISOString().slice(0, 10))
+const toDate = ref(new Date(todayDate.value.getFullYear(), todayDate.value.getMonth() + 3, todayDate.value.getDate()).toISOString().slice(0, 10))
 
 const patterns = reactive<RecurringPatterns>({})
 

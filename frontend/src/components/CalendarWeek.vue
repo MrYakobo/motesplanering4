@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { computed, ref, nextTick, onMounted } from 'vue'
 import { useCategories } from '../composables/useCategories'
+import { useToday } from '../composables/useToday'
 import type { Event } from '../types'
 
 const props = defineProps<{ events: Event[] }>()
 const emit = defineEmits<{ select: [id: number]; create: [date: string] }>()
 
 const { catStyle } = useCategories()
+const { today, todayStr } = useToday()
 
 const scrollRef = ref<HTMLElement | null>(null)
 const dayLabels = ['mån', 'tis', 'ons', 'tor', 'fre', 'lör', 'sön']
 const monthNames = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec']
-
-const todayStr = computed(() => new Date().toISOString().slice(0, 10))
 
 const byDate = computed(() => {
   const m: Record<string, Event[]> = {}
@@ -34,7 +34,7 @@ function weekNumber(d: Date) {
 
 // Generate all weeks from 1 year before to 1 year after
 const weeks = computed(() => {
-  const now = new Date()
+  const now = today.value
   const start = new Date(now.getFullYear() - 1, 0, 1)
   // Align to Monday
   start.setDate(start.getDate() - ((start.getDay() + 6) % 7))

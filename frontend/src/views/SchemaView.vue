@@ -44,7 +44,7 @@ const visibleEvents = computed(() => {
 // ── Stats ────────────────────────────────────────────────────────────────────
 const warnCount = computed(() =>
   visibleEvents.value.reduce((n, ev) => {
-    if (ev.date < today) return n
+    if (ev.date < todayStr.value) return n
     return n + (ev.expectedTasks || []).filter(tid => !assignments[ev.id]?.[tid]).length
   }, 0)
 )
@@ -66,18 +66,18 @@ function isUnset(ev: Event, task: Task): boolean {
 }
 
 function isCellWarn(ev: Event, task: Task): boolean {
-  if (ev.date < today) return false
+  if (ev.date < todayStr.value) return false
   return (ev.expectedTasks || []).includes(task.id) && !assignments[ev.id]?.[task.id]
 }
 
 function missingNames(ev: Event): string {
-  if (ev.date < today) return ''
+  if (ev.date < todayStr.value) return ''
   const missing = (ev.expectedTasks || []).filter(tid => !assignments[ev.id]?.[tid])
   return missing.map(tid => db.tasks.find(t => t.id === tid)?.name).filter(Boolean).join(', ')
 }
 
 function missingCount(ev: Event): number {
-  if (ev.date < today) return 0
+  if (ev.date < todayStr.value) return 0
   return (ev.expectedTasks || []).filter(tid => !assignments[ev.id]?.[tid]).length
 }
 
@@ -172,12 +172,12 @@ function autoDistributePersons(taskId: number) {
   personStartIdx.value = 0
 
   // Build pool from recent 6 months
-  const sixAgo = new Date()
+  const sixAgo = new Date(todayStr.value + 'T00:00:00')
   sixAgo.setMonth(sixAgo.getMonth() - 6)
   const cutoff = sixAgo.toISOString().slice(0, 10)
   const recentIds = new Set<number>()
   db.events.forEach(ev => {
-    if (ev.date < cutoff || ev.date >= today) return
+    if (ev.date < cutoff || ev.date >= todayStr.value) return
     const asgn = assignments[ev.id]?.[taskId]
     if (asgn?.type === 'contact') (asgn.ids || []).forEach(id => recentIds.add(id))
   })
@@ -202,7 +202,7 @@ const distTeams = computed(() => db.teams.filter(t => t.taskId === distTaskId.va
 
 const distCandidates = computed(() =>
   visibleEvents.value
-    .filter(ev => ev.date >= today && (ev.expectedTasks || []).includes(distTaskId.value!) && !assignments[ev.id]?.[distTaskId.value!])
+    .filter(ev => ev.date >= todayStr.value && (ev.expectedTasks || []).includes(distTaskId.value!) && !assignments[ev.id]?.[distTaskId.value!])
     .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')))
 )
 
@@ -255,7 +255,7 @@ onMounted(() => {
     if (!rows) return
     for (const row of rows) {
       const text = row.querySelector('.td-event')?.textContent || ''
-      if (text >= today) { (row as HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' }); break }
+      if (text >= todayStr.value) { (row as HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' }); break }
     }
   })
 })
@@ -313,7 +313,7 @@ onMounted(() => {
           <tr
             v-for="ev in visibleEvents"
             :key="ev.id"
-            :style="{ opacity: ev.date < today ? 0.5 : 1 }"
+            :style="{ opacity: ev.date < todayStr ? 0.5 : 1 }"
           >
             <td class="sticky left-0 bg-white z-[1] font-medium whitespace-nowrap px-2 py-1.5 border-b border-gray-100 td-event">
               <span class="text-xs">{{ ev.date }} {{ ev.time || '' }}</span><br />
