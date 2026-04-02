@@ -3,7 +3,7 @@ import { ref, reactive, computed, watch } from 'vue'
 import { X, Plus, Trash2, RefreshCw } from 'lucide-vue-next'
 import { useStore } from '../composables/useStore'
 import { useToast } from '../composables/useToast'
-import type { RecurringEntry, RecurringPatterns, Event } from '../types'
+import type { RecurringPatterns, Event } from '../types'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: []; generated: [] }>()

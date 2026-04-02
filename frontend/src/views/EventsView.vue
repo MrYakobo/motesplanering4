@@ -118,6 +118,12 @@ async function onDelete(id: number) {
       >
         <PlusCircle :size="14" /> Ny händelse
       </button>
+      <button
+        @click="generateOpen = true"
+        class="flex items-center gap-1 text-accent text-sm cursor-pointer bg-transparent border-none hover:underline"
+      >
+        <RefreshCw :size="14" /> Generera
+      </button>
       <!-- View toggle -->
       <div class="flex items-center gap-0.5 ml-2 bg-gray-100 rounded-md p-0.5">
         <button
@@ -185,5 +191,7 @@ async function onDelete(id: number) {
         @delete="onDelete"
       />
     </RecordModal>
+
+    <GenerateEventsModal :open="generateOpen" @close="generateOpen = false" @generated="() => {}" />
   </div>
 </template>

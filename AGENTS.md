@@ -1,5 +1,9 @@
 # Agent Instructions
 
+## git instructions
+
+dont commit and dont push. i'll do that myself :)
+
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
 
 ## Quick Reference
