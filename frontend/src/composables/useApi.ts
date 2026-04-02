@@ -74,5 +74,27 @@ export function useApi() {
     return data.url
   }
 
-  return { fetchDb, checkRole, login, logout, save, upload, authHeader, memberToken }
+  async function sendEmail(to: string, subject: string, html: string): Promise<{ ok: boolean; error?: string }> {
+    const res = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ to, subject, html }),
+    })
+    if (res.status === 401) throw new Error('unauthorized')
+    if (!res.ok) throw new Error(`Serverfel (${res.status})`)
+    return res.json()
+  }
+
+  async function runCron(jobId?: string): Promise<{ ok: boolean; sent: number; job?: string; error?: string }> {
+    const res = await fetch('/api/cron/run', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(jobId ? { jobId } : {}),
+    })
+    if (res.status === 401) throw new Error('unauthorized')
+    if (!res.ok) throw new Error(`Serverfel (${res.status})`)
+    return res.json()
+  }
+
+  return { fetchDb, checkRole, login, logout, save, upload, sendEmail, runCron, authHeader, memberToken }
 }
