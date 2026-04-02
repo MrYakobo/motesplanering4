@@ -90,6 +90,17 @@ export interface RecurringEntry {
 
 export type RecurringPatterns = Record<string, RecurringEntry[]>
 
+export interface GlobalSlide {
+  url: string
+  label: string
+  active: boolean
+}
+
+export interface SlideBackground {
+  color: string
+  image: string
+}
+
 export interface Database {
   events: Event[]
   contacts: Contact[]
@@ -98,6 +109,9 @@ export interface Database {
   categories: Category[]
   schedules: Record<string, Record<string, Assignment>>
   recurring_events: RecurringPatterns
+  globalSlides: GlobalSlide[]
+  slideLogo: string
+  slideBackground: SlideBackground
   settings: AppSettings
   _version: number
 }

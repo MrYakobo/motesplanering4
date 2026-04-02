@@ -5,12 +5,46 @@ import { useToday, localDateStr } from '../composables/useToday'
 import type { Event } from '../types'
 
 const props = defineProps<{ events: Event[] }>()
-const emit = defineEmits<{ select: [id: number]; create: [date: string] }>()
+const emit = defineEmits<{ select: [id: number]; create: [date: string]; move: [id: number, date: string] }>()
 
 const { catStyle } = useCategories()
 const { today, todayStr } = useToday()
 
 const scrollRef = ref<HTMLElement | null>(null)
+const dragEventId = ref<number | null>(null)
+const dragOverDate = ref<string | null>(null)
+
+function onDragStart(e: DragEvent, evId: number) {
+  dragEventId.value = evId
+  e.dataTransfer!.effectAllowed = 'move'
+  e.dataTransfer!.setData('text/plain', String(evId))
+  ;(e.target as HTMLElement).classList.add('opacity-40')
+}
+
+function onDragEnd(e: DragEvent) {
+  ;(e.target as HTMLElement).classList.remove('opacity-40')
+  dragEventId.value = null
+  dragOverDate.value = null
+}
+
+function onDragOver(e: DragEvent, ds: string) {
+  if (!dragEventId.value) return
+  e.preventDefault()
+  e.dataTransfer!.dropEffect = 'move'
+  dragOverDate.value = ds
+}
+
+function onDragLeave(_e: DragEvent, ds: string) {
+  if (dragOverDate.value === ds) dragOverDate.value = null
+}
+
+function onDrop(e: DragEvent, ds: string) {
+  e.preventDefault()
+  if (!dragEventId.value) return
+  emit('move', dragEventId.value, ds)
+  dragEventId.value = null
+  dragOverDate.value = null
+}
 
 const monthNames = ['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december']
 const dayHeaders = ['mån','tis','ons','tor','fre','lör','sön']
@@ -134,8 +168,12 @@ function toggleExpand(ds: string) {
                 'opacity-30': day.getMonth() !== m.month,
                 'month-today ring-2 ring-accent ring-inset': dateStr(day) === todayStr,
                 'bg-accent/5': dateStr(day) === todayStr,
+                'bg-accent/10 ring-2 ring-accent/30 ring-inset': dragOverDate === dateStr(day),
               }"
               @click="emit('create', dateStr(day))"
+              @dragover="onDragOver($event, dateStr(day))"
+              @dragleave="onDragLeave($event, dateStr(day))"
+              @drop="onDrop($event, dateStr(day))"
             >
               <div
                 class="text-[11px] font-medium mb-0.5 px-0.5"
@@ -148,8 +186,11 @@ function toggleExpand(ds: string) {
               <div
                 v-for="ev in (byDate[dateStr(day)] || []).slice(0, expandedDate === dateStr(day) ? 999 : MAX_VIS)"
                 :key="ev.id"
-                class="text-[10px] leading-tight rounded px-1 py-px mb-px truncate cursor-pointer hover:opacity-80"
+                class="text-[10px] leading-tight rounded px-1 py-px mb-px truncate cursor-grab hover:opacity-80"
                 :style="catStyle(ev.category)"
+                draggable="true"
+                @dragstart="onDragStart($event, ev.id)"
+                @dragend="onDragEnd"
                 @click.stop="emit('select', ev.id)"
               >
                 <span class="text-[9px] opacity-60 mr-0.5">{{ ev.time }}</span>{{ ev.title.replace(/<[^>]*>/g, '') }}

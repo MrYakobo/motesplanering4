@@ -71,7 +71,7 @@ const assignedPeople = computed(() => {
       <component :is="isFullscreen ? Minimize : Maximize" :size="16" />
     </button>
 
-    <div class="flex items-center gap-2 p-4 border-b border-gray-800 shrink-0">
+    <div v-if="!isFullscreen" class="flex items-center gap-2 p-4 border-b border-gray-800 shrink-0">
       <button
         @click="selectTask(null)"
         class="px-3 py-1 rounded text-xs cursor-pointer border transition-colors"

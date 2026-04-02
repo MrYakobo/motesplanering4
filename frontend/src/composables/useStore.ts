@@ -14,6 +14,9 @@ const db = reactive<Database>({
   categories: [],
   schedules: {},
   recurring_events: {},
+  globalSlides: [],
+  slideLogo: '',
+  slideBackground: { color: '#111', image: '' },
   settings: {},
   _version: 0,
 })

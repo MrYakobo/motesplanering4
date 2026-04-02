@@ -153,6 +153,14 @@ async function onDelete(id: number) {
   editingEvent.value = null
   toast('Händelse borttagen')
 }
+
+async function onMoveEvent(eventId: number, newDate: string) {
+  const ev = db.events.find(e => e.id === eventId)
+  if (!ev || ev.date === newDate) return
+  ev.date = newDate
+  await persist('events')
+  toast(`Flyttad till ${newDate}`)
+}
 </script>
 
 <template>
@@ -210,6 +218,7 @@ async function onDelete(id: number) {
       :events="filteredEvents"
       @select="onSelect"
       @create="newEvent"
+      @move="onMoveEvent"
     />
 
     <!-- Week calendar -->
@@ -218,6 +227,7 @@ async function onDelete(id: number) {
       :events="filteredEvents"
       @select="onSelect"
       @create="newEvent"
+      @move="onMoveEvent"
     />
 
     <!-- Year calendar -->

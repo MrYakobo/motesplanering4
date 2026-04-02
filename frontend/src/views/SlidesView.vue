@@ -4,8 +4,9 @@ import { useStore } from '../composables/useStore'
 import { useToday, localDateStr } from '../composables/useToday'
 import { useFullscreen } from '../composables/useFullscreen'
 import { Maximize, Minimize } from 'lucide-vue-next'
+import SlidesSidebar from '../components/SlidesSidebar.vue'
 
-const { db } = useStore()
+const { db, isAdmin } = useStore()
 const { today } = useToday()
 const { isFullscreen, toggle } = useFullscreen()
 
@@ -57,7 +58,15 @@ function dayLabel(dateStr: string) {
 </script>
 
 <template>
-  <div class="slide-area">
+  <div class="flex flex-1 overflow-hidden">
+    <div
+      class="slide-area"
+      :style="{
+        background: db.slideBackground?.image
+          ? `url(${db.slideBackground.image}) center/cover no-repeat`
+          : (db.slideBackground?.color || '#111'),
+      }"
+    >
     <!-- Fullscreen toggle -->
     <button
       @click="toggle"
@@ -92,15 +101,20 @@ function dayLabel(dateStr: string) {
       </div>
       <div class="slide-footer">
         <div class="slide-clock"></div>
+        <span class="flex-1" />
+        <img v-if="db.slideLogo" :src="db.slideLogo" class="h-[clamp(24px,3vw,48px)] w-auto opacity-80" />
       </div>
     </div>
   </div>
+
+  <!-- Sidebar (admin only, not in fullscreen) -->
+  <SlidesSidebar v-if="isAdmin && !isFullscreen" />
+</div>
 </template>
 
 <style scoped>
 .slide-area {
   flex: 1;
-  background: #111;
   color: #e5e5e5;
   display: flex;
   flex-direction: column;

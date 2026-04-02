@@ -5,12 +5,42 @@ import { useToday, localDateStr } from '../composables/useToday'
 import type { Event } from '../types'
 
 const props = defineProps<{ events: Event[] }>()
-const emit = defineEmits<{ select: [id: number]; create: [date: string] }>()
+const emit = defineEmits<{ select: [id: number]; create: [date: string]; move: [id: number, date: string] }>()
 
 const { catStyle } = useCategories()
 const { today, todayStr } = useToday()
 
 const scrollRef = ref<HTMLElement | null>(null)
+const dragEventId = ref<number | null>(null)
+const dragOverDate = ref<string | null>(null)
+
+function onDragStart(e: DragEvent, evId: number) {
+  dragEventId.value = evId
+  e.dataTransfer!.effectAllowed = 'move'
+  e.dataTransfer!.setData('text/plain', String(evId))
+  ;(e.target as HTMLElement).classList.add('opacity-40')
+}
+function onDragEnd(e: DragEvent) {
+  ;(e.target as HTMLElement).classList.remove('opacity-40')
+  dragEventId.value = null
+  dragOverDate.value = null
+}
+function onDragOver(e: DragEvent, ds: string) {
+  if (!dragEventId.value) return
+  e.preventDefault()
+  e.dataTransfer!.dropEffect = 'move'
+  dragOverDate.value = ds
+}
+function onDragLeave(_e: DragEvent, ds: string) {
+  if (dragOverDate.value === ds) dragOverDate.value = null
+}
+function onDrop(e: DragEvent, ds: string) {
+  e.preventDefault()
+  if (!dragEventId.value) return
+  emit('move', dragEventId.value, ds)
+  dragEventId.value = null
+  dragOverDate.value = null
+}
 const dayLabels = ['mån', 'tis', 'ons', 'tor', 'fre', 'lör', 'sön']
 const monthNames = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec']
 
@@ -105,8 +135,12 @@ onMounted(() => {
             class="border-l border-gray-100 first:border-l-0 px-1.5 py-1.5 cursor-pointer hover:bg-gray-50 transition-colors"
             :class="{
               'week-today bg-accent/5 ring-2 ring-accent ring-inset': dateStr(day) === todayStr,
+              'bg-accent/10 ring-2 ring-accent/30 ring-inset': dragOverDate === dateStr(day),
             }"
             @click="emit('create', dateStr(day))"
+            @dragover="onDragOver($event, dateStr(day))"
+            @dragleave="onDragLeave($event, dateStr(day))"
+            @drop="onDrop($event, dateStr(day))"
           >
             <div
               class="text-xs font-semibold mb-1"
@@ -118,8 +152,11 @@ onMounted(() => {
             <div
               v-for="ev in (byDate[dateStr(day)] || []).sort((a, b) => (a.time || '').localeCompare(b.time || ''))"
               :key="ev.id"
-              class="text-[11px] rounded px-1.5 py-0.5 mb-1 cursor-pointer hover:opacity-80"
+              class="text-[11px] rounded px-1.5 py-0.5 mb-1 cursor-grab hover:opacity-80"
               :style="catStyle(ev.category)"
+              draggable="true"
+              @dragstart="onDragStart($event, ev.id)"
+              @dragend="onDragEnd"
               @click.stop="emit('select', ev.id)"
             >
               <div class="text-[10px] opacity-60 font-mono">{{ ev.time }}</div>
