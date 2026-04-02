@@ -15,8 +15,8 @@ const routes = [
   { path: '/export', component: () => import('./views/ExportView.vue') },
   { path: '/mailbot', component: () => import('./views/MailbotView.vue') },
   { path: '/namnskyltar', component: () => import('./views/NamnskyltarView.vue') },
-  { path: '/namnskyltar/fullscreen', component: () => import('./views/NamnskyltarView.vue') },
-  { path: '/namnskyltar/fullscreen/:task', component: () => import('./views/NamnskyltarView.vue') },
+  { path: '/namnskyltar/:task', component: () => import('./views/NamnskyltarView.vue') },
+  { path: '/namnskyltar/:task/fullscreen', component: () => import('./views/NamnskyltarView.vue') },
   { path: '/sunday', component: () => import('./views/SundayView.vue') },
   { path: '/sunday/fullscreen', component: () => import('./views/SundayView.vue') },
 ]

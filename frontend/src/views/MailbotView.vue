@@ -4,7 +4,7 @@ import { useStore } from '../composables/useStore'
 import { useToday, localDateStr } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
 import { useApi } from '../composables/useApi'
-import { Mail, AlertTriangle, CheckCircle, Zap, Send } from 'lucide-vue-next'
+import { Mail, AlertTriangle, CheckCircle, Zap, Send, X } from 'lucide-vue-next'
 
 const { db, assignments } = useStore()
 const { show: toast } = useToast()
@@ -16,7 +16,7 @@ const cronRunning = ref(false)
 
 const upcomingEvents = computed(() =>
   db.events
-    .filter(e => e.date >= todayStr.value && e.date <= futureDate(30))
+    .filter(e => e.date >= todayStr.value && e.date <= futureDate(30) && (e.expectedTasks || []).length > 0)
     .sort((a, b) => a.date.localeCompare(b.date))
 )
 
@@ -28,7 +28,7 @@ function futureDate(days: number) {
 
 function getAssignedPeople(eid: number) {
   const asgn = assignments[eid] || {}
-  const people: { name: string; email: string; hasEmail: boolean; taskName: string }[] = []
+  const people: { id: number; name: string; email: string; hasEmail: boolean; taskName: string }[] = []
   const seen = new Set<number>()
   for (const [tid, a] of Object.entries(asgn)) {
     const task = db.tasks.find(t => t.id === parseInt(tid))
@@ -38,7 +38,7 @@ function getAssignedPeople(eid: number) {
       if (seen.has(id)) return
       seen.add(id)
       const c = db.contacts.find(x => x.id === id)
-      if (c) people.push({ name: c.name, email: c.email, hasEmail: !!c.email, taskName: task?.name || '' })
+      if (c) people.push({ id: c.id, name: c.name, email: c.email, hasEmail: !!c.email, taskName: task?.name || '' })
     })
   }
   return people
@@ -84,6 +84,78 @@ async function sendReminders() {
   } finally {
     sending.value = false
   }
+}
+
+// ── Email preview ────────────────────────────────────────────────────────────
+const previewHtml = ref('')
+const previewSubject = ref('')
+const previewOpen = ref(false)
+
+const DAY_NAMES = ['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag']
+
+function findPersonTask(eventId: number, contactId: number) {
+  const asgn = assignments[eventId] || {}
+  for (const [tid, val] of Object.entries(asgn)) {
+    const task = db.tasks.find(t => t.id === parseInt(tid))
+    if (!task) continue
+    if (val.type === 'contact' && (val.ids || []).includes(contactId)) return task
+    if (val.type === 'team') {
+      const team = db.teams.find(t => t.id === val.id)
+      if (team && team.members.includes(contactId)) return task
+    }
+  }
+  return null
+}
+
+function buildRosterRows(eventId: number) {
+  const asgn = assignments[eventId] || {}
+  let rows = ''
+  for (const [tid, val] of Object.entries(asgn)) {
+    const task = db.tasks.find(t => t.id === parseInt(tid))
+    if (!task) continue
+    if (val.type === 'contact') {
+      for (const cid of (val.ids || [])) {
+        const c = db.contacts.find(x => x.id === cid)
+        if (c) rows += `<tr><td style="padding:4px 8px;border-bottom:1px solid #f0f0f0">${task.name}</td><td style="padding:4px 8px;border-bottom:1px solid #f0f0f0">${c.name}</td></tr>`
+      }
+    } else if (val.type === 'team') {
+      const team = db.teams.find(t => t.id === val.id)
+      if (!team) continue
+      rows += `<tr><td colspan="2" style="padding:12px 8px 4px"><strong>${task.name} — Team ${team.number}</strong></td></tr>`
+      for (const cid of team.members) {
+        const c = db.contacts.find(x => x.id === cid)
+        if (c) rows += `<tr><td style="padding:4px 8px;border-bottom:1px solid #f0f0f0"></td><td style="padding:4px 8px;border-bottom:1px solid #f0f0f0">${c.name}</td></tr>`
+      }
+    }
+  }
+  return rows
+}
+
+function previewEmail(eventId: number, contactId: number) {
+  const ev = db.events.find(e => e.id === eventId)
+  const contact = db.contacts.find(c => c.id === contactId)
+  if (!ev || !contact) return
+
+  const task = findPersonTask(eventId, contactId)
+  const taskPhrase = task?.phrase || ('är ' + (task?.name || 'med'))
+  const firstName = contact.name.split(' ')[0]
+  const rosterHtml = buildRosterRows(eventId)
+  const d = new Date(ev.date + 'T00:00:00')
+  const orgName = db.settings?.orgName || ''
+  const orgLogo = db.settings?.orgLogo || ''
+  const subjectRole = task?.name ? task.name.toLowerCase() : 'med'
+
+  previewSubject.value = `Du är ${subjectRole} på ${DAY_NAMES[d.getDay()]}`
+  previewHtml.value = `<div style="font-family:system-ui,sans-serif;background:#fff;padding:20px;border-radius:3px">`
+    + `<h1 style="font-size:35px;font-weight:300;text-align:center;margin-bottom:30px">Hej ${firstName}!</h1>`
+    + `<p>Du ${taskPhrase} på "${ev.title}", ${DAY_NAMES[d.getDay()]} kl ${ev.time || ''}.</p>`
+    + `<p>Alla som har ansvar då är:</p>`
+    + `<table style="width:100%;border-top:1px solid #ccc;border-bottom:1px solid #ccc;padding:10px;margin-bottom:10px;border-collapse:collapse;font-size:13px"><tbody>${rosterHtml}</tbody></table>`
+    + `<h3 style="font-weight:400">Ha en fortsatt fin vecka!</h3>`
+    + (orgLogo ? `<img style="width:150px" src="${orgLogo}">` : '')
+    + `</div>`
+    + `<div style="text-align:center;margin-top:10px;font-size:12px;color:#999">${orgName}<br>Det här mailet avser ${ev.date} ${ev.time || ''}.</div>`
+  previewOpen.value = true
 }
 </script>
 
@@ -137,9 +209,9 @@ async function sendReminders() {
       </div>
 
       <!-- Event list -->
-      <h3 class="text-sm font-semibold text-gray-700 mb-3">Kommande händelser med tilldelningar</h3>
+      <h3 class="text-sm font-semibold text-gray-700 mb-3">Kommande händelser med förväntade uppgifter</h3>
       <div v-if="upcomingEvents.length === 0" class="text-sm text-gray-400 text-center py-8">
-        Inga händelser med tilldelningar de närmaste 30 dagarna
+        Inga händelser med förväntade uppgifter de närmaste 30 dagarna
       </div>
       <div class="space-y-3">
         <div v-for="ev in upcomingEvents" :key="ev.id" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -150,20 +222,57 @@ async function sendReminders() {
             <span v-else-if="getAssignedPeople(ev.id).some(p => !p.hasEmail)" class="text-amber-500"><AlertTriangle :size="14" /></span>
           </div>
           <div v-if="getAssignedPeople(ev.id).length > 0" class="px-4 py-2 flex flex-wrap gap-1.5">
-            <span
+            <button
               v-for="p in getAssignedPeople(ev.id)" :key="p.name"
-              class="text-xs px-2 py-0.5 rounded flex items-center gap-1"
-              :class="p.hasEmail ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'"
-              :title="p.hasEmail ? `${p.email} — ${p.taskName}` : `Saknar e-post — ${p.taskName}`"
+              @click="previewEmail(ev.id, p.id)"
+              class="text-xs px-2 py-0.5 rounded inline-flex items-center gap-1 border-none cursor-pointer transition-colors"
+              :class="p.hasEmail ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-red-100 text-red-800 hover:bg-red-200'"
+              :title="p.hasEmail ? `${p.email} — ${p.taskName} (klicka för förhandsgranskning)` : `Saknar e-post — ${p.taskName}`"
             >
               <Mail v-if="p.hasEmail" :size="10" />
               <AlertTriangle v-else :size="10" />
               {{ p.name }}
-            </span>
+            </button>
           </div>
           <div v-else class="px-4 py-2 text-xs text-gray-400">Inga tilldelade</div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Email preview modal -->
+  <Teleport to="body">
+    <Transition name="modal">
+      <div
+        v-if="previewOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/35 backdrop-blur-sm"
+        @click.self="previewOpen = false"
+      >
+        <div class="bg-gray-100 rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+          <div class="flex items-center px-5 py-3 border-b border-gray-200 bg-white shrink-0">
+            <div class="flex-1 min-w-0">
+              <div class="text-[11px] text-gray-400 uppercase tracking-wider">Ämne</div>
+              <div class="text-sm font-semibold truncate">{{ previewSubject }}</div>
+            </div>
+            <button @click="previewOpen = false" class="w-7 h-7 rounded-md flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors shrink-0 bg-transparent border-none cursor-pointer">
+              <X :size="16" />
+            </button>
+          </div>
+          <div class="flex-1 overflow-y-auto p-4">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden" v-html="previewHtml" />
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
+
+<style scoped>
+.modal-enter-active { transition: opacity 0.18s ease; }
+.modal-leave-active { transition: opacity 0.15s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+.modal-enter-active > div { transition: transform 0.2s cubic-bezier(0.34, 1.2, 0.64, 1); }
+.modal-leave-active > div { transition: transform 0.15s ease; }
+.modal-enter-from > div { transform: translateY(12px) scale(0.98); }
+.modal-leave-to > div { transform: translateY(8px) scale(0.98); }
+</style>
