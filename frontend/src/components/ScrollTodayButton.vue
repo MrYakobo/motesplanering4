@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import {
+  ChevronsUpDown
+} from 'lucide-vue-next'
 
 const props = defineProps<{
   scrollContainer: HTMLElement | null
@@ -52,6 +55,7 @@ function onClick() {
     @click="onClick"
     class="absolute bottom-4 right-4 bg-accent text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg cursor-pointer hover:bg-accent-hover transition-colors z-20 border-none"
   >
-    {{ direction === 'above' ? '↑' : '↓' }} Idag
+    <ChevronsUpDown class="inline size-4" />
+    Gå till idag
   </button>
 </template>

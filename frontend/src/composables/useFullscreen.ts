@@ -9,9 +9,7 @@ export function useFullscreen() {
 
   function enter() {
     isFullscreen.value = true
-    const base = route.path.replace(/\/fullscreen.*$/, '')
-    const suffix = route.path.includes('/fullscreen') ? '' : '/fullscreen'
-    if (suffix) router.replace(route.path + suffix)
+    if (!route.path.includes('/fullscreen')) router.replace(route.path + '/fullscreen')
   }
 
   function exit() {

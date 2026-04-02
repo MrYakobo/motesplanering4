@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useStore } from '../composables/useStore'
 import { useApi } from '../composables/useApi'
-import { Settings, LogOut } from 'lucide-vue-next'
+import RecordModal from './RecordModal.vue'
+import { Settings, LogOut, RefreshCw, UserRoundCog } from 'lucide-vue-next'
 
 const { role, isAdmin, db, memberContactId } = useStore()
 const { logout } = useApi()
+const router = useRouter()
 
 const open = ref(false)
+const switchOpen = ref(false)
+const switchSearch = ref('')
 const menuRef = ref<HTMLElement | null>(null)
 
 const displayName = computed(() => {
@@ -25,20 +30,32 @@ const initials = computed(() => {
   return (parts[0] || '?').slice(0, 2).toUpperCase()
 })
 
-const roleLabel = computed(() =>
-  isAdmin.value ? 'Administratör' : 'Medlem'
-)
+const roleLabel = computed(() => isAdmin.value ? 'Administratör' : 'Medlem')
+
+const filteredContacts = computed(() => {
+  const q = switchSearch.value.toLowerCase()
+  return db.contacts
+    .filter((c: any) => c.token && (!q || c.name.toLowerCase().includes(q)))
+    .sort((a, b) => a.name.localeCompare(b.name))
+})
+
+function switchToUser(contactId: number) {
+  const contact = db.contacts.find(c => c.id === contactId) as any
+  if (!contact?.token) return
+  // Clear admin auth, set member token
+  localStorage.removeItem('authHeader')
+  localStorage.setItem('memberToken', contact.token)
+  location.reload()
+}
 
 function onClickOutside(e: MouseEvent) {
-  if (menuRef.value && !menuRef.value.contains(e.target as Node)) {
-    open.value = false
-  }
+  if (menuRef.value && !menuRef.value.contains(e.target as Node)) open.value = false
 }
 
 onMounted(() => document.addEventListener('click', onClickOutside))
 onUnmounted(() => document.removeEventListener('click', onClickOutside))
 
-const emit = defineEmits<{ openSettings: [] }>()
+const emit = defineEmits<{ openGenerate: [] }>()
 </script>
 
 <template>
@@ -64,11 +81,13 @@ const emit = defineEmits<{ openSettings: [] }>()
           </div>
         </div>
         <div class="p-1.5">
-          <button
-            v-if="isAdmin"
-            @click="emit('openSettings'); open = false"
-            class="menu-btn"
-          >
+          <button v-if="isAdmin" @click="emit('openGenerate'); open = false" class="menu-btn">
+            <RefreshCw :size="16" /> Generera händelser
+          </button>
+          <button v-if="isAdmin" @click="switchOpen = true; switchSearch = ''; open = false" class="menu-btn">
+            <UserRoundCog :size="16" /> Byt användare
+          </button>
+          <button v-if="isAdmin" @click="router.push('/settings'); open = false" class="menu-btn">
             <Settings :size="16" /> Inställningar
           </button>
         </div>
@@ -80,6 +99,29 @@ const emit = defineEmits<{ openSettings: [] }>()
       </div>
     </Transition>
   </div>
+
+  <!-- Switch user modal -->
+  <RecordModal :open="switchOpen" title="Byt användare" @close="switchOpen = false">
+    <p class="text-xs text-gray-500 mb-3">Välj en person att logga in som. Logga ut för att återgå till admin.</p>
+    <input
+      v-model="switchSearch"
+      type="text"
+      placeholder="Sök person…"
+      class="w-full border border-gray-300 rounded-md px-2.5 py-2 text-sm outline-none focus:border-accent mb-3"
+    />
+    <div class="max-h-[50vh] overflow-y-auto space-y-0.5">
+      <button
+        v-for="c in filteredContacts" :key="c.id"
+        @click="switchToUser(c.id)"
+        class="flex items-center gap-2 w-full bg-transparent border-none py-2.5 px-2 text-sm text-gray-700 cursor-pointer rounded-md hover:bg-gray-50 transition-colors text-left"
+      >
+        <div class="w-7 h-7 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+          {{ c.name.split(' ').filter(Boolean).map((p: string) => p[0]).slice(0, 2).join('').toUpperCase() }}
+        </div>
+        {{ c.name }}
+      </button>
+    </div>
+  </RecordModal>
 </template>
 
 <style scoped>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { watch, onUnmounted } from 'vue'
 import { X } from 'lucide-vue-next'
 
-defineProps<{
+const props = defineProps<{
   open: boolean
   title: string
 }>()
@@ -9,6 +10,20 @@ defineProps<{
 const emit = defineEmits<{
   close: []
 }>()
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    e.stopPropagation()
+    emit('close')
+  }
+}
+
+watch(() => props.open, (v) => {
+  if (v) window.addEventListener('keydown', onKeydown)
+  else window.removeEventListener('keydown', onKeydown)
+})
+
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
@@ -19,7 +34,7 @@ const emit = defineEmits<{
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/35 backdrop-blur-sm"
         @click.self="emit('close')"
       >
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-xl h-[85vh] flex flex-col overflow-hidden mx-4">
           <div class="flex items-center px-5 py-3 border-b border-gray-200 shrink-0">
             <h3 class="flex-1 text-sm font-semibold truncate">{{ title }}</h3>
             <button

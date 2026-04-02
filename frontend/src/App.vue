@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from './composables/useStore'
 import { fullscreenState } from './composables/useFullscreen'

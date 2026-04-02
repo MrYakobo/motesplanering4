@@ -147,20 +147,27 @@ function copyIcal() {
         </div>
       </div>
 
-      <!-- iCal link -->
-      <div v-if="icalUrl" class="mt-8 pt-6 border-t border-white/10 flex items-center gap-3">
-        <a
-          :href="webcalUrl"
-          class="text-xs text-accent flex items-center gap-1.5 no-underline hover:underline"
-        >
-          <CalendarDays :size="14" /> Lägg till i kalenderapp
-        </a>
-        <button
-          @click="copyIcal"
-          class="text-[10px] text-white/30 bg-transparent border border-white/10 rounded px-2 py-0.5 cursor-pointer hover:text-white/60 transition-colors"
-        >
-          Kopiera iCal-länk
-        </button>
+      <!-- Subscribe to calendar -->
+      <div v-if="icalUrl && memberContactId" class="mt-8 bg-white/5 border border-white/10 rounded-lg p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <CalendarDays :size="16" class="text-accent shrink-0" />
+          <span class="text-sm font-semibold text-white/80">Prenumerera på ditt schema</span>
+        </div>
+        <p class="text-xs text-white/40 mb-3">Lägg till dina tilldelningar i din kalenderapp (Google, Apple, Outlook).</p>
+        <div class="flex items-center gap-2">
+          <a
+            :href="webcalUrl"
+            class="inline-flex items-center gap-1.5 bg-accent text-white text-xs font-semibold px-3 py-1.5 rounded-md no-underline hover:bg-accent-hover transition-colors"
+          >
+            <CalendarDays :size="13" /> Öppna i kalenderapp
+          </a>
+          <button
+            @click="copyIcal"
+            class="text-[11px] text-white/40 bg-transparent border border-white/15 rounded-md px-2.5 py-1.5 cursor-pointer hover:text-white/70 transition-colors"
+          >
+            Kopiera länk
+          </button>
+        </div>
       </div>
     </div>
   </div>

@@ -5,14 +5,15 @@ import { useStore } from '../composables/useStore'
 import { useToday } from '../composables/useToday'
 import UserMenu from './UserMenu.vue'
 import LoginModal from './LoginModal.vue'
-import SettingsModal from './SettingsModal.vue'
+import GenerateEventsModal from './GenerateEventsModal.vue'
 import { useApi } from '../composables/useApi'
 import {
   Calendar, Table, Users, ListChecks, UsersRound,
   Home, Monitor, IdCard, ClipboardList, User,
   PackageOpen, FileText, Mail, ChevronDown,
-  CalendarDays, Menu, Tags, Settings, LogOut, CalendarClock,
+  CalendarDays, Menu, Tags, Settings, LogOut, CalendarClock, UserRoundCog,
 } from 'lucide-vue-next'
+import RecordModal from './RecordModal.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -20,9 +21,11 @@ const { isViewer, isMember, isAdmin, db, memberContactId } = useStore()
 const { todayStr, isSimulated, simDate, setSimDate, clearSimDate } = useToday()
 
 const showLogin = ref(false)
-const showSettings = ref(false)
+const generateOpen = ref(false)
 const moreOpen = ref(false)
 const mobUserOpen = ref(false)
+const mobSwitchOpen = ref(false)
+const mobSwitchSearch = ref('')
 
 const isActive = (path: string) => route.path.startsWith(path)
 const go = (path: string) => router.push(path)
@@ -72,7 +75,6 @@ const isOutputActive = () => outputTabs.some(t => isActive(t.path))
 
 const moreItems = [
   { path: '/contacts', label: 'Kontakter', icon: Users },
-  { path: '/teams', label: 'Team', icon: UsersRound },
   { path: '/categories', label: 'Kategorier', icon: Tags },
   { path: '/slides', label: 'Slides', icon: Monitor },
   { path: '/export', label: 'Månadsblad', icon: FileText },
@@ -84,6 +86,21 @@ const moreItems = [
 function goMobile(path: string) {
   moreOpen.value = false
   router.push(path)
+}
+
+const mobSwitchContacts = computed(() => {
+  const q = mobSwitchSearch.value.toLowerCase()
+  return db.contacts
+    .filter((c: any) => c.token && (!q || c.name.toLowerCase().includes(q)))
+    .sort((a, b) => a.name.localeCompare(b.name))
+})
+
+function switchToUser(contactId: number) {
+  const contact = db.contacts.find(c => c.id === contactId) as any
+  if (!contact?.token) return
+  localStorage.removeItem('authHeader')
+  localStorage.setItem('memberToken', contact.token)
+  location.reload()
 }
 
 function onLoginSuccess() {
@@ -178,17 +195,14 @@ function onLoginSuccess() {
       Logga in
     </button>
 
-    <UserMenu v-else @open-settings="showSettings = true" />
+    <UserMenu v-else @open-generate="generateOpen = true" />
 
     <LoginModal
       :open="showLogin"
       @close="showLogin = false"
       @success="onLoginSuccess"
     />
-    <SettingsModal
-      :open="showSettings"
-      @close="showSettings = false"
-    />
+    <GenerateEventsModal :open="generateOpen" @close="generateOpen = false" @generated="generateOpen = false" />
   </nav>
 
   <!-- Mobile bottom nav (≤480px) -->
@@ -199,8 +213,8 @@ function onLoginSuccess() {
       </button>
     </template>
     <template v-else>
-      <button @click="goMobile('/events')" :class="{ active: route.path === '/events' }">
-        <Calendar :size="16" /><span>Händelser</span>
+      <button @click="goMobile('/teams')" :class="{ active: isActive('/teams') }">
+        <UsersRound :size="16" /><span>Team</span>
       </button>
       <button @click="goMobile('/schema')" :class="{ active: isActive('/schema') }">
         <Table :size="16" /><span>Schema</span>
@@ -225,8 +239,8 @@ function onLoginSuccess() {
   <Teleport to="body">
     <Transition name="sheet">
       <div v-if="moreOpen" class="fixed inset-0 z-[38]" @click="moreOpen = false">
-        <div class="absolute inset-0 bg-black/30" />
-        <div class="absolute bottom-[calc(48px+env(safe-area-inset-bottom,0px))] left-0 right-0 bg-[#1a1a2e] border-t border-[#2d2d4e] p-2 flex flex-col gap-0.5 max-h-[60vh] overflow-y-auto z-[39]" @click.stop>
+        <div class="sheet-backdrop" />
+        <div class="sheet-panel" @click.stop>
           <button
             v-for="item in moreItems" :key="item.path"
             @click="goMobile(item.path)"
@@ -261,17 +275,20 @@ function onLoginSuccess() {
     <!-- Mobile user sheet -->
     <Transition name="sheet">
       <div v-if="mobUserOpen" class="fixed inset-0 z-[38]" @click="mobUserOpen = false">
-        <div class="absolute inset-0 bg-black/30" />
-        <div class="absolute bottom-[calc(48px+env(safe-area-inset-bottom,0px))] left-0 right-0 bg-[#1a1a2e] border-t border-[#2d2d4e] overflow-hidden z-[39]" @click.stop>
+        <div class="sheet-backdrop" />
+        <div class="sheet-panel" @click.stop>
           <div class="p-4 flex items-center gap-3 border-b border-[#2d2d4e]">
             <div class="w-10 h-10 rounded-full bg-accent text-white text-sm font-bold flex items-center justify-center shrink-0">{{ userInitials }}</div>
             <div>
-              <div class="text-white font-semibold text-sm">{{ isAdmin ? 'Admin' : 'Medlem' }}</div>
+              <div class="text-white font-semibold text-sm">{{ isAdmin ? 'Admin' : (memberContactId ? db.contacts.find(c => c.id === memberContactId)?.name : 'Medlem') }}</div>
               <div class="text-gray-400 text-xs">{{ isAdmin ? 'Administratör' : 'Medlem' }}</div>
             </div>
           </div>
           <div class="p-1.5">
-            <button v-if="isAdmin" @click="showSettings = true; mobUserOpen = false" class="mob-sheet-btn">
+            <button v-if="isAdmin" @click="mobSwitchOpen = true; mobSwitchSearch = ''; mobUserOpen = false" class="mob-sheet-btn">
+              <UserRoundCog :size="18" /> Byt användare
+            </button>
+            <button v-if="isAdmin" @click="router.push('/settings'); mobUserOpen = false" class="mob-sheet-btn">
               <Settings :size="18" /> Inställningar
             </button>
             <button @click="useApi().logout()" class="mob-sheet-btn text-red-400">
@@ -282,6 +299,26 @@ function onLoginSuccess() {
       </div>
     </Transition>
   </Teleport>
+
+  <!-- Mobile switch user modal -->
+  <RecordModal :open="mobSwitchOpen" title="Byt användare" @close="mobSwitchOpen = false">
+    <p class="text-xs text-gray-500 mb-3">Välj en person att logga in som. Logga ut för att återgå till admin.</p>
+    <input
+      v-model="mobSwitchSearch"
+      type="text"
+      placeholder="Sök person…"
+      class="w-full border border-gray-300 rounded-md px-2.5 py-2 text-sm outline-none focus:border-accent mb-3"
+    />
+    <div class="max-h-[50vh] overflow-y-auto space-y-0.5">
+      <button
+        v-for="c in mobSwitchContacts" :key="c.id"
+        @click="switchToUser(c.id)"
+        class="flex items-center gap-2 w-full bg-transparent border-none py-2.5 px-2 text-sm text-gray-700 cursor-pointer rounded-md hover:bg-gray-50 transition-colors text-left"
+      >
+        {{ c.name }}
+      </button>
+    </div>
+  </RecordModal>
 </template>
 
 <style scoped>
@@ -352,10 +389,47 @@ function onLoginSuccess() {
   }
 }
 
-/* Sheet transition */
-.sheet-enter-active { transition: opacity 0.15s ease; }
-.sheet-leave-active { transition: opacity 0.12s ease; }
-.sheet-enter-from, .sheet-leave-to { opacity: 0; }
+/* Sheet transition — slide up from bottom */
+.sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+  transition: opacity 0.25s ease;
+}
+.sheet-panel {
+  position: absolute;
+  bottom: calc(43px + env(safe-area-inset-bottom, 0px));
+  left: 0;
+  right: 0;
+  background: #1a1a2e;
+  border-top: 1px solid #2d2d4e;
+  border-radius: 16px 16px 0 0;
+  padding: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+  z-index: 39;
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease;
+}
+.sheet-enter-active .sheet-backdrop,
+.sheet-leave-active .sheet-backdrop {
+  transition: opacity 0.25s ease;
+}
+.sheet-enter-from .sheet-backdrop,
+.sheet-leave-to .sheet-backdrop {
+  opacity: 0;
+}
+.sheet-enter-active .sheet-panel,
+.sheet-leave-active .sheet-panel {
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease;
+}
+.sheet-enter-from .sheet-panel {
+  transform: translateY(100%);
+  opacity: 0;
+}
+.sheet-leave-to .sheet-panel {
+  transform: translateY(40%);
+  opacity: 0;
+}
 .mob-sheet-btn {
   width: 100%;
   text-align: left;

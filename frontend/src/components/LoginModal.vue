@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import { useApi } from '../composables/useApi'
 
-defineProps<{ open: boolean }>()
+const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: []; success: [] }>()
 
 const { login } = useApi()
@@ -10,6 +10,15 @@ const username = ref('')
 const password = ref('')
 const error = ref(false)
 const loading = ref(false)
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') { e.stopPropagation(); emit('close') }
+}
+watch(() => props.open, (v) => {
+  if (v) window.addEventListener('keydown', onKeydown)
+  else window.removeEventListener('keydown', onKeydown)
+})
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 async function submit() {
   error.value = false

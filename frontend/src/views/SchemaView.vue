@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, nextTick, onMounted } from 'vue'
+import { computed, ref, nextTick, onMounted, watch } from 'vue'
 import { useStore } from '../composables/useStore'
 import { useToday, localDateStr } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
 import { Shuffle, Users, User } from 'lucide-vue-next'
 import RecordModal from '../components/RecordModal.vue'
-import type { Event, Task, Team } from '../types'
+import SchemaMobile from '../components/SchemaMobile.vue'
+import type { Event, Task } from '../types'
 
 const { db, assignments, persist, searchQuery, isAdmin } = useStore()
 const { show: toast } = useToast()
@@ -31,6 +32,16 @@ const activePopTask = computed(() => activePop.value ? db.tasks.find(t => t.id =
 const pickerTitle = computed(() => {
   if (!activePopEvent.value || !activePopTask.value) return ''
   return `${activePopTask.value.name} — ${activePopEvent.value.date} ${activePopEvent.value.title}`
+})
+
+const pickerListRef = ref<HTMLElement | null>(null)
+
+watch(activePop, (v) => {
+  if (!v) return
+  nextTick(() => {
+    const el = pickerListRef.value?.querySelector('input:checked') as HTMLElement
+    if (el) el.closest('label')?.scrollIntoView({ block: 'center', behavior: 'instant' })
+  })
 })
 
 // (picker is a modal now, no document click needed)
@@ -121,6 +132,38 @@ function togglePerson(eid: number, tid: number, cid: number, checked: boolean) {
 function filteredContacts() {
   const q = popSearch.value.toLowerCase()
   return db.contacts.filter(c => !q || c.name.toLowerCase().includes(q))
+}
+
+// Suggested contacts: people assigned to this task in the last 6 months
+function suggestedContactIds(tid: number): Set<number> {
+  const sixAgo = new Date(todayStr.value + 'T00:00:00')
+  sixAgo.setMonth(sixAgo.getMonth() - 6)
+  const cutoff = localDateStr(sixAgo)
+  const ids = new Set<number>()
+  db.events.forEach(ev => {
+    if (ev.date < cutoff || ev.date >= todayStr.value) return
+    const asgn = assignments[ev.id]?.[tid]
+    if (asgn?.type === 'contact') (asgn.ids || []).forEach(id => ids.add(id))
+  })
+  return ids
+}
+
+function suggestedContacts() {
+  if (!activePop.value) return []
+  const suggested = suggestedContactIds(activePop.value.tid)
+  const q = popSearch.value.toLowerCase()
+  return db.contacts
+    .filter(c => suggested.has(c.id) && (!q || c.name.toLowerCase().includes(q)))
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
+
+function otherContacts() {
+  if (!activePop.value) return []
+  const suggested = suggestedContactIds(activePop.value.tid)
+  const q = popSearch.value.toLowerCase()
+  return db.contacts
+    .filter(c => !suggested.has(c.id) && (!q || c.name.toLowerCase().includes(q)))
+    .sort((a, b) => a.name.localeCompare(b.name))
 }
 
 // ── Inline add person ────────────────────────────────────────────────────────
@@ -266,6 +309,11 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col flex-1 overflow-hidden">
+    <!-- Mobile: task-first card view -->
+    <SchemaMobile class="flex-1 sm:hidden" @pick="(eid, tid) => togglePop(eid, tid)" @distribute="(tid) => { const t = db.tasks.find(x => x.id === tid); t?.teamTask ? autoDistributeTeams(tid) : autoDistributePersons(tid) }" />
+
+    <!-- Desktop: table view -->
+    <div class="hidden sm:flex flex-col flex-1 overflow-hidden">
     <!-- Stats bar -->
     <div class="flex items-center gap-4 px-4 py-2 bg-white border-b border-gray-200 shrink-0">
       <span class="text-xs text-gray-500">
@@ -353,6 +401,7 @@ onMounted(() => {
         </tbody>
       </table>
     </div>
+    </div><!-- end desktop wrapper -->
 
     <!-- Assignment picker modal -->
     <RecordModal :open="activePop !== null" :title="pickerTitle" @close="closePops">
@@ -397,9 +446,27 @@ onMounted(() => {
           placeholder="Sök person…"
           class="w-full border border-gray-300 rounded-md px-2.5 py-2 text-sm outline-none focus:border-accent mb-3"
         />
-        <div class="max-h-[50vh] overflow-y-auto space-y-0.5">
+        <div ref="pickerListRef" class="min-h-[40vh] max-h-[50vh] overflow-y-auto space-y-0.5">
+          <!-- Suggested contacts (recent 6 months) -->
+          <template v-if="suggestedContacts().length > 0 && !popSearch">
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 pt-1 pb-0.5">Förslag</div>
+            <label
+              v-for="c in suggestedContacts()"
+              :key="'s-' + c.id"
+              class="flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer text-sm text-gray-700 hover:bg-gray-100 bg-accent/5"
+            >
+              <input
+                type="checkbox"
+                :checked="isPersonChecked(activePop.eid, activePop.tid, c.id)"
+                @change="togglePerson(activePop.eid, activePop.tid, c.id, ($event.target as HTMLInputElement).checked)"
+                class="accent-accent"
+              />
+              {{ c.name }}
+            </label>
+            <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 pt-2 pb-0.5">Alla</div>
+          </template>
           <label
-            v-for="c in filteredContacts()"
+            v-for="c in (suggestedContacts().length > 0 && !popSearch ? otherContacts() : filteredContacts())"
             :key="c.id"
             class="flex items-center gap-2 px-2 py-2 rounded-md cursor-pointer text-sm text-gray-700 hover:bg-gray-100"
           >

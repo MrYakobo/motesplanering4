@@ -5,7 +5,7 @@ import { useToday } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
 import { useApi } from '../composables/useApi'
 
-const { db, getPublicEvents } = useStore()
+const { getPublicEvents } = useStore()
 const { todayStr, today: todayDate } = useToday()
 const { show: toast } = useToast()
 const api = useApi()
@@ -50,14 +50,6 @@ function dayNum(dateStr: string) {
   return new Date(dateStr + 'T00:00:00').getDate()
 }
 
-function weekNumber(dateStr: string) {
-  const d = new Date(dateStr + 'T00:00:00')
-  const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
-  tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7))
-  const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1))
-  return Math.ceil(((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
-}
-
 // Group events by date within a month, tracking first-in-date
 function groupByDate(events: typeof filteredEvents.value) {
   const result: { ev: typeof events[0]; isFirst: boolean; dateStr: string }[] = []
@@ -68,11 +60,6 @@ function groupByDate(events: typeof filteredEvents.value) {
     lastDate = ev.date
   })
   return result
-}
-
-// Check if two dates are in the same ISO week
-function _sameWeek(a: string, b: string) {
-  return weekNumber(a) === weekNumber(b)
 }
 
 async function publishExport() {

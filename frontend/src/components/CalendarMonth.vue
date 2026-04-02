@@ -171,7 +171,7 @@ function toggleExpand(ds: string) {
             v-for="(weekMon, wi) in weeksForMonth(m.year, m.month)" :key="wi"
             class="cal-row flex-1 border-b border-gray-50 min-h-0"
           >
-            <div class="cal-wk-col text-[9px] text-gray-300 font-mono flex items-start justify-center pt-1">
+            <div class="cal-wk-col text-[9px] text-gray-800 font-mono flex items-start justify-center pt-1">
               {{ weekNumber(weekMon) }}
             </div>
             <div

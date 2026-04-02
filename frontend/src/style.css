@@ -12,7 +12,25 @@ html {
   touch-action: manipulation;
 }
 
+/* Lock body from scrolling */
+html, body {
+  overflow: hidden;
+  height: 100%;
+}
+
+/* Prevent text selection globally (app feel), allow in inputs */
+* {
+  -webkit-user-select: none;
+  user-select: none;
+}
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 @media (max-width: 480px) {
-  /* Add bottom padding for mobile bottom nav */
-  body { padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px)); }
+  /* Shrink the app container to leave room for the fixed bottom nav */
+  #app > div {
+    height: calc(100dvh - 48px - env(safe-area-inset-bottom, 0px)) !important;
+  }
 }

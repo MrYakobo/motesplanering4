@@ -699,10 +699,29 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // ── Static file serving ─────────────────────────────────────────
+  // ── Static file serving (Vue SPA from frontend/dist) ──────────
+  const SPA_DIR = path.join(__dirname, 'frontend', 'dist');
+
+  // Serve uploaded files from project root /uploads/
+  if (url.pathname.startsWith('/uploads/')) {
+    const uploadPath = path.join(__dirname, url.pathname);
+    if (!uploadPath.startsWith(path.join(__dirname, 'uploads'))) {
+      res.writeHead(403); res.end('Forbidden'); return;
+    }
+    try {
+      const content = fs.readFileSync(uploadPath);
+      const ext = path.extname(uploadPath);
+      res.writeHead(200, {'Content-Type': MIME[ext] || 'application/octet-stream'});
+      res.end(content);
+    } catch {
+      res.writeHead(404); res.end('Not found');
+    }
+    return;
+  }
+
   let filePath = url.pathname === '/' ? '/index.html' : url.pathname;
-  filePath = path.join(__dirname, filePath);
-  if (!filePath.startsWith(__dirname)) {
+  filePath = path.join(SPA_DIR, filePath);
+  if (!filePath.startsWith(SPA_DIR)) {
     res.writeHead(403); res.end('Forbidden'); return;
   }
   const ext = path.extname(filePath);
@@ -712,8 +731,15 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, {'Content-Type': contentType});
     res.end(content);
   } catch {
-    res.writeHead(404, {'Content-Type':'text/plain'});
-    res.end('Not found');
+    // SPA fallback — serve index.html for client-side routing
+    try {
+      const index = fs.readFileSync(path.join(SPA_DIR, 'index.html'));
+      res.writeHead(200, {'Content-Type': 'text/html'});
+      res.end(index);
+    } catch {
+      res.writeHead(404, {'Content-Type':'text/plain'});
+      res.end('Not found');
+    }
   }
 });
 

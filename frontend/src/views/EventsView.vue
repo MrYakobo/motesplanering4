@@ -11,9 +11,9 @@ import PropagateModal from '../components/PropagateModal.vue'
 import CalendarMonth from '../components/CalendarMonth.vue'
 import CalendarWeek from '../components/CalendarWeek.vue'
 import CalendarYear from '../components/CalendarYear.vue'
-import { PlusCircle, List, CalendarDays, CalendarRange, Grid3x3, RefreshCw } from 'lucide-vue-next'
+import SubscribeModal from '../components/SubscribeModal.vue'
+import { List, CalendarDays, CalendarRange, Grid3x3, CalendarPlus } from 'lucide-vue-next'
 import type { Event, EventView } from '../types'
-import GenerateEventsModal from '../components/GenerateEventsModal.vue'
 
 const { db, selectedId, searchQuery, persist, assignments, currentView, setView } = useStore()
 const { todayStr } = useToday()
@@ -26,8 +26,8 @@ watch(() => route.meta.view, (v) => {
 }, { immediate: true })
 
 const editingEvent = ref<Event | null>(null)
-const generateOpen = ref(false)
 const highlightDate = ref<string | null>(null)
+const subscribeOpen = ref(false)
 
 // ── Propagation state ────────────────────────────────────────────────────────
 const propagateOpen = ref(false)
@@ -175,36 +175,34 @@ async function onMoveEvent(eventId: number, newDate: string) {
 <template>
   <div class="flex flex-col flex-1 overflow-hidden relative">
     <div class="flex items-center gap-2 px-4 py-2 bg-white border-b border-gray-200 shrink-0">
-      <span class="text-xs text-gray-500">
+      <span class="text-xs text-gray-500 hidden sm:inline">
         Totalt: <strong class="text-gray-900">{{ filteredEvents.length }}</strong>
       </span>
-      <button
-        @click="newEvent()"
-        class="flex items-center gap-1 text-accent text-sm cursor-pointer bg-transparent border-none hover:underline"
-      >
-        <PlusCircle :size="14" /> Ny händelse
-      </button>
-      <button
-        @click="generateOpen = true"
-        class="flex items-center gap-1 text-accent text-sm cursor-pointer bg-transparent border-none hover:underline"
-      >
-        <RefreshCw :size="14" /> Generera
-      </button>
       <!-- View toggle -->
-      <div class="flex items-center gap-0.5 ml-2 bg-gray-100 rounded-md p-0.5">
+      <div class="flex items-center gap-0.5 bg-gray-100 rounded-md p-0.5">
         <button
           v-for="v in views" :key="v.id"
           @click="setView(v.id)"
           class="flex items-center gap-1 px-2 py-1 rounded text-xs cursor-pointer border-none transition-colors"
-          :class="currentView === v.id
-            ? 'bg-white text-gray-800 shadow-sm'
-            : 'bg-transparent text-gray-500 hover:text-gray-700'"
+          :class="[
+            currentView === v.id
+              ? 'bg-white text-gray-800 shadow-sm'
+              : 'bg-transparent text-gray-500 hover:text-gray-700',
+            v.id === 'year' ? 'hidden sm:flex' : '',
+          ]"
           :title="v.label"
         >
           <component :is="v.icon" :size="13" />
           <span class="hidden sm:inline">{{ v.label }}</span>
         </button>
       </div>
+      <button
+        @click="subscribeOpen = true"
+        class="flex items-center gap-1 text-gray-400 text-xs cursor-pointer bg-transparent border-none hover:text-accent transition-colors"
+        title="Prenumerera på kategori"
+      >
+        <CalendarPlus :size="13" />
+      </button>
       <input
         v-model="searchQuery"
         type="search"
@@ -260,8 +258,6 @@ async function onMoveEvent(eventId: number, newDate: string) {
       />
     </RecordModal>
 
-    <GenerateEventsModal :open="generateOpen" @close="generateOpen = false" @generated="() => {}" />
-
     <PropagateModal
       :open="propagateOpen"
       :event="propagateEvent!"
@@ -272,5 +268,7 @@ async function onMoveEvent(eventId: number, newDate: string) {
       @skip="onPropagateSkip"
       @close="onPropagateSkip"
     />
+
+    <SubscribeModal :open="subscribeOpen" @close="subscribeOpen = false" />
   </div>
 </template>

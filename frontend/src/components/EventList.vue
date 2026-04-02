@@ -69,12 +69,12 @@ onMounted(() => {
       <table class="w-full border-collapse">
         <thead>
           <tr>
-            <th class="sticky top-0 z-[3] bg-gray-50 border-b-2 border-gray-200 w-5 px-0" />
+            <th class="sticky top-0 z-[3] bg-gray-50 border-b-2 border-gray-200 w-5 px-0 hidden sm:table-cell" />
             <th class="sticky top-0 z-[3] bg-gray-50 border-b-2 border-gray-200 px-3.5 py-2 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Datum</th>
             <th class="sticky top-0 z-[3] bg-gray-50 border-b-2 border-gray-200 px-3.5 py-2 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Titel</th>
-            <th class="sticky top-0 z-[3] bg-gray-50 border-b-2 border-gray-200 px-3.5 py-2 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Kategori</th>
-            <th class="sticky top-0 z-[3] bg-gray-50 border-b-2 border-gray-200 px-3.5 py-2 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Beskrivning</th>
-            <th class="sticky top-0 z-[3] bg-gray-50 border-b-2 border-gray-200 w-10" />
+            <th class="sticky top-0 z-[3] bg-gray-50 border-b-2 border-gray-200 px-3.5 py-2 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap hidden sm:table-cell">Kategori</th>
+            <th class="sticky top-0 z-[3] bg-gray-50 border-b-2 border-gray-200 px-3.5 py-2 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap hidden sm:table-cell">Beskrivning</th>
+            <th class="sticky top-0 z-[3] bg-gray-50 border-b-2 border-gray-200 w-10 hidden sm:table-cell" />
           </tr>
         </thead>
         <tbody>
@@ -96,22 +96,22 @@ onMounted(() => {
               :style="isToday(ev) ? 'scroll-margin-top: 40px' : ''"
             >
               <!-- Arrow column -->
-              <td class="w-5 px-0 text-center align-middle">
+              <td class="w-5 px-0 text-center align-middle hidden sm:table-cell">
                 <ArrowRight v-if="isToday(ev)" :size="14" class="text-accent inline-block" />
               </td>
               <td class="px-3.5 py-2.5 text-sm" :class="{ 'shadow-[inset_3px_0_0_var(--accent)]': isToday(ev) }">
                 <span class="text-xs whitespace-nowrap">{{ ev.date }} {{ ev.time || '' }}</span>
               </td>
               <td class="px-3.5 py-2.5 text-sm">{{ ev.title }}</td>
-              <td class="px-3.5 py-2.5 text-sm">
+              <td class="px-3.5 py-2.5 text-sm hidden sm:table-cell">
                 <span v-if="ev.category" class="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium" :style="catStyle(ev.category)">{{ ev.category }}</span>
                 <span v-else class="text-gray-400">—</span>
               </td>
-              <td class="px-3.5 py-2.5 text-sm">
+              <td class="px-3.5 py-2.5 text-sm hidden sm:table-cell">
                 <span v-if="ev.description">{{ ev.description }}</span>
                 <span v-else class="text-gray-400">—</span>
               </td>
-              <td class="w-10 text-center px-1">
+              <td class="w-10 text-center px-1 hidden sm:table-cell">
                 <button class="opacity-0 group-hover:opacity-100 p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all">
                   <Ellipsis :size="16" />
                 </button>

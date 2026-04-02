@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useStore } from '../composables/useStore'
 import { useToday, localDateStr } from '../composables/useToday'
 import { useFullscreen } from '../composables/useFullscreen'
-import { Maximize, Minimize } from 'lucide-vue-next'
+import { Maximize, Minimize, Pause, Play } from 'lucide-vue-next'
 import SlidesSidebar from '../components/SlidesSidebar.vue'
 
 const { db, isAdmin, getPublicEvents } = useStore()
@@ -55,6 +55,103 @@ function dayLabel(dateStr: string) {
   const name = dayLabels[d.getDay()]
   return name.charAt(0).toUpperCase() + name.slice(1)
 }
+
+// ── Promo slides ─────────────────────────────────────────────────────────────
+const promoUrls = computed(() => {
+  const eventPromos = weekEvents.value.flatMap(e => (e.promoSlides || []).filter(Boolean))
+  const globalPromos = (db.globalSlides || []).filter(s => s.active).map(s => s.url)
+  return [...eventPromos, ...globalPromos]
+})
+
+const totalSlides = computed(() => 1 + promoUrls.value.length)
+const hasMultiple = computed(() => totalSlides.value > 1)
+
+// ── Slideshow state ──────────────────────────────────────────────────────────
+function slideDuration(idx: number): number {
+  if (idx === 0) {
+    return Math.min(20, Math.max(10, 10 + (byDay.value.length - 3) * 2.5)) * 1000
+  }
+  return 10000
+}
+
+const slideIndex = ref(0)
+const paused = ref(false)
+const animating = ref(false)
+let advanceTimer: ReturnType<typeof setTimeout> | null = null
+
+function currentDuration(): number {
+  return slideDuration(slideIndex.value)
+}
+
+function scheduleAdvance() {
+  cancelAdvance()
+  if (paused.value || totalSlides.value <= 1) return
+  // Reset: set animating false, then on next frame start the CSS transition
+  animating.value = false
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      animating.value = true
+      advanceTimer = setTimeout(() => {
+        slideIndex.value = (slideIndex.value + 1) % totalSlides.value
+        scheduleAdvance()
+      }, currentDuration())
+    })
+  })
+}
+
+function cancelAdvance() {
+  if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null }
+  animating.value = false
+}
+
+function goToSlide(idx: number) {
+  slideIndex.value = idx
+  scheduleAdvance()
+}
+
+function nextSlide() {
+  if (totalSlides.value <= 1) return
+  goToSlide((slideIndex.value + 1) % totalSlides.value)
+}
+
+function prevSlide() {
+  if (totalSlides.value <= 1) return
+  goToSlide((slideIndex.value - 1 + totalSlides.value) % totalSlides.value)
+}
+
+function togglePause() {
+  paused.value = !paused.value
+  if (paused.value) {
+    cancelAdvance()
+  } else {
+    scheduleAdvance()
+  }
+}
+
+// Reset when slides change
+watch(totalSlides, () => { slideIndex.value = 0; scheduleAdvance() })
+
+function onKeydown(e: KeyboardEvent) {
+  if ((e.target as HTMLElement)?.closest('input,textarea,select')) return
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); nextSlide() }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prevSlide() }
+  if (e.key === ' ') { e.preventDefault(); togglePause() }
+}
+
+onMounted(() => { scheduleAdvance(); window.addEventListener('keydown', onKeydown) })
+onUnmounted(() => { cancelAdvance(); window.removeEventListener('keydown', onKeydown) })
+
+// ── Clock ────────────────────────────────────────────────────────────────────
+const clockText = ref('')
+let clockTimer: ReturnType<typeof setInterval> | null = null
+
+function updateClock() {
+  const now = new Date()
+  clockText.value = now.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
+}
+
+onMounted(() => { updateClock(); clockTimer = setInterval(updateClock, 10000) })
+onUnmounted(() => { if (clockTimer) clearInterval(clockTimer) })
 </script>
 
 <template>
@@ -67,49 +164,84 @@ function dayLabel(dateStr: string) {
           : (db.slideBackground?.color || '#111'),
       }"
     >
-    <!-- Fullscreen toggle -->
-    <button
-      @click="toggle"
-      class="absolute top-[2vh] right-[2vw] p-1.5 rounded-md bg-white/10 text-white/50 hover:text-white hover:bg-white/20 border-none cursor-pointer transition-colors z-10"
-      :title="isFullscreen ? 'Avsluta fullskärm (Esc)' : 'Fullskärm (F)'"
-    >
-      <component :is="isFullscreen ? Minimize : Maximize" :size="16" />
-    </button>
+      <!-- Progress bar -->
+      <div
+        v-if="hasMultiple"
+        class="slide-progress-bar"
+        :class="{ animating }"
+        :style="{ transitionDuration: animating ? currentDuration() + 'ms' : '0ms' }"
+      />
 
-    <!-- Week overview -->
-    <div class="slide-week">
-      <div class="slide-week-header">
-        <h2>Händer i veckan (v{{ weekNum }})</h2>
-      </div>
-      <div class="slide-columns">
-        <div v-if="byDay.length === 0" class="flex-1 flex items-center justify-center text-[clamp(14px,1.5vw,24px)] text-gray-500">
-          Inga händelser denna vecka
-        </div>
-        <div v-for="([date, events], colIdx) in byDay" :key="date" class="slide-col">
-          <div class="slide-col-day">{{ dayLabel(date) }}</div>
-          <div class="slide-col-events">
-            <div
-              v-for="(ev, evIdx) in events" :key="ev.id"
-              class="slide-ev"
-              :style="{ animationDelay: `${(colIdx * 0.15 + evIdx * 0.08).toFixed(2)}s` }"
-            >
-              <div class="slide-ev-title">{{ ev.title }}</div>
-              <div class="slide-ev-meta">{{ ev.category || '' }} · {{ ev.time || '' }}</div>
+      <!-- Fullscreen toggle -->
+      <button
+        @click="toggle"
+        class="absolute top-[2vh] right-[2vw] p-1.5 rounded-md bg-white/10 text-white/50 hover:text-white hover:bg-white/20 border-none cursor-pointer transition-colors z-10"
+        :title="isFullscreen ? 'Avsluta fullskärm (Esc)' : 'Fullskärm (F)'"
+      >
+        <component :is="isFullscreen ? Minimize : Maximize" :size="16" />
+      </button>
+
+      <!-- Slide 0: Week overview -->
+      <div class="slide-panel" :class="{ active: slideIndex === 0 }">
+        <div class="slide-week">
+          <div class="slide-week-header">
+            <h2>Händer i veckan (v{{ weekNum }})</h2>
+          </div>
+          <div class="slide-columns">
+            <div v-if="byDay.length === 0" class="flex-1 flex items-center justify-center text-[clamp(14px,1.5vw,24px)] text-gray-500">
+              Inga händelser denna vecka
             </div>
+            <div v-for="([date, events], colIdx) in byDay" :key="date" class="slide-col">
+              <div class="slide-col-day">{{ dayLabel(date) }}</div>
+              <div class="slide-col-events">
+                <div
+                  v-for="(ev, evIdx) in events" :key="ev.id"
+                  class="slide-ev"
+                  :style="{ animationDelay: `${(colIdx * 0.15 + evIdx * 0.08).toFixed(2)}s` }"
+                >
+                  <div class="slide-ev-title">{{ ev.title }}</div>
+                  <div class="slide-ev-meta">{{ ev.category || '' }} · {{ ev.time || '' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <div class="slide-clock">{{ clockText }}</div>
+            <span class="flex-1" />
+            <img v-if="db.slideLogo" :src="db.slideLogo" class="h-[clamp(24px,3vw,48px)] w-auto opacity-80" />
           </div>
         </div>
       </div>
-      <div class="slide-footer">
-        <div class="slide-clock"></div>
-        <span class="flex-1" />
-        <img v-if="db.slideLogo" :src="db.slideLogo" class="h-[clamp(24px,3vw,48px)] w-auto opacity-80" />
+
+      <!-- Promo slides -->
+      <div
+        v-for="(url, i) in promoUrls" :key="'promo-' + i"
+        class="slide-panel flex items-center justify-center"
+        :class="{ active: slideIndex === i + 1 }"
+      >
+        <img :src="url" class="max-w-full max-h-full object-contain" alt="Promo" />
+      </div>
+
+      <!-- Controls -->
+      <div v-if="hasMultiple" class="slide-controls">
+        <button
+          v-for="i in totalSlides" :key="i"
+          @click="goToSlide(i - 1)"
+          class="slide-dot"
+          :class="{ active: slideIndex === i - 1 }"
+        />
+        <button
+          @click="togglePause"
+          class="slide-pause"
+        >
+          <component :is="paused ? Play : Pause" :size="16" />
+        </button>
       </div>
     </div>
-  </div>
 
-  <!-- Sidebar (admin only, not in fullscreen) -->
-  <SlidesSidebar v-if="isAdmin && !isFullscreen" />
-</div>
+    <!-- Sidebar (admin only, not in fullscreen) -->
+    <SlidesSidebar v-if="isAdmin && !isFullscreen" />
+  </div>
 </template>
 
 <style scoped>
@@ -120,6 +252,17 @@ function dayLabel(dateStr: string) {
   flex-direction: column;
   overflow: hidden;
   position: relative;
+}
+.slide-panel {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+.slide-panel.active {
+  opacity: 1;
+  pointer-events: auto;
 }
 .slide-week {
   display: flex;
@@ -199,5 +342,54 @@ function dayLabel(dateStr: string) {
 @keyframes slideEvIn {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
+}
+.slide-controls {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  z-index: 2;
+}
+.slide-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.2);
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  transition: all .2s;
+}
+.slide-dot.active {
+  background: #fff;
+  width: 20px;
+  border-radius: 4px;
+}
+.slide-pause {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,.3);
+  cursor: pointer;
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+}
+.slide-pause:hover { color: #fff; }
+.slide-progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0;
+  background: rgba(255,255,255,.5);
+  z-index: 3;
+  transition: none;
+}
+.slide-progress-bar.animating {
+  width: 100%;
+  transition: width linear;
 }
 </style>

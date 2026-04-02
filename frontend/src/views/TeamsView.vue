@@ -4,7 +4,6 @@ import { useStore } from '../composables/useStore'
 import { useToast } from '../composables/useToast'
 import RecordModal from '../components/RecordModal.vue'
 import { PlusCircle, X, Search } from 'lucide-vue-next'
-import type { Team } from '../types'
 
 const { db, persist } = useStore()
 const { show: toast } = useToast()
@@ -150,9 +149,9 @@ async function onDrop(toTeamId: string) {
     </div>
 
     <!-- Board -->
-    <div class="flex flex-1 overflow-x-auto gap-px bg-gray-200">
-      <!-- Pool -->
-      <div class="bg-white min-w-[240px] max-w-[280px] flex flex-col shrink-0">
+    <div class="flex flex-1 overflow-x-auto gap-px bg-gray-200 sm:flex-row flex-col sm:overflow-y-hidden overflow-y-auto">
+      <!-- Pool (desktop only — on mobile, use the "Lägg till" modal instead) -->
+      <div class="bg-white min-w-[240px] max-w-[280px] flex-col shrink-0 hidden sm:flex">
         <div class="px-3 py-2.5 text-sm font-bold text-gray-700 border-b border-gray-200 flex items-center justify-between">
           Alla personer <span class="text-xs font-normal text-gray-400">{{ db.contacts.length }}</span>
         </div>
@@ -237,7 +236,7 @@ async function onDrop(toTeamId: string) {
     <!-- Member picker modal -->
     <RecordModal
       :open="pickerTeamId !== null"
-      :title="'Lägg till medlem'"
+      :title="pickerTeamId ? `Lägg till medlem i ${teamTasks.find(t => t.id === activeTaskId)?.name || ''} team ${db.teams.find(t => t.id === pickerTeamId)?.number || ''}` : ''"
       @close="pickerTeamId = null"
     >
       <input

@@ -1,6 +1,6 @@
 import { reactive, ref, computed } from 'vue'
 import type {
-  Database, Event, Contact, Task, Team, Category,
+  Database, Event,
   Assignments, Assignment, TabId, EventView, UserRole,
 } from '../types'
 import { useApi } from './useApi'
@@ -23,7 +23,7 @@ const db = reactive<Database>({
 
 const assignments = reactive<Assignments>({})
 const currentTab = ref<TabId>('events')
-const currentView = ref<EventView>('list')
+const currentView = ref<EventView>('calendar')
 const selectedId = ref<number | null>(null)
 const role = ref<UserRole>('viewer')
 const memberContactId = ref<number | null>(null)

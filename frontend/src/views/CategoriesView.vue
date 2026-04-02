@@ -4,7 +4,8 @@ import { useStore } from '../composables/useStore'
 import { useToast } from '../composables/useToast'
 import { useCategories } from '../composables/useCategories'
 import RecordModal from '../components/RecordModal.vue'
-import { PlusCircle, Lock } from 'lucide-vue-next'
+import SubscribeModal from '../components/SubscribeModal.vue'
+import { PlusCircle, Lock, CalendarPlus } from 'lucide-vue-next'
 import type { Category } from '../types'
 
 const { db, persist } = useStore()
@@ -79,6 +80,9 @@ async function remove() {
 function eventCount(catName: string) {
   return db.events.filter(e => e.category === catName).length
 }
+
+// ── Subscribe ────────────────────────────────────────────────────────────────
+const subscribeOpen = ref(false)
 </script>
 
 <template>
@@ -86,9 +90,14 @@ function eventCount(catName: string) {
     <div class="max-w-lg mx-auto">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-base font-semibold">Kategorier <span class="text-xs font-normal text-gray-400">{{ db.categories.length }} st</span></h2>
-        <button @click="openNew" class="flex items-center gap-1 text-accent text-sm cursor-pointer bg-transparent border-none hover:underline">
-          <PlusCircle :size="14" /> Ny kategori
-        </button>
+        <div class="flex items-center gap-3">
+          <button @click="subscribeOpen = true" class="flex items-center gap-1 text-gray-500 text-sm cursor-pointer bg-transparent border-none hover:text-accent hover:underline">
+            <CalendarPlus :size="14" /> Prenumerera
+          </button>
+          <button @click="openNew" class="flex items-center gap-1 text-accent text-sm cursor-pointer bg-transparent border-none hover:underline">
+            <PlusCircle :size="14" /> Ny kategori
+          </button>
+        </div>
       </div>
 
       <!-- Uncategorized warning -->
@@ -147,5 +156,7 @@ function eventCount(catName: string) {
         <button v-if="editing?.name" @click="remove" class="bg-red-500 text-white rounded-md px-4 py-1.5 text-sm cursor-pointer hover:bg-red-600 transition-colors">Ta bort</button>
       </div>
     </RecordModal>
+
+    <SubscribeModal :open="subscribeOpen" @close="subscribeOpen = false" />
   </div>
 </template>

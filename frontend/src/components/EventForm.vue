@@ -145,7 +145,7 @@ function onSave() {
     <button @click="onSave" class="btn-primary">Spara</button>
     <span class="flex-1" />
     <button
-      v-if="!props.event._isNew"
+      v-if="db.events.some(e => e.id === form.id)"
       @click="emit('delete', form.id)"
       class="btn-danger"
     >

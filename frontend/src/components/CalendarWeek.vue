@@ -133,7 +133,7 @@ onMounted(() => {
         <div class="grid grid-cols-7 min-h-[120px]">
           <div
             v-for="(day, i) in daysForWeek(mon)" :key="dateStr(day)"
-            class="border-l border-gray-100 first:border-l-0 px-1.5 py-1.5 cursor-pointer hover:bg-gray-50 transition-colors"
+            class="bg-white/80 border-t border-l border-gray-200 first:border-l-0 px-1.5 py-1.5 cursor-pointer hover:bg-gray-50 transition-colors"
             :class="{
               'week-today bg-accent/5 ring-2 ring-accent ring-inset': dateStr(day) === todayStr,
               'bg-accent/10 ring-2 ring-accent/30 ring-inset': dragOverDate === dateStr(day),
@@ -153,15 +153,14 @@ onMounted(() => {
             <div
               v-for="ev in (byDate[dateStr(day)] || []).sort((a, b) => (a.time || '').localeCompare(b.time || ''))"
               :key="ev.id"
-              class="text-[11px] rounded px-1.5 py-0.5 mb-1 cursor-grab hover:opacity-80"
+              class="text-[10px] leading-tight rounded px-1 py-px mb-px cursor-grab hover:opacity-80 truncate"
               :style="catStyle(ev.category)"
               draggable="true"
               @dragstart="onDragStart($event, ev.id)"
               @dragend="onDragEnd"
               @click.stop="emit('select', ev.id)"
             >
-              <div class="text-[10px] opacity-60 font-mono">{{ ev.time }}</div>
-              <div class="font-medium leading-tight truncate">{{ ev.title }}</div>
+              <span class="text-[9px] opacity-60 mr-0.5 hidden sm:inline">{{ ev.time }}</span><span class="font-medium leading-tight truncate">{{ ev.title }}</span>
             </div>
           </div>
         </div>
