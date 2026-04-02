@@ -46,9 +46,21 @@ export interface Assignment {
 
 export type Assignments = Record<number, Record<number, Assignment>>
 
+export interface CronJob {
+  id: string
+  name: string
+  schedule: string
+  action: string
+  daysAhead?: number
+  enabled: boolean
+}
+
 export interface AppSettings {
   orgName?: string
   orgLogo?: string
+  baseUrl?: string
+  accentColor?: string
+  cronJobs?: CronJob[]
   smtp?: {
     host: string
     port: number

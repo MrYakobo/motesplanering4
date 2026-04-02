@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useStore } from '../composables/useStore'
 import UserMenu from './UserMenu.vue'
 import LoginModal from './LoginModal.vue'
+import SettingsModal from './SettingsModal.vue'
 import {
   Calendar, Table, Users, ListChecks, UsersRound,
   Home, Monitor, IdCard, ClipboardList,
@@ -14,6 +15,7 @@ const route = useRoute()
 const { isAdmin, isMember, isViewer } = useStore()
 
 const showLogin = ref(false)
+const showSettings = ref(false)
 
 const isActive = (path: string) => route.path === path
 const go = (path: string) => router.push(path)
@@ -79,12 +81,16 @@ function onLoginSuccess() {
       Logga in
     </button>
 
-    <UserMenu v-else @open-settings="go('/settings')" />
+    <UserMenu v-else @open-settings="showSettings = true" />
 
     <LoginModal
       :open="showLogin"
       @close="showLogin = false"
       @success="onLoginSuccess"
+    />
+    <SettingsModal
+      :open="showSettings"
+      @close="showSettings = false"
     />
   </nav>
 </template>

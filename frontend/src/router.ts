@@ -3,6 +3,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 const routes = [
   { path: '/', redirect: '/events' },
   { path: '/home', component: () => import('./views/HomeView.vue') },
+  { path: '/settings', component: () => import('./views/SettingsView.vue') },
   { path: '/events', component: () => import('./views/EventsView.vue') },
   { path: '/contacts', component: () => import('./views/ContactsView.vue') },
   { path: '/tasks', component: () => import('./views/TasksView.vue') },
