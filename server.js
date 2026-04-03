@@ -90,7 +90,7 @@ function slugifyEmail(email) {
   return (email || '').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
 }
 
-function buildIcalForContact(contact, db, schedules) {
+function buildIcalForContact(contact, db, schedules, baseUrl) {
   const events = (db.events || []).filter(ev => {
     const asgn = schedules[ev.id] || {};
     return Object.values(asgn).some(val => {
@@ -103,11 +103,13 @@ function buildIcalForContact(contact, db, schedules) {
     });
   });
 
+  const dayNames = ['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'];
+  function icalEscape(s) { return (s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); }
+
   let cal = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Motesplanering//EN\r\nX-WR-CALNAME:' + contact.name + ' schema\r\n';
   for (const ev of events) {
     const task = Shared.findPersonTask(ev.id, contact.id, db, schedules);
     const dtStart = (ev.date || '').replace(/-/g, '') + (ev.time ? 'T' + ev.time.replace(/:/g, '') + '00' : '');
-    // default 1h duration — build DTEND in same local format as DTSTART
     const startDate = new Date(ev.date + 'T' + (ev.time || '00:00') + ':00');
     const endDate = new Date(startDate.getTime() + 3600000);
     const yy = endDate.getFullYear();
@@ -118,12 +120,23 @@ function buildIcalForContact(contact, db, schedules) {
     const ss = String(endDate.getSeconds()).padStart(2,'0');
     const dtEnd = yy + mm + dd + 'T' + hh + mi + ss;
     const summary = (ev.title || 'Event') + (task ? ' (' + task.name + ')' : '');
+
+    // Build description: "Du är bildtekniker på söndag"
+    const dayName = dayNames[startDate.getDay()];
+    let desc = '';
+    if (task) desc = 'Du ' + (task.phrase || 'är ' + task.name.toLowerCase()) + ' på ' + dayName;
+    if (ev.description) desc += (desc ? '\\n\\n' : '') + icalEscape(ev.description);
+
+    // Link back to the week view for this date
+    const eventUrl = baseUrl ? baseUrl + '/#/events/week/' + ev.date : '';
+
     cal += 'BEGIN:VEVENT\r\n';
     cal += 'UID:ev' + ev.id + '-' + contact.id + '@motesplanering\r\n';
     cal += 'DTSTART:' + dtStart + '\r\n';
     cal += 'DTEND:' + dtEnd + '\r\n';
     cal += 'SUMMARY:' + summary + '\r\n';
-    if (ev.description) cal += 'DESCRIPTION:' + ev.description.replace(/\n/g, '\\n') + '\r\n';
+    if (desc) cal += 'DESCRIPTION:' + desc + '\r\n';
+    if (eventUrl) cal += 'URL:' + eventUrl + '\r\n';
     cal += 'END:VEVENT\r\n';
   }
   cal += 'END:VCALENDAR\r\n';
@@ -390,7 +403,10 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const schedules = loadSchedules(db);
-    const ical = buildIcalForContact(contact, db, schedules);
+    const proto = req.headers['x-forwarded-proto'] || 'http';
+    const host = req.headers['x-forwarded-host'] || req.headers['host'] || 'localhost:' + PORT;
+    const baseUrl = proto + '://' + host;
+    const ical = buildIcalForContact(contact, db, schedules, baseUrl);
     res.writeHead(200, {'Content-Type':'text/calendar; charset=utf-8', 'Content-Disposition': 'inline; filename="' + slug + '.ics"'});
     res.end(ical);
     return;
