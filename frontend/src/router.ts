@@ -6,6 +6,7 @@ const routes = [
   { path: '/settings', component: () => import('./views/SettingsView.vue') },
   { path: '/events', component: () => import('./views/EventsView.vue') },
   { path: '/calendar', component: () => import('./views/EventsView.vue'), meta: { view: 'calendar' } },
+  { path: '/week/:date?', component: () => import('./views/EventsView.vue'), meta: { view: 'week' } },
   { path: '/year', component: () => import('./views/EventsView.vue'), meta: { view: 'year' } },
   { path: '/contacts', component: () => import('./views/ContactsView.vue') },
   { path: '/tasks', component: () => import('./views/TasksView.vue') },

@@ -315,16 +315,16 @@ onMounted(() => {
     <!-- Desktop: table view -->
     <div class="hidden sm:flex flex-col flex-1 overflow-hidden">
     <!-- Stats bar -->
-    <div class="flex items-center gap-4 px-4 py-2 bg-white border-b border-gray-200 shrink-0">
-      <span class="text-xs text-gray-500">
-        Totalt: <strong class="text-gray-900">{{ visibleEvents.length }}</strong>
+    <div class="skeu-toolbar">
+      <span class="skeu-toolbar-label">
+        Totalt: <strong>{{ visibleEvents.length }}</strong>
       </span>
-      <span v-if="warnCount > 0" class="text-xs text-amber-500 font-semibold">⚠ {{ warnCount }} saknas</span>
+      <span v-if="warnCount > 0" class="skeu-badge-warn">⚠ {{ warnCount }} saknas</span>
       <input
         v-model="searchQuery"
         type="search"
         placeholder="Sök..."
-        class="ml-auto border border-gray-300 rounded-md px-2.5 py-1 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 w-48"
+        class="skeu-search ml-auto"
       />
     </div>
 
@@ -333,26 +333,26 @@ onMounted(() => {
       <table class="border-collapse" style="width:max-content;min-width:100%">
         <thead>
           <tr>
-            <th class="sticky top-0 left-0 z-[5] bg-gray-50 border-b-2 border-gray-200 px-2 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider" style="max-width:45vw">
+            <th class="skeu-th sticky left-0 z-[5]" style="max-width:45vw">
               Datum / Händelse
             </th>
             <th
               v-for="task in db.tasks"
               :key="task.id"
-              class="sticky top-0 z-[3] bg-gray-50 border-b-2 border-gray-200 px-1.5 py-2 text-left min-w-[120px]"
+              class="skeu-th min-w-[120px]"
             >
-              <div class="flex items-center gap-1 text-xs font-semibold text-gray-700">
+              <div class="flex items-center gap-1 text-xs font-semibold">
                 {{ task.name }}
                 <button
                   v-if="isAdmin"
                   @click.stop="task.teamTask ? autoDistributeTeams(task.id) : autoDistributePersons(task.id)"
-                  class="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--accent-light)] border border-[var(--accent-mid)] text-[var(--accent)] cursor-pointer hover:opacity-80"
+                  class="skeu-dist-btn"
                   :title="task.teamTask ? 'Fördela team jämnt' : 'Fördela personer jämnt'"
                 >
-                  <Shuffle :size="11" /> Fördela
+                  <Shuffle :size="10" /> Fördela
                 </button>
               </div>
-              <div class="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1">
+              <div class="text-[10px] text-[#888] mt-0.5 flex items-center gap-1">
                 <Users v-if="task.teamTask" :size="10" />
                 <User v-else :size="10" />
                 {{ task.teamTask ? 'team' : 'person' }}
@@ -364,9 +364,10 @@ onMounted(() => {
           <tr
             v-for="ev in visibleEvents"
             :key="ev.id"
+            class="skeu-grid-row"
             :style="{ opacity: ev.date < todayStr ? 0.5 : 1 }"
           >
-            <td class="sticky left-0 bg-white z-[1] font-medium px-2 py-1.5 border-b border-gray-100 td-event" style="max-width:45vw;white-space:normal;word-break:break-word">
+            <td class="sticky left-0 z-[1] font-medium px-2 py-1.5 td-event skeu-grid-sticky" style="max-width:45vw;white-space:normal;word-break:break-word">
               <span class="text-xs">{{ ev.date }} {{ ev.time || '' }}</span><br />
               <span class="text-xs text-gray-500">{{ ev.title }}</span>
               <span v-if="missingCount(ev) > 0" class="text-xs text-amber-500 font-semibold ml-1" :title="'Saknas: ' + missingNames(ev)">
@@ -376,16 +377,16 @@ onMounted(() => {
             <td
               v-for="task in db.tasks"
               :key="task.id"
-              class="px-1.5 py-1 border-b border-gray-100"
+              class="px-1.5 py-1"
               @click.stop
             >
               <div class="pop-cell relative">
                 <div
-                  class="pop-label px-1.5 py-1 border rounded text-xs cursor-pointer bg-white text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px] transition-colors"
+                  class="skeu-cell"
                   :class="{
-                    'border-gray-200 hover:border-[var(--accent)]': !isUnset(ev, task) && !isCellWarn(ev, task),
-                    'text-gray-400 bg-gray-50 border-gray-200 hover:border-[var(--accent)]': isUnset(ev, task) && !isCellWarn(ev, task),
-                    'border-amber-400 bg-amber-50': isCellWarn(ev, task),
+                    'skeu-cell-set': !isUnset(ev, task) && !isCellWarn(ev, task),
+                    'skeu-cell-empty': isUnset(ev, task) && !isCellWarn(ev, task),
+                    'skeu-cell-warn': isCellWarn(ev, task),
                   }"
                   :title="task.teamTask ? teamMembers(ev, task) : ''"
                   @click="togglePop(ev.id, task.id)"
@@ -576,3 +577,123 @@ onMounted(() => {
     </RecordModal>
   </div>
 </template>
+
+<style scoped>
+.skeu-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #e8e8e8 0%, #d4d4d4 100%);
+  border-bottom: 1px solid #bbb;
+  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
+}
+.skeu-toolbar-label {
+  font-size: 11px;
+  color: #666;
+  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+.skeu-toolbar-label strong { color: #333; }
+.skeu-badge-warn {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 4px;
+  color: #7c5a00;
+  background: linear-gradient(180deg, #fff4cc 0%, #ffe699 100%);
+  border: 1px solid #d4a800;
+  box-shadow: 0 1px 0 rgba(255,255,255,.5) inset;
+  text-shadow: 0 1px 0 rgba(255,255,255,.4);
+}
+.skeu-search {
+  width: 180px;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  outline: none;
+  color: #333;
+  background: linear-gradient(180deg, #e0e0e0 0%, #fff 3px);
+  border: 1px solid #aaa;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06) inset;
+}
+.skeu-search:focus {
+  border-color: #6a5aed;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06) inset, 0 0 0 2px rgba(106,90,237,.15);
+}
+.skeu-th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: 7px 6px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #555;
+  background: linear-gradient(180deg, #eee 0%, #ddd 100%);
+  border-bottom: 1px solid #bbb;
+  box-shadow: 0 1px 0 rgba(255,255,255,.5) inset;
+  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+.skeu-dist-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  color: #fff;
+  border: 1px solid rgba(0,0,0,.15);
+  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.15) inset;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.15);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.skeu-dist-btn:hover { background: linear-gradient(180deg, #7b6cf5 0%, #5544d4 100%); }
+.skeu-grid-row {
+  border-bottom: 1px solid #d8d8d8;
+  background: linear-gradient(180deg, #f8f8f8 0%, #f0f0f0 100%);
+}
+.skeu-grid-sticky {
+  background: linear-gradient(180deg, #f0f0f0 0%, #e8e8e8 100%);
+  border-bottom: 1px solid #d0d0d0;
+  border-right: 1px solid #ccc;
+}
+.skeu-cell {
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+  transition: all 0.1s ease;
+}
+.skeu-cell-set {
+  color: #333;
+  background: linear-gradient(180deg, #fff 0%, #f0f0f0 100%);
+  border: 1px solid #c0c0c0;
+  box-shadow: 0 1px 0 rgba(255,255,255,.5) inset;
+}
+.skeu-cell-set:hover { border-color: #6a5aed; }
+.skeu-cell-empty {
+  color: #aaa;
+  background: linear-gradient(180deg, #f0f0f0 0%, #e8e8e8 100%);
+  border: 1px solid #ccc;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04) inset;
+}
+.skeu-cell-empty:hover { border-color: #6a5aed; }
+.skeu-cell-warn {
+  color: #7c5a00;
+  background: linear-gradient(180deg, #fff8e0 0%, #ffefb0 100%);
+  border: 1px solid #d4a800;
+  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
+}
+.skeu-cell-warn:hover { border-color: #b08900; }
+</style>

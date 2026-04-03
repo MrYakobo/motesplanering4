@@ -40,8 +40,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-dvh overflow-hidden bg-gray-100 text-gray-900">
-    <AppNav v-if="!loading && !fullscreenState" />
+  <div class="flex flex-col h-dvh overflow-hidden bg-[#e0e0e0] text-gray-900">
+    <AppNav v-if="!loading && !fullscreenState && !isViewer" />
     <div v-if="loading" class="flex-1 flex items-center justify-center">
       <p class="text-gray-400 text-sm">Laddar...</p>
     </div>

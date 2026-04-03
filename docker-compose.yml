@@ -8,7 +8,7 @@ services:
     volumes:
       - ./server.js:/app/server.js
       - ./lib:/app/lib
-      - ./frontend/dist:/app/frontend/dist
+      #- ./frontend/dist:/app/frontend/dist
       - ./data_prod.json:/app/data_prod.json
       - ./backups:/app/backups
       - ./uploads:/app/uploads

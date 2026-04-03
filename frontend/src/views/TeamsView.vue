@@ -15,7 +15,6 @@ const pickerSearch = ref('')
 
 const teamTasks = computed(() => db.tasks.filter(t => t.teamTask))
 
-// Auto-select first task
 if (!activeTaskId.value && teamTasks.value.length > 0) {
   activeTaskId.value = teamTasks.value[0].id
 }
@@ -90,7 +89,6 @@ function initials(name: string) {
   return (parts[0] || '?').slice(0, 2).toUpperCase()
 }
 
-// Drag and drop
 const dragContactId = ref<number | null>(null)
 const dragFromTeamId = ref<string | null>(null)
 const dragOverTeamId = ref<string | null>(null)
@@ -105,25 +103,19 @@ function onDragOver(e: DragEvent, teamId: string) {
   dragOverTeamId.value = teamId
 }
 
-function onDragLeave() {
-  dragOverTeamId.value = null
-}
+function onDragLeave() { dragOverTeamId.value = null }
 
 async function onDrop(toTeamId: string) {
   dragOverTeamId.value = null
   if (dragContactId.value === null || dragFromTeamId.value === toTeamId) return
-
-  // Remove from old team
   if (dragFromTeamId.value !== 'pool') {
     const from = db.teams.find(t => t.id === parseInt(dragFromTeamId.value!))
     if (from) from.members = from.members.filter(id => id !== dragContactId.value)
   }
-  // Add to new team
   if (toTeamId !== 'pool') {
     const to = db.teams.find(t => t.id === parseInt(toTeamId))
     if (to && !to.members.includes(dragContactId.value!)) to.members.push(dragContactId.value!)
   }
-
   await persist('teams')
   dragContactId.value = null
   dragFromTeamId.value = null
@@ -133,45 +125,43 @@ async function onDrop(toTeamId: string) {
 <template>
   <div class="flex flex-col flex-1 overflow-hidden">
     <!-- Task tabs -->
-    <div class="flex items-center gap-1 px-4 py-2.5 bg-white border-b border-gray-200 shrink-0 overflow-x-auto">
-      <button
-        v-for="task in teamTasks" :key="task.id"
-        @click="selectTask(task.id)"
-        class="px-3 py-1 rounded-md text-sm border cursor-pointer transition-colors shrink-0"
-        :class="task.id === activeTaskId
-          ? 'bg-accent text-white border-accent'
-          : 'bg-transparent text-gray-500 border-gray-200 hover:bg-gray-50'"
-      >
-        {{ task.name }}
-      </button>
+    <div class="skeu-toolbar">
+      <div class="skeu-segmented">
+        <button
+          v-for="task in teamTasks" :key="task.id"
+          @click="selectTask(task.id)"
+          class="skeu-seg-btn"
+          :class="{ 'skeu-seg-active': task.id === activeTaskId }"
+        >
+          {{ task.name }}
+        </button>
+      </div>
       <span class="flex-1" />
-      <span class="text-xs text-gray-400">{{ teams.length }} team · {{ allInTeams.size }} personer</span>
+      <span class="skeu-toolbar-label">{{ teams.length }} team · {{ allInTeams.size }} personer</span>
     </div>
 
     <!-- Board -->
-    <div class="flex flex-1 overflow-x-auto gap-px bg-gray-200 sm:flex-row flex-col sm:overflow-y-hidden overflow-y-auto">
-      <!-- Pool (desktop only — on mobile, use the "Lägg till" modal instead) -->
-      <div class="bg-white min-w-[240px] max-w-[280px] flex-col shrink-0 hidden sm:flex">
-        <div class="px-3 py-2.5 text-sm font-bold text-gray-700 border-b border-gray-200 flex items-center justify-between">
-          Alla personer <span class="text-xs font-normal text-gray-400">{{ db.contacts.length }}</span>
+    <div class="flex flex-1 overflow-x-auto gap-px sm:flex-row flex-col sm:overflow-y-hidden overflow-y-auto" style="background: linear-gradient(180deg, #d0d0d0 0%, #c0c0c0 100%)">
+      <!-- Pool (desktop only) -->
+      <div class="skeu-pool hidden sm:flex">
+        <div class="skeu-pool-header">
+          Alla personer <span>{{ db.contacts.length }}</span>
         </div>
-        <div class="px-2 py-1.5 border-b border-gray-200">
-          <div class="flex items-center gap-1.5 border border-gray-200 rounded-md px-2 py-1">
-            <Search :size="13" class="text-gray-400 shrink-0" />
-            <input v-model="poolSearch" type="text" placeholder="Sök…" class="border-none outline-none text-sm flex-1 bg-transparent" />
-          </div>
+        <div class="skeu-pool-search">
+          <Search :size="13" class="text-[#999] shrink-0" />
+          <input v-model="poolSearch" type="text" placeholder="Sök…" class="border-none outline-none text-sm flex-1 bg-transparent" />
         </div>
         <div
           class="flex-1 overflow-y-auto p-1.5"
           @dragover="onDragOver($event, 'pool')"
           @dragleave="onDragLeave"
           @drop="onDrop('pool')"
-          :class="{ 'bg-indigo-50': dragOverTeamId === 'pool' }"
+          :class="{ 'skeu-drop-target': dragOverTeamId === 'pool' }"
         >
           <div
             v-for="c in poolContacts" :key="c.id"
-            class="px-2.5 py-1 mb-0.5 rounded-md text-xs cursor-grab border border-gray-200"
-            :class="allInTeams.has(c.id) ? 'opacity-35 italic text-gray-500' : 'text-gray-600'"
+            class="skeu-pool-item"
+            :class="{ 'opacity-35 italic': allInTeams.has(c.id) }"
             draggable="true"
             @dragstart="onDragStart(c.id, 'pool')"
           >
@@ -183,11 +173,11 @@ async function onDrop(toTeamId: string) {
       <!-- Team columns -->
       <div
         v-for="team in teams" :key="team.id"
-        class="bg-gray-50 min-w-[200px] flex-1 flex flex-col"
+        class="skeu-team-col"
       >
-        <div class="px-3 py-2.5 text-sm font-bold text-gray-700 border-b border-gray-200 flex items-center justify-between">
+        <div class="skeu-team-header">
           Team {{ team.number }}
-          <button @click="deleteTeam(team.id)" class="text-gray-300 hover:text-red-500 transition-colors cursor-pointer bg-transparent border-none p-0.5">
+          <button @click="deleteTeam(team.id)" class="skeu-team-del">
             <X :size="14" />
           </button>
         </div>
@@ -196,36 +186,31 @@ async function onDrop(toTeamId: string) {
           @dragover="onDragOver($event, String(team.id))"
           @dragleave="onDragLeave"
           @drop="onDrop(String(team.id))"
-          :class="{ 'bg-indigo-50': dragOverTeamId === String(team.id) }"
+          :class="{ 'skeu-drop-target': dragOverTeamId === String(team.id) }"
         >
           <div
             v-for="mid in team.members" :key="mid"
-            class="bg-white border border-gray-200 rounded-md px-2.5 py-1.5 mb-1 text-sm flex items-center gap-2 cursor-grab hover:border-accent hover:bg-indigo-50 transition-colors"
+            class="skeu-member-card"
             draggable="true"
             @dragstart="onDragStart(mid, String(team.id))"
           >
-            <div class="w-6 h-6 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-              {{ initials(contactName(mid)) }}
-            </div>
+            <div class="skeu-member-avatar">{{ initials(contactName(mid)) }}</div>
             {{ contactName(mid) }}
-            <button @click="removeMember(team.id, mid)" class="ml-auto text-gray-300 hover:text-red-500 transition-colors cursor-pointer bg-transparent border-none p-0.5">
+            <button @click="removeMember(team.id, mid)" class="skeu-team-del ml-auto">
               <X :size="12" />
             </button>
           </div>
         </div>
         <button
           @click="pickerTeamId = team.id; pickerSearch = ''"
-          class="border-none border-t border-gray-200 py-2 px-3 text-xs text-accent cursor-pointer bg-transparent flex items-center gap-1 hover:bg-indigo-50 transition-colors"
+          class="skeu-team-add"
         >
           <PlusCircle :size="12" /> Lägg till
         </button>
       </div>
 
       <!-- New team column -->
-      <div
-        @click="createTeam"
-        class="min-w-[120px] flex items-center justify-center text-gray-400 text-sm cursor-pointer hover:bg-gray-100 transition-colors shrink-0 px-6"
-      >
+      <div @click="createTeam" class="skeu-new-team">
         <div class="text-center">
           <PlusCircle :size="24" class="mx-auto mb-1" />
           Nytt team
@@ -251,12 +236,218 @@ async function onDrop(toTeamId: string) {
           @click="addMember(pickerTeamId!, c.id)"
           class="flex items-center gap-2 w-full bg-transparent border-none py-2.5 px-2 text-sm text-gray-700 cursor-pointer rounded-md hover:bg-gray-50 transition-colors text-left"
         >
-          <div class="w-7 h-7 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-            {{ initials(c.name) }}
-          </div>
+          <div class="skeu-member-avatar">{{ initials(c.name) }}</div>
           {{ c.name }}
         </button>
       </div>
     </RecordModal>
   </div>
 </template>
+
+<style scoped>
+.skeu-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #e8e8e8 0%, #d4d4d4 100%);
+  border-bottom: 1px solid #bbb;
+  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
+  overflow-x: auto;
+}
+.skeu-toolbar-label {
+  font-size: 11px;
+  color: #888;
+  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+  white-space: nowrap;
+}
+.skeu-segmented {
+  display: flex;
+  align-items: center;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid #aaa;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06) inset;
+  flex-shrink: 0;
+}
+.skeu-seg-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  border: none;
+  border-right: 1px solid #aaa;
+  color: #555;
+  background: linear-gradient(180deg, #f4f4f4 0%, #ddd 100%);
+  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+  transition: all 0.1s ease;
+  white-space: nowrap;
+}
+.skeu-seg-btn:last-child { border-right: none; }
+.skeu-seg-btn:hover { background: linear-gradient(180deg, #fff 0%, #e8e8e8 100%); }
+.skeu-seg-active {
+  color: #fff !important;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.2) !important;
+  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,.15) inset;
+}
+
+/* Pool panel */
+.skeu-pool {
+  min-width: 240px;
+  max-width: 280px;
+  flex-direction: column;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #f0f0f0 0%, #e4e4e4 100%);
+  border-right: 1px solid #bbb;
+}
+.skeu-pool-header {
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #444;
+  border-bottom: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
+  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+.skeu-pool-header span {
+  font-size: 11px;
+  font-weight: 400;
+  color: #999;
+}
+.skeu-pool-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 6px 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #ddd 0%, #fff 3px);
+  border: 1px solid #aaa;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06) inset;
+}
+.skeu-pool-item {
+  padding: 4px 8px;
+  margin-bottom: 2px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: grab;
+  color: #555;
+  background: linear-gradient(180deg, #fff 0%, #f0f0f0 100%);
+  border: 1px solid #ccc;
+  box-shadow: 0 1px 0 rgba(255,255,255,.5) inset, 0 1px 2px rgba(0,0,0,.04);
+  transition: border-color 0.1s ease;
+}
+.skeu-pool-item:hover { border-color: #6a5aed; }
+
+/* Team columns */
+.skeu-team-col {
+  min-width: 200px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #eaeaea 0%, #e0e0e0 100%);
+}
+.skeu-team-header {
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #444;
+  border-bottom: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
+  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+.skeu-team-del {
+  color: #bbb;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  transition: color 0.1s ease;
+}
+.skeu-team-del:hover { color: #e74c3c; }
+
+.skeu-member-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: grab;
+  color: #444;
+  background: linear-gradient(180deg, #fff 0%, #f0f0f0 100%);
+  border: 1px solid #c0c0c0;
+  box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 1px 3px rgba(0,0,0,.06);
+  transition: all 0.1s ease;
+}
+.skeu-member-card:hover {
+  border-color: #6a5aed;
+  background: linear-gradient(180deg, #f0ecff 0%, #e8e0ff 100%);
+}
+
+.skeu-member-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #6a5aed 0%, #3b2fba 100%);
+  border: 1px solid rgba(0,0,0,.1);
+  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset;
+}
+
+.skeu-team-add {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #6a5aed;
+  background: none;
+  border: none;
+  border-top: 1px solid #ccc;
+  text-shadow: 0 1px 0 rgba(255,255,255,.5);
+  transition: background 0.1s ease;
+}
+.skeu-team-add:hover {
+  background: linear-gradient(180deg, #f0ecff 0%, #e8e0ff 100%);
+}
+
+.skeu-new-team {
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0 24px;
+  text-shadow: 0 1px 0 rgba(255,255,255,.5);
+  transition: all 0.1s ease;
+}
+.skeu-new-team:hover {
+  color: #6a5aed;
+  background: rgba(106,90,237,.05);
+}
+
+.skeu-drop-target {
+  background: linear-gradient(180deg, #ede9fe 0%, #e0d8f8 100%) !important;
+}
+</style>

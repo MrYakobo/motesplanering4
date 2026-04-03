@@ -81,27 +81,26 @@ function eventCount(catName: string) {
   return db.events.filter(e => e.category === catName).length
 }
 
-// ── Subscribe ────────────────────────────────────────────────────────────────
 const subscribeOpen = ref(false)
 </script>
 
 <template>
-  <div class="flex-1 overflow-y-auto p-6 bg-gray-50">
+  <div class="cat-page">
     <div class="max-w-lg mx-auto">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-base font-semibold">Kategorier <span class="text-xs font-normal text-gray-400">{{ db.categories.length }} st</span></h2>
+      <div class="cat-header">
+        <h2 class="cat-title">Kategorier <span>{{ db.categories.length }} st</span></h2>
         <div class="flex items-center gap-3">
-          <button @click="subscribeOpen = true" class="flex items-center gap-1 text-gray-500 text-sm cursor-pointer bg-transparent border-none hover:text-accent hover:underline">
-            <CalendarPlus :size="14" /> Prenumerera
+          <button @click="subscribeOpen = true" class="cat-link-btn">
+            <CalendarPlus :size="13" /> Prenumerera
           </button>
-          <button @click="openNew" class="flex items-center gap-1 text-accent text-sm cursor-pointer bg-transparent border-none hover:underline">
-            <PlusCircle :size="14" /> Ny kategori
+          <button @click="openNew" class="cat-add-btn">
+            <PlusCircle :size="13" /> Ny kategori
           </button>
         </div>
       </div>
 
       <!-- Uncategorized warning -->
-      <div v-if="uncategorized.length > 0" class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4">
+      <div v-if="uncategorized.length > 0" class="cat-warn">
         <div class="text-xs font-semibold text-red-800 mb-1">Okategoriserade ({{ uncategorized.length }})</div>
         <div class="flex flex-wrap gap-1">
           <span v-for="e in uncategorized.slice(0, 20)" :key="e.id" class="text-[11px] bg-red-100 text-red-800 px-2 py-0.5 rounded">{{ e.title }}</span>
@@ -113,14 +112,12 @@ const subscribeOpen = ref(false)
         <div
           v-for="cat in db.categories" :key="cat.name"
           @click="openEdit(cat)"
-          class="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center gap-3 cursor-pointer hover:border-accent transition-colors"
+          class="cat-card"
           :class="{ 'opacity-60': cat.hidden }"
         >
-          <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold" :style="catStyle(cat.name)">
-            {{ cat.name }}
-          </span>
+          <span class="cat-badge" :style="catStyle(cat.name)">{{ cat.name }}</span>
           <Lock v-if="cat.hidden" :size="12" class="text-gray-400" title="Dold i utdata" />
-          <span class="text-xs text-gray-400 ml-auto">{{ eventCount(cat.name) }} händelser</span>
+          <span class="cat-count">{{ eventCount(cat.name) }} händelser</span>
         </div>
       </div>
     </div>
@@ -128,16 +125,16 @@ const subscribeOpen = ref(false)
     <RecordModal :open="editing !== null" :title="editing?.name || 'Ny kategori'" @close="editing = null">
       <div class="space-y-4">
         <div>
-          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Namn</label>
-          <input v-model="editName" type="text" class="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-sm outline-none focus:border-accent" />
+          <label class="skeu-label">Namn</label>
+          <input v-model="editName" type="text" class="skeu-input" />
         </div>
         <div>
-          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Färg</label>
+          <label class="skeu-label">Färg</label>
           <div class="flex gap-2 flex-wrap">
             <button
               v-for="c in COLORS" :key="c.id"
               @click="editColor = c.id"
-              class="w-8 h-8 rounded-full border-2 cursor-pointer transition-transform"
+              class="color-swatch"
               :style="{ background: c.bg, borderColor: editColor === c.id ? c.fg : 'transparent' }"
               :class="{ 'scale-110': editColor === c.id }"
             />
@@ -145,18 +142,191 @@ const subscribeOpen = ref(false)
         </div>
         <div>
           <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
-            <input type="checkbox" v-model="editHidden" class="accent-accent" />
+            <input type="checkbox" v-model="editHidden" class="accent-[#6a5aed]" />
             Dölj i utdata (slides, månadsblad, söndag)
           </label>
         </div>
       </div>
-      <div class="flex gap-2 mt-6 pt-4 border-t border-gray-200">
-        <button @click="save" class="bg-accent text-white rounded-md px-4 py-1.5 text-sm cursor-pointer hover:bg-accent-hover transition-colors">Spara</button>
+      <div class="flex gap-2 mt-6 pt-4 border-t border-[#ccc]">
+        <button @click="save" class="skeu-btn-primary">Spara</button>
         <span class="flex-1" />
-        <button v-if="editing?.name" @click="remove" class="bg-red-500 text-white rounded-md px-4 py-1.5 text-sm cursor-pointer hover:bg-red-600 transition-colors">Ta bort</button>
+        <button v-if="editing?.name" @click="remove" class="skeu-btn-danger">Ta bort</button>
       </div>
     </RecordModal>
 
     <SubscribeModal :open="subscribeOpen" @close="subscribeOpen = false" />
   </div>
 </template>
+
+<style scoped>
+.cat-page {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  background: linear-gradient(180deg, #ddd 0%, #ccc 100%);
+}
+
+.cat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.cat-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+.cat-title span {
+  font-size: 11px;
+  font-weight: 400;
+  color: #888;
+}
+
+.cat-link-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #666;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-shadow: 0 1px 0 rgba(255,255,255,.5);
+}
+.cat-link-btn:hover { color: #4a3cc9; }
+
+.cat-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #fff;
+  border: 1px solid rgba(0,0,0,.2);
+  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 1px 2px rgba(59,47,186,.25);
+  text-shadow: 0 -1px 0 rgba(0,0,0,.15);
+  transition: all 0.12s ease;
+}
+.cat-add-btn:hover { background: linear-gradient(180deg, #7b6cf5 0%, #5544d4 100%); }
+
+.cat-warn {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fee2e2 0%, #fecaca 100%);
+  border: 1px solid #f5a5a5;
+  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 1px 2px rgba(0,0,0,.06);
+}
+
+.cat-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  background: linear-gradient(180deg, #f7f7f7 0%, #eaeaea 100%);
+  border: 1px solid #c0c0c0;
+  box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 1px 3px rgba(0,0,0,.08);
+}
+.cat-card:hover {
+  background: linear-gradient(180deg, #fff 0%, #f0f0f0 100%);
+  border-color: #6a5aed;
+  box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 2px 6px rgba(106,90,237,.15);
+}
+
+.cat-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(0,0,0,.08);
+  box-shadow: 0 1px 0 rgba(255,255,255,.5) inset;
+}
+
+.cat-count {
+  font-size: 11px;
+  color: #888;
+  margin-left: auto;
+  text-shadow: 0 1px 0 rgba(255,255,255,.5);
+}
+
+/* Form elements inside modal */
+.skeu-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #666;
+  margin-bottom: 4px;
+  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+.skeu-input {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 5px;
+  font-size: 13px;
+  color: #333;
+  outline: none;
+  background: linear-gradient(180deg, #e4e4e4 0%, #fff 3px);
+  border: 1px solid #aaa;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06) inset;
+}
+.skeu-input:focus {
+  border-color: #6a5aed;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06) inset, 0 0 0 2px rgba(106,90,237,.15);
+}
+.color-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2.5px solid transparent;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,.1), 0 1px 0 rgba(255,255,255,.3) inset;
+}
+.skeu-btn-primary {
+  padding: 6px 16px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  border: 1px solid rgba(0,0,0,.2);
+  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 1px 3px rgba(59,47,186,.3);
+  text-shadow: 0 -1px 0 rgba(0,0,0,.15);
+  transition: all 0.12s ease;
+}
+.skeu-btn-primary:hover { background: linear-gradient(180deg, #7b6cf5 0%, #5544d4 100%); }
+.skeu-btn-primary:active {
+  background: linear-gradient(180deg, #4a3cc9 0%, #3b2fba 100%);
+  box-shadow: 0 1px 2px rgba(0,0,0,.15) inset;
+}
+.skeu-btn-danger {
+  padding: 6px 16px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  border: 1px solid rgba(0,0,0,.2);
+  background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.15) inset, 0 1px 3px rgba(192,57,43,.3);
+  text-shadow: 0 -1px 0 rgba(0,0,0,.15);
+  transition: all 0.12s ease;
+}
+.skeu-btn-danger:hover { background: linear-gradient(180deg, #f05545 0%, #d44332 100%); }
+.skeu-btn-danger:active {
+  background: linear-gradient(180deg, #c0392b 0%, #a93226 100%);
+  box-shadow: 0 1px 2px rgba(0,0,0,.15) inset;
+}
+</style>

@@ -46,78 +46,69 @@ function unassignedCount(taskId: number): number {
 <template>
   <div class="flex flex-col flex-1 overflow-hidden">
     <!-- Task tabs -->
-    <div class="flex gap-1 px-3 py-2 bg-white border-b border-gray-200 overflow-x-auto shrink-0" style="-webkit-overflow-scrolling:touch">
+    <div class="mob-task-bar">
       <button
         v-for="task in db.tasks" :key="task.id"
         @click="selectedTaskId = task.id"
-        class="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border-none cursor-pointer transition-colors shrink-0"
-        :class="selectedTaskId === task.id
-          ? 'bg-accent text-white'
-          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+        class="mob-task-pill"
+        :class="{ 'mob-task-active': selectedTaskId === task.id }"
       >
         {{ task.name }}
         <span
           v-if="unassignedCount(task.id) > 0"
-          class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold"
-          :class="selectedTaskId === task.id ? 'bg-white/30 text-white' : 'bg-amber-100 text-amber-700'"
+          class="mob-task-badge"
+          :class="{ 'mob-task-badge-active': selectedTaskId === task.id }"
         >{{ unassignedCount(task.id) }}</span>
       </button>
     </div>
 
-    <!-- Task info + distribute -->
-    <div v-if="selectedTask && unassignedCount(selectedTask.id) > 0" class="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-100 shrink-0">
-      <AlertTriangle :size="14" class="text-amber-500 shrink-0" />
-      <span class="text-xs text-amber-700 flex-1">{{ unassignedCount(selectedTask.id) }} otilldelade</span>
-      <button
-        @click="emit('distribute', selectedTask.id)"
-        class="text-xs font-semibold px-2.5 py-1 rounded-md bg-accent text-white border-none cursor-pointer hover:bg-accent-hover transition-colors"
-      >
-        Fördela
-      </button>
+    <!-- Distribute bar -->
+    <div v-if="selectedTask && unassignedCount(selectedTask.id) > 0" class="mob-warn-bar">
+      <AlertTriangle :size="14" class="text-amber-600 shrink-0" />
+      <span class="text-xs text-amber-800 flex-1">{{ unassignedCount(selectedTask.id) }} otilldelade</span>
+      <button @click="emit('distribute', selectedTask.id)" class="mob-dist-btn">Fördela</button>
     </div>
 
-    <!-- Event list for selected task -->
-    <div class="flex-1 overflow-y-auto">
-      <!-- Future events -->
-      <div v-if="futureEvents.length > 0" class="divide-y divide-gray-100">
+    <!-- Event list -->
+    <div class="flex-1 overflow-y-auto" style="background: linear-gradient(180deg, #e0e0e0 0%, #d4d4d4 100%)">
+      <div v-if="futureEvents.length > 0">
         <div
           v-for="ev in futureEvents" :key="ev.id"
           @click="emit('pick', ev.id, selectedTaskId!)"
-          class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors"
+          class="mob-event-card"
         >
           <div class="min-w-0 flex-1">
-            <div class="text-xs text-gray-400 font-mono">{{ ev.date }} {{ ev.time || '' }}</div>
-            <div class="text-sm font-medium text-gray-800 truncate">{{ ev.title }}</div>
+            <div class="text-xs text-[#999] font-mono">{{ ev.date }} {{ ev.time || '' }}</div>
+            <div class="text-sm font-medium text-[#333] truncate">{{ ev.title }}</div>
           </div>
           <div class="shrink-0 text-right">
-            <div v-if="assignmentLabel(ev)" class="text-sm text-accent font-medium max-w-[140px] truncate">
+            <div v-if="assignmentLabel(ev)" class="text-sm text-[#5b4fc7] font-medium max-w-[140px] truncate">
               {{ assignmentLabel(ev) }}
             </div>
-            <div v-else class="flex items-center gap-1 text-xs text-amber-500">
+            <div v-else class="flex items-center gap-1 text-xs text-amber-600">
               <AlertTriangle :size="12" /> Ej tilldelad
             </div>
           </div>
         </div>
       </div>
-      <div v-else class="px-4 py-8 text-center text-sm text-gray-400">
+      <div v-else class="px-4 py-8 text-center text-sm text-[#999]">
         Inga kommande händelser med denna uppgift
       </div>
 
-      <!-- Past events (collapsed) -->
-      <details v-if="pastEvents.length > 0" class="border-t border-gray-200">
-        <summary class="px-4 py-2 text-xs text-gray-400 cursor-pointer hover:text-gray-600">
+      <details v-if="pastEvents.length > 0" class="border-t border-[#ccc]">
+        <summary class="px-4 py-2 text-xs text-[#999] cursor-pointer hover:text-[#666]" style="text-shadow: 0 1px 0 rgba(255,255,255,.5)">
           {{ pastEvents.length }} tidigare händelser
         </summary>
-        <div class="divide-y divide-gray-50">
+        <div>
           <div
             v-for="ev in pastEvents" :key="ev.id"
-            class="flex items-center gap-3 px-4 py-2 opacity-50"
+            class="mob-event-card opacity-50"
           >
             <div class="min-w-0 flex-1">
-              <div class="text-xs text-gray-400 font-mono">{{ ev.date }}</div>
-              <div class="text-xs text-gray-500 truncate">{{ ev.title }}</div>
+              <div class="text-xs text-[#999] font-mono">{{ ev.date }}</div>
+              <div class="text-xs text-[#666] truncate">{{ ev.title }}</div>
             </div>
-            <div class="text-xs text-gray-400 shrink-0 max-w-[120px] truncate">
+            <div class="text-xs text-[#999] shrink-0 max-w-[120px] truncate">
               {{ assignmentLabel(ev) || '—' }}
             </div>
           </div>
@@ -126,3 +117,100 @@ function unassignedCount(taskId: number): number {
     </div>
   </div>
 </template>
+
+<style scoped>
+.mob-task-bar {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  -webkit-overflow-scrolling: touch;
+  background: linear-gradient(180deg, #e8e8e8 0%, #d4d4d4 100%);
+  border-bottom: 1px solid #bbb;
+  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
+}
+.mob-task-pill {
+  padding: 5px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: #555;
+  border: 1px solid #bbb;
+  background: linear-gradient(180deg, #f4f4f4 0%, #ddd 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.5) inset, 0 1px 2px rgba(0,0,0,.06);
+  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+  transition: all 0.1s ease;
+}
+.mob-task-active {
+  color: #fff !important;
+  border-color: rgba(0,0,0,.2) !important;
+  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 1px 3px rgba(59,47,186,.3) !important;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.2) !important;
+}
+.mob-task-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  margin-left: 4px;
+  color: #7c5a00;
+  background: linear-gradient(180deg, #fff4cc 0%, #ffe699 100%);
+  border: 1px solid #d4a800;
+}
+.mob-task-badge-active {
+  color: #fff;
+  background: rgba(255,255,255,.25);
+  border-color: rgba(255,255,255,.3);
+}
+
+.mob-warn-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #fff4cc 0%, #ffe699 100%);
+  border-bottom: 1px solid #d4a800;
+  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
+}
+.mob-dist-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  color: #fff;
+  border: 1px solid rgba(0,0,0,.2);
+  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.15);
+}
+
+.mob-event-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  margin: 0 8px 4px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #f7f7f7 0%, #eaeaea 100%);
+  border: 1px solid #c0c0c0;
+  box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 1px 3px rgba(0,0,0,.06);
+  transition: all 0.1s ease;
+}
+.mob-event-card:first-child { margin-top: 8px; }
+.mob-event-card:active {
+  background: linear-gradient(180deg, #f0ecff 0%, #e8e0ff 100%);
+  border-color: #6a5aed;
+}
+</style>

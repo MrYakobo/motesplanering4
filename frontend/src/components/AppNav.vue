@@ -110,8 +110,12 @@ function onLoginSuccess() {
 </script>
 
 <template>
-  <nav class="flex items-center bg-[#1a1a2e] text-white px-4 h-11 gap-1 shrink-0">
-    <span class="font-bold text-sm mr-4 text-purple-400">Mötesplanering</span>
+  <nav class="skeu-nav">
+    <!-- Logo badge in nav -->
+    <div class="nav-logo">
+      <Calendar :size="14" stroke-width="2" />
+    </div>
+    <span class="nav-brand">Mötesplanering</span>
 
     <template v-if="isViewer || isMember">
       <button
@@ -121,7 +125,7 @@ function onLoginSuccess() {
         class="nav-btn"
         :class="{ active: isActive(tab.path) }"
       >
-        <component :is="tab.icon" :size="14" />
+        <component :is="tab.icon" :size="13" />
         {{ tab.label }}
       </button>
     </template>
@@ -134,7 +138,7 @@ function onLoginSuccess() {
         class="nav-btn"
         :class="{ active: isActive(tab.path) }"
       >
-        <component :is="tab.icon" :size="14" />
+        <component :is="tab.icon" :size="13" />
         {{ tab.label }}
       </button>
 
@@ -144,11 +148,11 @@ function onLoginSuccess() {
           class="nav-btn"
           :class="{ active: isOutputActive() }"
         >
-          <PackageOpen :size="14" />
+          <PackageOpen :size="13" />
           Utdata
-          <ChevronDown :size="11" class="opacity-60" />
+          <ChevronDown :size="10" class="opacity-60" />
         </button>
-        <div class="nav-dropdown-menu hidden group-hover:flex flex-col absolute top-full left-0 bg-[#1a1a2e] border border-[#2d2d4e] rounded-md p-1 min-w-[160px] z-[200] shadow-[0_8px_24px_rgba(0,0,0,.4)]">
+        <div class="nav-dropdown-menu hidden group-hover:flex flex-col absolute top-full left-0 mt-0.5 rounded-lg p-1 min-w-[160px] z-[200]">
           <button
             v-for="tab in outputTabs"
             :key="tab.path"
@@ -156,7 +160,7 @@ function onLoginSuccess() {
             class="nav-drop-item"
             :class="{ active: isActive(tab.path) }"
           >
-            <component :is="tab.icon" :size="14" />
+            <component :is="tab.icon" :size="13" />
             {{ tab.label }}
           </button>
         </div>
@@ -168,15 +172,10 @@ function onLoginSuccess() {
     <!-- Simulated date warning -->
     <span
       v-if="isSimulated"
-      class="bg-amber-100 text-amber-800 text-[11px] px-2.5 py-0.5 rounded flex items-center gap-1.5 mr-2"
+      class="skeu-badge-warn"
     >
       ⚠ {{ simDate }}
-      <button
-        @click="clearSimDate"
-        class="bg-transparent border border-amber-400 text-amber-800 rounded text-[10px] px-1.5 cursor-pointer hover:bg-amber-200 transition-colors"
-      >
-        Återställ
-      </button>
+      <button @click="clearSimDate" class="skeu-badge-warn-btn">Återställ</button>
     </span>
 
     <!-- Date picker -->
@@ -184,13 +183,13 @@ function onLoginSuccess() {
       type="date"
       :value="simDate || todayStr"
       @change="setSimDate(($event.target as HTMLInputElement).value)"
-      class="bg-[#2d2d4e] text-gray-300 border border-[#444] rounded-md px-2 py-0.5 text-xs cursor-pointer outline-none focus:border-accent mr-2"
+      class="skeu-date-input"
     />
 
     <button
       v-if="isViewer"
       @click="showLogin = true"
-      class="text-purple-400 text-sm bg-transparent border-none cursor-pointer px-3 py-1.5"
+      class="nav-btn"
     >
       Logga in
     </button>
@@ -244,26 +243,27 @@ function onLoginSuccess() {
           <button
             v-for="item in moreItems" :key="item.path"
             @click="goMobile(item.path)"
-            class="flex items-center gap-3 px-4 py-2.5 rounded-md text-sm text-gray-300 bg-transparent border-none cursor-pointer hover:bg-[#2d2d4e] hover:text-white transition-colors w-full text-left"
-            :class="{ 'text-white bg-accent/20': isActive(item.path) }"
+            class="mob-sheet-btn"
+            :class="{ 'mob-sheet-btn-active': isActive(item.path) }"
           >
             <component :is="item.icon" :size="18" />
             {{ item.label }}
           </button>
           <!-- Emulate date -->
-          <div class="flex items-center gap-3 px-4 py-2.5 rounded-md text-sm text-gray-300">
+          <div class="flex items-center gap-3 px-4 py-2.5 rounded-md text-sm text-[#555]">
             <CalendarClock :size="18" class="shrink-0" />
             <span class="shrink-0">Datum</span>
             <input
               type="date"
               :value="simDate || todayStr"
               @change="setSimDate(($event.target as HTMLInputElement).value)"
-              class="flex-1 bg-[#2d2d4e] text-gray-300 border border-[#444] rounded-md px-2 py-1 text-xs outline-none focus:border-accent"
+              class="flex-1 rounded-md px-2 py-1 text-xs outline-none"
+              style="background: linear-gradient(180deg, #ddd 0%, #fff 3px); border: 1px solid #aaa; box-shadow: 0 1px 2px rgba(0,0,0,.06) inset; color: #333;"
             />
             <button
               v-if="isSimulated"
               @click="clearSimDate"
-              class="text-[10px] text-amber-400 bg-transparent border border-amber-400/40 rounded px-1.5 py-0.5 cursor-pointer hover:bg-amber-400/10 shrink-0"
+              class="text-[10px] text-amber-700 bg-transparent border border-amber-400 rounded px-1.5 py-0.5 cursor-pointer hover:bg-amber-50 shrink-0"
             >
               Återställ
             </button>
@@ -277,11 +277,11 @@ function onLoginSuccess() {
       <div v-if="mobUserOpen" class="fixed inset-0 z-[38]" @click="mobUserOpen = false">
         <div class="sheet-backdrop" />
         <div class="sheet-panel" @click.stop>
-          <div class="p-4 flex items-center gap-3 border-b border-[#2d2d4e]">
-            <div class="w-10 h-10 rounded-full bg-accent text-white text-sm font-bold flex items-center justify-center shrink-0">{{ userInitials }}</div>
+          <div class="p-4 flex items-center gap-3 border-b border-[#ccc]">
+            <div class="mob-avatar-lg">{{ userInitials }}</div>
             <div>
-              <div class="text-white font-semibold text-sm">{{ isAdmin ? 'Admin' : (memberContactId ? db.contacts.find(c => c.id === memberContactId)?.name : 'Medlem') }}</div>
-              <div class="text-gray-400 text-xs">{{ isAdmin ? 'Administratör' : 'Medlem' }}</div>
+              <div class="text-[#333] font-semibold text-sm" style="text-shadow: 0 1px 0 rgba(255,255,255,.7)">{{ isAdmin ? 'Admin' : (memberContactId ? db.contacts.find(c => c.id === memberContactId)?.name : 'Medlem') }}</div>
+              <div class="text-[#888] text-xs">{{ isAdmin ? 'Administratör' : 'Medlem' }}</div>
             </div>
           </div>
           <div class="p-1.5">
@@ -323,25 +323,149 @@ function onLoginSuccess() {
 
 <style scoped>
 @reference "../style.css";
-.nav-btn {
-  @apply flex items-center gap-1 px-3 py-1.5 rounded-md text-[13px] text-gray-400
-         cursor-pointer border-none bg-transparent transition-colors;
-}
-.nav-btn:hover { @apply bg-[#2d2d4e] text-white; }
-.nav-btn.active { @apply bg-accent text-white; }
-.nav-drop-item {
-  @apply flex items-center gap-2 px-3 py-1.5 rounded text-[13px] text-gray-400
-         cursor-pointer border-none bg-transparent transition-colors w-full text-left;
-}
-.nav-drop-item:hover { @apply bg-[#2d2d4e] text-white; }
-.nav-drop-item.active { @apply bg-accent text-white; }
 
-/* Mobile bottom nav — hidden by default, shown at ≤480px */
-.mob-nav {
-  display: none;
+/* ── Skeuomorphic top nav ─────────────────────────────────────────────────── */
+.skeu-nav {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 12px;
+  gap: 2px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #e8e8e8 0%, #c8c8c8 45%, #b8b8b8 55%, #c0c0c0 100%);
+  border-bottom: 1px solid #999;
+  box-shadow: 0 1px 0 rgba(255,255,255,.45) inset, 0 1px 3px rgba(0,0,0,.12);
 }
+
+.nav-logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(180deg, #6a5aed 0%, #3b2fba 100%);
+  border: 1px solid rgba(0,0,0,.2);
+  box-shadow: 0 1px 0 rgba(255,255,255,.3) inset, 0 1px 3px rgba(59,47,186,.35);
+  margin-right: 6px;
+}
+
+.nav-brand {
+  font-weight: 700;
+  font-size: 13px;
+  color: #333;
+  margin-right: 12px;
+  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  color: #444;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  text-shadow: 0 1px 0 rgba(255,255,255,.6);
+  transition: all 0.12s ease;
+}
+.nav-btn:hover {
+  background: linear-gradient(180deg, #fff 0%, #e8e8e8 100%);
+  border-color: #aaa;
+  box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 1px 2px rgba(0,0,0,.08);
+}
+.nav-btn.active {
+  color: #fff;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.2);
+  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
+  border-color: rgba(0,0,0,.25);
+  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 1px 3px rgba(59,47,186,.3);
+}
+
+/* Dropdown menu */
+.nav-dropdown-menu {
+  background: linear-gradient(180deg, #f0f0f0 0%, #ddd 100%);
+  border: 1px solid #aaa;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2), 0 1px 0 rgba(255,255,255,.5) inset;
+}
+.nav-drop-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #444;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  text-shadow: 0 1px 0 rgba(255,255,255,.6);
+  transition: all 0.1s ease;
+  width: 100%;
+  text-align: left;
+}
+.nav-drop-item:hover {
+  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
+  color: #fff;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.2);
+}
+.nav-drop-item.active {
+  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
+  color: #fff;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.2);
+}
+
+/* Simulated date badge */
+.skeu-badge-warn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-right: 6px;
+  color: #7c5a00;
+  background: linear-gradient(180deg, #fff4cc 0%, #ffe699 100%);
+  border: 1px solid #d4a800;
+  box-shadow: 0 1px 0 rgba(255,255,255,.5) inset, 0 1px 2px rgba(0,0,0,.08);
+  text-shadow: 0 1px 0 rgba(255,255,255,.5);
+}
+.skeu-badge-warn-btn {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  color: #7c5a00;
+  background: linear-gradient(180deg, #fff 0%, #f0e0a0 100%);
+  border: 1px solid #c49800;
+  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
+}
+.skeu-badge-warn-btn:hover { background: linear-gradient(180deg, #fff 0%, #ffe070 100%); }
+
+/* Date input */
+.skeu-date-input {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+  margin-right: 6px;
+  color: #444;
+  background: linear-gradient(180deg, #fff 0%, #eee 100%);
+  border: 1px solid #aaa;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06) inset;
+}
+.skeu-date-input:focus { border-color: #6a5aed; }
+
+/* ── Mobile bottom nav ────────────────────────────────────────────────────── */
+.mob-nav { display: none; }
+
 @media (max-width: 480px) {
-  nav { display: none !important; }
+  .skeu-nav { display: none !important; }
   .mob-nav {
     display: flex;
     position: fixed;
@@ -349,8 +473,9 @@ function onLoginSuccess() {
     left: 0;
     right: 0;
     z-index: 40;
-    background: #1a1a2e;
-    border-top: 1px solid #2d2d4e;
+    background: linear-gradient(180deg, #d0d0d0 0%, #b0b0b0 100%);
+    border-top: 1px solid #999;
+    box-shadow: 0 -1px 0 rgba(255,255,255,.4) inset;
     padding: 4px 0;
     padding-bottom: env(safe-area-inset-bottom, 4px);
   }
@@ -358,7 +483,7 @@ function onLoginSuccess() {
     flex: 1;
     background: none;
     border: none;
-    color: #9ca3af;
+    color: #555;
     font-size: 9px;
     padding: 4px 0;
     display: flex;
@@ -366,9 +491,10 @@ function onLoginSuccess() {
     align-items: center;
     gap: 1px;
     cursor: pointer;
+    text-shadow: 0 1px 0 rgba(255,255,255,.5);
     transition: color 0.12s ease;
   }
-  .mob-nav button.active { color: var(--accent); }
+  .mob-nav button.active { color: #4a3cc9; }
   .mob-nav button:active { transform: scale(0.9); }
   .mob-nav .mob-user-btn {
     flex: none;
@@ -382,14 +508,32 @@ function onLoginSuccess() {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: var(--accent);
-    color: #fff;
     font-size: 10px;
     font-weight: 700;
+    color: #fff;
+    background: linear-gradient(180deg, #6a5aed 0%, #3b2fba 100%);
+    border: 1px solid rgba(0,0,0,.15);
+    box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 1px 3px rgba(59,47,186,.3);
   }
 }
 
-/* Sheet transition — slide up from bottom */
+.mob-avatar-lg {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #6a5aed 0%, #3b2fba 100%);
+  border: 1px solid rgba(0,0,0,.15);
+  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 1px 3px rgba(59,47,186,.3);
+}
+
+/* ── Sheet transitions ────────────────────────────────────────────────────── */
 .sheet-backdrop {
   position: absolute;
   inset: 0;
@@ -401,41 +545,31 @@ function onLoginSuccess() {
   bottom: calc(43px + env(safe-area-inset-bottom, 0px));
   left: 0;
   right: 0;
-  background: #1a1a2e;
-  border-top: 1px solid #2d2d4e;
   border-radius: 16px 16px 0 0;
   padding: 8px;
   max-height: 60vh;
   overflow-y: auto;
   z-index: 39;
+  background: linear-gradient(180deg, #d0d0d0 0%, #b8b8b8 100%);
+  border-top: 1px solid rgba(255,255,255,.4);
+  box-shadow: 0 -4px 20px rgba(0,0,0,.3);
   transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease;
 }
 .sheet-enter-active .sheet-backdrop,
-.sheet-leave-active .sheet-backdrop {
-  transition: opacity 0.25s ease;
-}
+.sheet-leave-active .sheet-backdrop { transition: opacity 0.25s ease; }
 .sheet-enter-from .sheet-backdrop,
-.sheet-leave-to .sheet-backdrop {
-  opacity: 0;
-}
+.sheet-leave-to .sheet-backdrop { opacity: 0; }
 .sheet-enter-active .sheet-panel,
-.sheet-leave-active .sheet-panel {
-  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease;
-}
-.sheet-enter-from .sheet-panel {
-  transform: translateY(100%);
-  opacity: 0;
-}
-.sheet-leave-to .sheet-panel {
-  transform: translateY(40%);
-  opacity: 0;
-}
+.sheet-leave-active .sheet-panel { transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease; }
+.sheet-enter-from .sheet-panel { transform: translateY(100%); opacity: 0; }
+.sheet-leave-to .sheet-panel { transform: translateY(40%); opacity: 0; }
+
 .mob-sheet-btn {
   width: 100%;
   text-align: left;
   padding: 10px 14px;
   font-size: 14px;
-  color: #ccc;
+  color: #444;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -443,5 +577,14 @@ function onLoginSuccess() {
   background: none;
   border: none;
   cursor: pointer;
+  text-shadow: 0 1px 0 rgba(255,255,255,.5);
+}
+.mob-sheet-btn:hover {
+  background: linear-gradient(180deg, #fff 0%, #e8e8e8 100%);
+}
+.mob-sheet-btn-active {
+  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
+  color: #fff !important;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.2) !important;
 }
 </style>

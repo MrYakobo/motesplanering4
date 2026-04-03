@@ -42,7 +42,6 @@ const filteredContacts = computed(() => {
 function switchToUser(contactId: number) {
   const contact = db.contacts.find(c => c.id === contactId) as any
   if (!contact?.token) return
-  // Clear admin auth, set member token
   localStorage.removeItem('authHeader')
   localStorage.setItem('memberToken', contact.token)
   location.reload()
@@ -60,40 +59,32 @@ const emit = defineEmits<{ openGenerate: [] }>()
 
 <template>
   <div ref="menuRef" class="relative">
-    <button
-      @click.stop="open = !open"
-      class="w-10 h-10 rounded-full bg-accent text-white text-sm font-bold flex items-center justify-center cursor-pointer border-2 border-transparent hover:border-purple-400 transition-colors"
-    >
+    <button @click.stop="open = !open" class="skeu-avatar">
       {{ initials }}
     </button>
     <Transition name="dropdown">
-      <div
-        v-if="open"
-        class="absolute right-0 top-full mt-1 w-72 bg-[#1a1a2e] border border-[#2d2d4e] rounded-xl shadow-2xl overflow-hidden z-50"
-      >
-        <div class="p-5 flex items-center gap-3 border-b border-[#2d2d4e]">
-          <div class="w-14 h-14 rounded-full bg-accent text-white text-xl font-bold flex items-center justify-center shrink-0">
-            {{ initials }}
-          </div>
+      <div v-if="open" class="skeu-dropdown">
+        <div class="skeu-dropdown-header">
+          <div class="skeu-avatar-lg">{{ initials }}</div>
           <div>
-            <div class="text-white font-semibold">{{ displayName }}</div>
-            <div class="text-gray-400 text-xs">{{ roleLabel }}</div>
+            <div class="skeu-dropdown-name">{{ displayName }}</div>
+            <div class="skeu-dropdown-role">{{ roleLabel }}</div>
           </div>
         </div>
-        <div class="p-1.5">
-          <button v-if="isAdmin" @click="emit('openGenerate'); open = false" class="menu-btn">
-            <RefreshCw :size="16" /> Generera händelser
+        <div class="skeu-dropdown-section">
+          <button v-if="isAdmin" @click="emit('openGenerate'); open = false" class="skeu-menu-btn">
+            <RefreshCw :size="15" /> Generera händelser
           </button>
-          <button v-if="isAdmin" @click="switchOpen = true; switchSearch = ''; open = false" class="menu-btn">
-            <UserRoundCog :size="16" /> Byt användare
+          <button v-if="isAdmin" @click="switchOpen = true; switchSearch = ''; open = false" class="skeu-menu-btn">
+            <UserRoundCog :size="15" /> Byt användare
           </button>
-          <button v-if="isAdmin" @click="router.push('/settings'); open = false" class="menu-btn">
-            <Settings :size="16" /> Inställningar
+          <button v-if="isAdmin" @click="router.push('/settings'); open = false" class="skeu-menu-btn">
+            <Settings :size="15" /> Inställningar
           </button>
         </div>
-        <div class="p-1.5 border-t border-[#2d2d4e]">
-          <button @click="logout" class="menu-btn text-red-400">
-            <LogOut :size="16" /> Logga ut
+        <div class="skeu-dropdown-section" style="border-top: 1px solid #bbb;">
+          <button @click="logout" class="skeu-menu-btn skeu-menu-btn-danger">
+            <LogOut :size="15" /> Logga ut
           </button>
         </div>
       </div>
@@ -115,7 +106,7 @@ const emit = defineEmits<{ openGenerate: [] }>()
         @click="switchToUser(c.id)"
         class="flex items-center gap-2 w-full bg-transparent border-none py-2.5 px-2 text-sm text-gray-700 cursor-pointer rounded-md hover:bg-gray-50 transition-colors text-left"
       >
-        <div class="w-7 h-7 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+        <div class="skeu-avatar-sm">
           {{ c.name.split(' ').filter(Boolean).map((p: string) => p[0]).slice(0, 2).join('').toUpperCase() }}
         </div>
         {{ c.name }}
@@ -125,23 +116,121 @@ const emit = defineEmits<{ openGenerate: [] }>()
 </template>
 
 <style scoped>
-.menu-btn {
-  width: 100%;
-  text-align: left;
-  padding: 10px 14px;
-  font-size: 13px;
-  color: #ccc;
+.skeu-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  border-radius: 6px;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,.2);
+  background: linear-gradient(180deg, #6a5aed 0%, #3b2fba 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 1px 3px rgba(59,47,186,.35);
+  transition: all 0.12s ease;
+}
+.skeu-avatar:hover {
+  box-shadow: 0 1px 0 rgba(255,255,255,.3) inset, 0 2px 6px rgba(59,47,186,.5);
+}
+
+.skeu-avatar-lg {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #6a5aed 0%, #3b2fba 100%);
+  border: 1px solid rgba(0,0,0,.15);
+  box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 2px 4px rgba(59,47,186,.3);
+}
+
+.skeu-avatar-sm {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #6a5aed 0%, #3b2fba 100%);
+  border: 1px solid rgba(0,0,0,.1);
+  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset;
+}
+
+.skeu-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 6px;
+  width: 260px;
+  border-radius: 10px;
+  overflow: hidden;
+  z-index: 50;
+  background: linear-gradient(180deg, #f0f0f0 0%, #ddd 100%);
+  border: 1px solid #aaa;
+  box-shadow: 0 1px 0 rgba(255,255,255,.5) inset, 0 6px 24px rgba(0,0,0,.25);
+}
+
+.skeu-dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #bbb;
+  background: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
+}
+.skeu-dropdown-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+.skeu-dropdown-role {
+  font-size: 11px;
+  color: #777;
+  text-shadow: 0 1px 0 rgba(255,255,255,.5);
+}
+
+.skeu-dropdown-section { padding: 4px; }
+
+.skeu-menu-btn {
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #444;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 5px;
   background: none;
   border: none;
   cursor: pointer;
-  transition: background 0.1s;
+  text-shadow: 0 1px 0 rgba(255,255,255,.6);
+  transition: all 0.1s ease;
 }
-.menu-btn:hover { background: #2d2d4e; color: #fff; }
-.menu-btn.text-red-400:hover { color: #f87171; }
+.skeu-menu-btn:hover {
+  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
+  color: #fff;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.2);
+}
+.skeu-menu-btn-danger { color: #c0392b; }
+.skeu-menu-btn-danger:hover {
+  background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
+  color: #fff;
+}
+
 .dropdown-enter-active { animation: dropIn 0.12s ease; }
 .dropdown-leave-active { transition: opacity 0.1s ease; }
 .dropdown-leave-to { opacity: 0; }
