@@ -1,16 +1,17 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
 const routes = [
-  { path: '/', redirect: '/events' },
+  { path: '/', redirect: '/events/calendar' },
   { path: '/home', component: () => import('./views/HomeView.vue') },
   { path: '/settings', component: () => import('./views/SettingsView.vue') },
-  { path: '/events', component: () => import('./views/EventsView.vue') },
-  { path: '/calendar', component: () => import('./views/EventsView.vue'), meta: { view: 'calendar' } },
-  { path: '/week/:date?', component: () => import('./views/EventsView.vue'), meta: { view: 'week' } },
-  { path: '/year', component: () => import('./views/EventsView.vue'), meta: { view: 'year' } },
+  { path: '/events', component: () => import('./views/EventsView.vue'), meta: { view: 'list' } },
+  { path: '/events/calendar', component: () => import('./views/EventsView.vue'), meta: { view: 'calendar' } },
+  { path: '/events/week/:date?', component: () => import('./views/EventsView.vue'), meta: { view: 'week' } },
+  { path: '/events/year', component: () => import('./views/EventsView.vue'), meta: { view: 'year' } },
   { path: '/contacts', component: () => import('./views/ContactsView.vue') },
   { path: '/tasks', component: () => import('./views/TasksView.vue') },
   { path: '/teams', component: () => import('./views/TeamsView.vue') },
+  { path: '/teams/:taskId', component: () => import('./views/TeamsView.vue') },
   { path: '/schema', component: () => import('./views/SchemaView.vue') },
   { path: '/categories', component: () => import('./views/CategoriesView.vue') },
   { path: '/slides', component: () => import('./views/SlidesView.vue') },

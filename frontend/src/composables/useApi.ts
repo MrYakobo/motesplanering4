@@ -96,5 +96,20 @@ export function useApi() {
     return res.json()
   }
 
-  return { fetchDb, checkRole, login, logout, save, upload, sendEmail, runCron, authHeader, memberToken }
+  async function updateMyContact(data: { name?: string; email?: string; phone?: string }): Promise<void> {
+    const res = await fetch('/api/me/contact', { method: 'PUT', headers: getHeaders(), body: JSON.stringify(data) })
+    if (!res.ok) throw new Error(`Kunde inte spara (${res.status})`)
+  }
+
+  async function joinTeam(teamId: number): Promise<void> {
+    const res = await fetch('/api/me/join-team', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ teamId }) })
+    if (!res.ok) throw new Error(`Kunde inte gå med (${res.status})`)
+  }
+
+  async function leaveTeam(teamId: number): Promise<void> {
+    const res = await fetch('/api/me/leave-team', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ teamId }) })
+    if (!res.ok) throw new Error(`Kunde inte lämna (${res.status})`)
+  }
+
+  return { fetchDb, checkRole, login, logout, save, upload, sendEmail, runCron, updateMyContact, joinTeam, leaveTeam, authHeader, memberToken }
 }

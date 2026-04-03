@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, onUnmounted } from 'vue'
+import { watch, ref, nextTick, onUnmounted } from 'vue'
 import { X } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -13,9 +13,20 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') { e.stopPropagation(); emit('close') }
 }
 
+const bodyRef = ref<HTMLElement | null>(null)
+
 watch(() => props.open, (v) => {
-  if (v) window.addEventListener('keydown', onKeydown)
-  else window.removeEventListener('keydown', onKeydown)
+  if (v) {
+    window.addEventListener('keydown', onKeydown)
+    nextTick(() => {
+      setTimeout(() => {
+        const input = bodyRef.value?.querySelector('input, textarea, select') as HTMLElement
+        input?.focus()
+      }, 50)
+    })
+  } else {
+    window.removeEventListener('keydown', onKeydown)
+  }
 })
 
 onUnmounted(() => window.removeEventListener('keydown', onKeydown))
@@ -29,7 +40,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         class="fixed inset-0 z-50 flex items-center justify-center"
         @click.self="emit('close')"
       >
-        <div class="modal-backdrop" />
+        <div class="modal-backdrop" @click="emit('close')" />
         <div class="skeu-modal">
           <div class="skeu-modal-header">
             <h3 class="skeu-modal-title">{{ title }}</h3>
@@ -37,7 +48,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
               <X :size="14" />
             </button>
           </div>
-          <div class="skeu-modal-body">
+          <div ref="bodyRef" class="skeu-modal-body">
             <slot />
           </div>
           <div v-if="$slots.footer" class="skeu-modal-footer">
@@ -118,6 +129,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   flex: 1;
   overflow-y: auto;
   padding: 16px;
+  min-height: 300px;
 }
 
 .skeu-modal-footer {

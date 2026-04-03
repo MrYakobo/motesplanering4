@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useToday, localDateStr } from '../composables/useToday'
 import type { Event } from '../types'
 
@@ -9,6 +9,7 @@ const emit = defineEmits<{ selectDate: [date: string] }>()
 const { today, todayStr } = useToday()
 
 const scrollRef = ref<HTMLElement | null>(null)
+const todayVisible = ref(true)
 const monthNames = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec']
 const dayHeaders = ['m','t','o','t','f','l','s']
 
@@ -76,9 +77,55 @@ function isCurrentWeek(weekMon: Date) {
   return monStr <= currentWeekSun.value && sunStr >= currentWeekMon.value
 }
 
+const visibleYearIdx = ref(0)
+
+function updateVisibleYear() {
+  const container = scrollRef.value
+  if (!container) return
+  const sections = container.querySelectorAll('.year-section')
+  const cTop = container.scrollTop
+  const cH = container.clientHeight
+  for (let i = 0; i < sections.length; i++) {
+    const el = sections[i] as HTMLElement
+    if (el.offsetTop + cH / 2 > cTop) { visibleYearIdx.value = i; return }
+  }
+}
+
+const navLabel = computed(() => String(years.value[visibleYearIdx.value] ?? ''))
+
+function prevYear() {
+  const idx = Math.max(0, visibleYearIdx.value - 1)
+  const sections = scrollRef.value?.querySelectorAll('.year-section')
+  if (sections?.[idx]) (sections[idx] as HTMLElement).scrollIntoView({ block: 'start', behavior: 'smooth' })
+}
+function nextYear() {
+  const idx = Math.min(years.value.length - 1, visibleYearIdx.value + 1)
+  const sections = scrollRef.value?.querySelectorAll('.year-section')
+  if (sections?.[idx]) (sections[idx] as HTMLElement).scrollIntoView({ block: 'start', behavior: 'smooth' })
+}
+
+function checkTodayVisible() {
+  const container = scrollRef.value
+  if (!container) { todayVisible.value = false; return }
+  const el = container.querySelector('.year-today') as HTMLElement
+  if (!el) { todayVisible.value = false; return }
+  const cRect = container.getBoundingClientRect()
+  const tRect = el.getBoundingClientRect()
+  todayVisible.value = tRect.bottom > cRect.top && tRect.top < cRect.bottom
+}
+
+function goToday() {
+  const currentYearIdx = years.value.indexOf(today.value.getFullYear())
+  if (currentYearIdx >= 0) {
+    const sections = scrollRef.value?.querySelectorAll('.year-section')
+    if (sections?.[currentYearIdx]) {
+      (sections[currentYearIdx] as HTMLElement).scrollIntoView({ block: 'start', behavior: 'smooth' })
+    }
+  }
+}
+
 onMounted(() => {
   nextTick(() => {
-    // Scroll to current year
     const currentYearIdx = years.value.indexOf(today.value.getFullYear())
     if (currentYearIdx >= 0) {
       const sections = scrollRef.value?.querySelectorAll('.year-section')
@@ -86,8 +133,18 @@ onMounted(() => {
         (sections[currentYearIdx] as HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' })
       }
     }
+    scrollRef.value?.addEventListener('scroll', checkTodayVisible, { passive: true })
+    scrollRef.value?.addEventListener('scroll', updateVisibleYear, { passive: true })
+    checkTodayVisible()
+    updateVisibleYear()
   })
 })
+onUnmounted(() => {
+  scrollRef.value?.removeEventListener('scroll', checkTodayVisible)
+  scrollRef.value?.removeEventListener('scroll', updateVisibleYear)
+})
+
+defineExpose({ goToday, todayVisible, prevYear, nextYear, navLabel, navUp: prevYear, navDown: nextYear })
 </script>
 
 <template>

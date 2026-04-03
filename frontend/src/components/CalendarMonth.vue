@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useCategories } from '../composables/useCategories'
 import { useToday, localDateStr } from '../composables/useToday'
-import ScrollTodayButton from './ScrollTodayButton.vue'
 import type { Event } from '../types'
 
 const props = defineProps<{ events: Event[]; highlightDate?: string | null }>()
@@ -14,6 +13,51 @@ const { today, todayStr } = useToday()
 const scrollRef = ref<HTMLElement | null>(null)
 const dragEventId = ref<number | null>(null)
 const dragOverDate = ref<string | null>(null)
+const todayVisible = ref(true)
+const visibleMonthIdx = ref(0)
+
+const monthNames = ['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december']
+
+function updateVisibleMonth() {
+  const container = scrollRef.value
+  if (!container) return
+  const sections = container.querySelectorAll('.month-section')
+  const cTop = container.scrollTop
+  const cH = container.clientHeight
+  for (let i = 0; i < sections.length; i++) {
+    const el = sections[i] as HTMLElement
+    if (el.offsetTop + cH / 2 > cTop) { visibleMonthIdx.value = i; return }
+  }
+}
+
+const navLabel = computed(() => {
+  const m = months.value[visibleMonthIdx.value]
+  if (!m) return ''
+  return `${monthNames[m.month]} ${m.year}`
+})
+
+function prevMonth() {
+  const idx = Math.max(0, visibleMonthIdx.value - 1)
+  scrollToMonthIdx(idx)
+}
+function nextMonth() {
+  const idx = Math.min(months.value.length - 1, visibleMonthIdx.value + 1)
+  scrollToMonthIdx(idx)
+}
+function scrollToMonthIdx(idx: number) {
+  const sections = scrollRef.value?.querySelectorAll('.month-section')
+  if (sections?.[idx]) (sections[idx] as HTMLElement).scrollIntoView({ block: 'start', behavior: 'smooth' })
+}
+
+function checkTodayVisible() {
+  const container = scrollRef.value
+  if (!container) { todayVisible.value = false; return }
+  const el = container.querySelector('.month-current') as HTMLElement
+  if (!el) { todayVisible.value = false; return }
+  const cRect = container.getBoundingClientRect()
+  const tRect = el.getBoundingClientRect()
+  todayVisible.value = tRect.bottom > cRect.top && tRect.top < cRect.bottom
+}
 
 function onDragStart(e: DragEvent, evId: number) {
   dragEventId.value = evId
@@ -47,7 +91,6 @@ function onDrop(e: DragEvent, ds: string) {
   dragOverDate.value = null
 }
 
-const monthNames = ['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december']
 const dayHeaders = ['mån','tis','ons','tor','fre','lör','sön']
 
 const byDate = computed(() => {
@@ -123,7 +166,6 @@ function goToday() {
 
 onMounted(() => {
   setTimeout(() => {
-    // If a highlight date is provided, scroll to that month
     const targetDate = props.highlightDate || null
     let targetYear: number, targetMonth: number
     if (targetDate) {
@@ -139,7 +181,15 @@ onMounted(() => {
       const sections = scrollRef.value?.querySelectorAll('.month-section')
       if (sections?.[idx]) (sections[idx] as HTMLElement).scrollIntoView({ block: 'start', behavior: 'instant' })
     }
+    scrollRef.value?.addEventListener('scroll', checkTodayVisible, { passive: true })
+    scrollRef.value?.addEventListener('scroll', updateVisibleMonth, { passive: true })
+    checkTodayVisible()
+    updateVisibleMonth()
   }, 50)
+})
+onUnmounted(() => {
+  scrollRef.value?.removeEventListener('scroll', checkTodayVisible)
+  scrollRef.value?.removeEventListener('scroll', updateVisibleMonth)
 })
 
 // Expand overflow for a date
@@ -147,6 +197,8 @@ const expandedDate = ref<string | null>(null)
 function toggleExpand(ds: string) {
   expandedDate.value = expandedDate.value === ds ? null : ds
 }
+
+defineExpose({ goToday, todayVisible, prevMonth, nextMonth, navLabel, navUp: prevMonth, navDown: nextMonth })
 </script>
 
 <template>
@@ -157,9 +209,6 @@ function toggleExpand(ds: string) {
         class="month-section snap-start h-full min-h-full flex flex-col"
         :class="{ 'month-current': m.year === today.getFullYear() && m.month === today.getMonth() }"
       >
-        <div class="shrink-0 bg-white/95 backdrop-blur-sm px-3 py-1.5 text-sm font-bold text-gray-800 border-b border-gray-100 capitalize z-10">
-          {{ monthNames[m.month] }} <span class="font-normal text-gray-400">{{ m.year }}</span>
-        </div>
         <!-- Day headers -->
         <div class="shrink-0 cal-row text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100">
           <div class="cal-wk-col text-center py-1">v.</div>
@@ -229,8 +278,6 @@ function toggleExpand(ds: string) {
         </div>
       </div>
     </div>
-    <!-- Floating today button -->
-    <ScrollTodayButton :scroll-container="scrollRef" target-selector=".month-current" @click="goToday" />
   </div>
 </template>
 

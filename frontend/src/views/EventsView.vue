@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useStore } from '../composables/useStore'
 import { useToday } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
@@ -11,8 +11,7 @@ import PropagateModal from '../components/PropagateModal.vue'
 import CalendarMonth from '../components/CalendarMonth.vue'
 import CalendarWeek from '../components/CalendarWeek.vue'
 import CalendarYear from '../components/CalendarYear.vue'
-import SubscribeModal from '../components/SubscribeModal.vue'
-import { List, CalendarDays, CalendarRange, Grid3x3, CalendarPlus } from 'lucide-vue-next'
+import { CircleDot, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import type { Event, EventView } from '../types'
 
 const { db, selectedId, searchQuery, persist, assignments, currentView, setView } = useStore()
@@ -23,7 +22,7 @@ const router = useRouter()
 
 // Sync view from route meta
 watch(() => route.meta.view, (v) => {
-  if (v === 'calendar' || v === 'year' || v === 'week') setView(v as EventView)
+  if (v === 'list' || v === 'calendar' || v === 'year' || v === 'week') setView(v as EventView)
 }, { immediate: true })
 
 // Week date from route param
@@ -32,12 +31,50 @@ watch(() => route.params.date, (d) => { if (route.meta.view === 'week') weekDate
 
 function onWeekDateChange(d: string) {
   weekDate.value = d
-  router.replace(`/week/${d}`)
+  router.replace(`/events/week/${d}`)
 }
 
 const editingEvent = ref<Event | null>(null)
 const highlightDate = ref<string | null>(null)
-const subscribeOpen = ref(false)
+const monthRef = ref<InstanceType<typeof CalendarMonth> | null>(null)
+const weekRef = ref<InstanceType<typeof CalendarWeek> | null>(null)
+const listRef = ref<InstanceType<typeof EventList> | null>(null)
+const yearRef = ref<InstanceType<typeof CalendarYear> | null>(null)
+
+function goToday() {
+  if (currentView.value === 'list') listRef.value?.goToday()
+  else if (currentView.value === 'calendar') monthRef.value?.goToday()
+  else if (currentView.value === 'week') weekRef.value?.goToday()
+  else if (currentView.value === 'year') yearRef.value?.goToday()
+}
+
+const todayIsVisible = computed(() => {
+  const view = currentView.value
+  if (view === 'list') return listRef.value?.todayVisible ?? true
+  if (view === 'calendar') return monthRef.value?.todayVisible ?? true
+  if (view === 'week') return weekRef.value?.todayVisible ?? true
+  if (view === 'year') return yearRef.value?.todayVisible ?? true
+  return true
+})
+
+function navPrev() {
+  if (currentView.value === 'week') weekRef.value?.prevWeek()
+  else if (currentView.value === 'calendar') monthRef.value?.prevMonth()
+  else if (currentView.value === 'year') yearRef.value?.prevYear()
+}
+function navNext() {
+  if (currentView.value === 'week') weekRef.value?.nextWeek()
+  else if (currentView.value === 'calendar') monthRef.value?.nextMonth()
+  else if (currentView.value === 'year') yearRef.value?.nextYear()
+}
+const navLabel = computed(() => {
+  const view = currentView.value
+  if (view === 'week') return weekRef.value?.weekNum != null ? `Vecka ${weekRef.value.weekNum}` : ''
+  if (view === 'calendar') return monthRef.value?.navLabel ?? ''
+  if (view === 'year') return yearRef.value?.navLabel ?? ''
+  return ''
+})
+const hasNav = computed(() => currentView.value !== 'list')
 
 // ── Propagation state ────────────────────────────────────────────────────────
 const propagateOpen = ref(false)
@@ -88,18 +125,13 @@ function newEvent(date?: string, time?: string) {
   }
 }
 
+const flashWeek = ref(false)
+
 function onCalendarSwitchWeek(dateStr: string) {
   weekDate.value = dateStr
-  setView('week')
-  router.replace(`/week/${dateStr}`)
+  flashWeek.value = true
+  router.push(`/events/week/${dateStr}`)
 }
-
-const views: { id: EventView; icon: any; label: string }[] = [
-  { id: 'list', icon: List, label: 'Lista' },
-  { id: 'calendar', icon: CalendarDays, label: 'Månad' },
-  { id: 'week', icon: CalendarRange, label: 'Vecka' },
-  { id: 'year', icon: Grid3x3, label: 'År' },
-]
 
 async function onSave(ev: Event) {
   const idx = db.events.findIndex(e => e.id === ev.id)
@@ -183,48 +215,69 @@ async function onMoveEvent(eventId: number, newDate: string, newTime?: string) {
   await persist('events')
   toast(`Flyttad till ${newDate}${newTime ? ' ' + newTime : ''}`)
 }
+
+function activeRef() {
+  if (currentView.value === 'list') return listRef.value
+  if (currentView.value === 'calendar') return monthRef.value
+  if (currentView.value === 'week') return weekRef.value
+  if (currentView.value === 'year') return yearRef.value
+  return null
+}
+
+function onKeydown(e: KeyboardEvent) {
+  const tag = (e.target as HTMLElement).tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+  if (currentView.value === 'list') return
+  if (e.key === 'j' || e.key === 'ArrowDown') {
+    e.preventDefault()
+    activeRef()?.navDown()
+  } else if (e.key === 'k' || e.key === 'ArrowUp') {
+    e.preventDefault()
+    activeRef()?.navUp()
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
   <div class="flex flex-col flex-1 overflow-hidden relative">
     <div class="skeu-toolbar">
-      <span class="text-[11px] text-[#666] hidden sm:inline" style="text-shadow: 0 1px 0 rgba(255,255,255,.7)">
-        Totalt: <strong class="text-[#333]">{{ filteredEvents.length }}</strong>
-      </span>
-      <!-- View toggle -->
-      <div class="skeu-segmented">
-        <button
-          v-for="v in views" :key="v.id"
-          @click="setView(v.id)"
-          class="skeu-seg-btn"
-          :class="[
-            currentView === v.id ? 'skeu-seg-active' : '',
-            v.id === 'year' ? 'hidden sm:flex' : '',
-          ]"
-          :title="v.label"
-        >
-          <component :is="v.icon" :size="12" />
-          <span class="hidden sm:inline">{{ v.label }}</span>
-        </button>
-      </div>
+      <!-- Today -->
       <button
-        @click="subscribeOpen = true"
-        class="skeu-icon-btn"
-        title="Prenumerera på kategori"
+        @click="goToday"
+        class="skeu-today-btn"
+        :class="{ 'skeu-today-btn-disabled': todayIsVisible }"
+        title="Gå till idag"
       >
-        <CalendarPlus :size="13" />
+        <CircleDot :size="12" />
+        <span class="hidden sm:inline">Idag</span>
       </button>
+      <!-- Prev / Next / Label -->
+      <template v-if="hasNav">
+        <button @click="navPrev" class="skeu-icon-btn"><ChevronLeft :size="14" /></button>
+        <button @click="navNext" class="skeu-icon-btn"><ChevronRight :size="14" /></button>
+        <span class="text-[13px] font-semibold text-[#333] whitespace-nowrap capitalize hidden sm:inline" style="text-shadow: 0 1px 0 rgba(255,255,255,.7)">{{ navLabel }}</span>
+      </template>
+      <span v-else class="text-[11px] text-[#666] hidden sm:inline" style="text-shadow: 0 1px 0 rgba(255,255,255,.7)">
+        {{ filteredEvents.length }} händelser
+      </span>
+      <!-- Spacer -->
+      <div class="flex-1" />
+      <!-- Search -->
       <input
         v-model="searchQuery"
         type="search"
         placeholder="Sök..."
-        class="skeu-search ml-auto"
+        class="skeu-search"
       />
     </div>
 
     <!-- List view -->
     <EventList
       v-if="currentView === 'list'"
+      ref="listRef"
       :events="filteredEvents"
       :selected-id="selectedId"
       @select="onSelect"
@@ -233,6 +286,7 @@ async function onMoveEvent(eventId: number, newDate: string, newTime?: string) {
     <!-- Month calendar -->
     <CalendarMonth
       v-else-if="currentView === 'calendar'"
+      ref="monthRef"
       :events="filteredEvents"
       :highlight-date="highlightDate"
       @select="onSelect"
@@ -243,17 +297,21 @@ async function onMoveEvent(eventId: number, newDate: string, newTime?: string) {
     <!-- Week calendar -->
     <CalendarWeek
       v-else-if="currentView === 'week'"
+      ref="weekRef"
       :events="filteredEvents"
       :initial-date="weekDate"
+      :flash-initial="flashWeek"
       @select="onSelect"
       @create="(d: string, t?: string) => newEvent(d, t)"
       @move="onMoveEvent"
       @update:date="onWeekDateChange"
+      @vue:mounted="flashWeek = false"
     />
 
     <!-- Year calendar -->
     <CalendarYear
       v-else-if="currentView === 'year'"
+      ref="yearRef"
       :events="filteredEvents"
       @select-date="onCalendarSwitchWeek"
     />
@@ -281,8 +339,6 @@ async function onMoveEvent(eventId: number, newDate: string, newTime?: string) {
       @skip="onPropagateSkip"
       @close="onPropagateSkip"
     />
-
-    <SubscribeModal :open="subscribeOpen" @close="subscribeOpen = false" />
   </div>
 </template>
 
@@ -331,8 +387,10 @@ async function onMoveEvent(eventId: number, newDate: string, newTime?: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
+  gap: 3px;
+  min-width: 24px;
   height: 24px;
+  padding: 0 4px;
   border-radius: 4px;
   border: 1px solid transparent;
   background: transparent;
@@ -345,6 +403,27 @@ async function onMoveEvent(eventId: number, newDate: string, newTime?: string) {
   border-color: #aaa;
   color: #444;
   box-shadow: 0 1px 0 rgba(255,255,255,.7) inset;
+}
+.skeu-today-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  border: 1px solid rgba(0,0,0,.2);
+  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.15);
+  transition: background 0.1s ease;
+}
+.skeu-today-btn:hover { background: linear-gradient(180deg, #7b6cf5 0%, #5544d4 100%); }
+.skeu-today-btn-disabled {
+  opacity: 0.35;
+  pointer-events: none;
 }
 .skeu-search {
   width: 180px;

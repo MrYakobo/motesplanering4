@@ -40,7 +40,7 @@ async function submit() {
         class="fixed inset-0 z-[9999] flex items-center justify-center"
         @click.self="emit('close')"
       >
-        <div class="modal-backdrop" />
+        <div class="modal-backdrop" @click="emit('close')" />
         <div class="skeu-login-card">
           <button @click="emit('close')" class="skeu-close">×</button>
           <h3 class="skeu-login-title">Logga in</h3>

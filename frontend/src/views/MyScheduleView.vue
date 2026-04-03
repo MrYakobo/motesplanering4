@@ -1,15 +1,83 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useStore } from '../composables/useStore'
 import { useToday } from '../composables/useToday'
-import { CalendarDays } from 'lucide-vue-next'
+import { useApi } from '../composables/useApi'
+import { useToast } from '../composables/useToast'
+import { CalendarDays, Save } from 'lucide-vue-next'
 
 const { db, assignments, memberContactId } = useStore()
 const { todayStr } = useToday()
+const { updateMyContact, joinTeam, leaveTeam } = useApi()
+const { show: toast } = useToast()
 
 const me = computed(() =>
   memberContactId.value ? db.contacts.find(c => c.id === memberContactId.value) : null
 )
+
+// Editable contact fields
+const editName = ref('')
+const editEmail = ref('')
+const editPhone = ref('')
+const saving = ref(false)
+const teamsOpen = ref(false)
+
+function initEditFields() {
+  if (me.value) {
+    editName.value = me.value.name || ''
+    editEmail.value = me.value.email || ''
+    editPhone.value = me.value.phone || ''
+  }
+}
+initEditFields()
+
+async function saveContact() {
+  saving.value = true
+  try {
+    await updateMyContact({ name: editName.value, email: editEmail.value, phone: editPhone.value })
+    if (me.value) {
+      me.value.name = editName.value
+      me.value.email = editEmail.value
+      me.value.phone = editPhone.value
+    }
+    toast('Uppgifter sparade')
+  } catch (e: any) { toast(e.message) }
+  saving.value = false
+}
+
+// Team self-service
+const teamTasks = computed(() => db.tasks.filter((t: any) => t.teamTask))
+
+function myTeamsForTask(taskId: number) {
+  return db.teams.filter(t => t.taskId === taskId && t.members.includes(memberContactId.value!))
+}
+function teamMemberNames(team: { members: number[] }) {
+  return team.members
+    .filter(id => id !== memberContactId.value)
+    .map(id => db.contacts.find(c => c.id === id)?.name)
+    .filter(Boolean) as string[]
+}
+function availableTeamsForTask(taskId: number) {
+  return db.teams.filter(t => t.taskId === taskId && !t.members.includes(memberContactId.value!))
+}
+
+async function doJoinTeam(teamId: number) {
+  try {
+    await joinTeam(teamId)
+    const team = db.teams.find(t => t.id === teamId)
+    if (team && !team.members.includes(memberContactId.value!)) team.members.push(memberContactId.value!)
+    toast('Gick med i teamet')
+  } catch (e: any) { toast(e.message) }
+}
+
+async function doLeaveTeam(teamId: number) {
+  try {
+    await leaveTeam(teamId)
+    const team = db.teams.find(t => t.id === teamId)
+    if (team) team.members = team.members.filter(id => id !== memberContactId.value)
+    toast('Lämnade teamet')
+  } catch (e: any) { toast(e.message) }
+}
 
 const myEvents = computed(() => {
   const cid = memberContactId.value
@@ -166,6 +234,83 @@ function copyIcal() {
             class="text-[11px] text-white/40 bg-transparent border border-white/15 rounded-md px-2.5 py-1.5 cursor-pointer hover:text-white/70 transition-colors"
           >
             Kopiera länk
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══ Mina team ═══ -->
+      <div v-if="memberContactId && teamTasks.length > 0" class="mt-8">
+        <button @click="teamsOpen = !teamsOpen"
+          class="flex items-center gap-2 w-full bg-transparent border-none cursor-pointer text-left p-0 mb-1">
+          <span class="text-[10px] text-white/30 transition-transform" :class="teamsOpen ? 'rotate-90' : ''">▶</span>
+          <h2 class="text-sm font-semibold text-white/50 uppercase tracking-wider">Mina team</h2>
+          <span class="text-[11px] text-white/20">{{ myTeamsForTask(teamTasks[0]?.id).length ? 'Medlem' : 'Inget team' }}</span>
+        </button>
+        <div v-if="teamsOpen">
+        <p class="text-xs text-white/30 mb-4 ml-4">Du kan vara med i ett team per uppgift. Teamet avgör vilka händelser du tilldelas.</p>
+
+        <div v-for="task in teamTasks" :key="task.id" class="mb-6">
+          <div class="text-xs font-semibold text-white/50 mb-2">{{ task.name }}</div>
+
+          <!-- Teams I'm in -->
+          <div v-for="team in myTeamsForTask(task.id)" :key="team.id"
+            class="bg-accent/10 border border-accent/20 rounded-lg px-4 py-3 mb-2">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-sm font-semibold text-white/90">Team {{ team.number }}</span>
+              <button @click="doLeaveTeam(team.id)"
+                class="text-[11px] text-white/30 bg-transparent border border-white/10 rounded px-2 py-0.5 cursor-pointer hover:text-red-400 hover:border-red-400/30 transition-colors">
+                Lämna team
+              </button>
+            </div>
+            <div v-if="teamMemberNames(team).length" class="text-[11px] text-white/40">
+              Övriga: {{ teamMemberNames(team).join(', ') }}
+            </div>
+            <div v-else class="text-[11px] text-white/25">Du är ensam i detta team</div>
+          </div>
+
+          <!-- Not in any team for this task -->
+          <div v-if="myTeamsForTask(task.id).length === 0">
+            <p class="text-xs text-white/30 mb-2">Du är inte med i något team för {{ task.name }}. Välj ett team att gå med i:</p>
+            <div class="space-y-1.5">
+              <button v-for="team in availableTeamsForTask(task.id)" :key="team.id"
+                @click="doJoinTeam(team.id)"
+                class="w-full text-left bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 cursor-pointer hover:border-accent/40 hover:bg-accent/5 transition-colors">
+                <div class="text-sm text-white/70">Team {{ team.number }}
+                  <span class="text-[11px] text-white/30 ml-1">{{ team.members.length }} {{ team.members.length === 1 ? 'person' : 'personer' }}</span>
+                </div>
+                <div v-if="teamMemberNames(team).length" class="text-[11px] text-white/30 mt-0.5">
+                  {{ teamMemberNames(team).join(', ') }}
+                </div>
+              </button>
+            </div>
+            <div v-if="availableTeamsForTask(task.id).length === 0" class="text-xs text-white/20">Inga team tillgängliga</div>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <!-- ═══ Mitt konto ═══ -->
+      <div v-if="memberContactId && me" class="mt-8 bg-white/5 border border-white/10 rounded-lg p-4">
+        <h2 class="text-sm font-semibold text-white/80 mb-3">Mitt konto</h2>
+        <div class="space-y-3">
+          <div>
+            <label class="text-[11px] text-white/40 block mb-0.5">Namn</label>
+            <input v-model="editName" type="text"
+              class="w-full bg-white/5 border border-white/15 rounded-md px-3 py-2 text-sm text-white outline-none focus:border-accent" />
+          </div>
+          <div>
+            <label class="text-[11px] text-white/40 block mb-0.5">E-post</label>
+            <input v-model="editEmail" type="email"
+              class="w-full bg-white/5 border border-white/15 rounded-md px-3 py-2 text-sm text-white outline-none focus:border-accent" />
+          </div>
+          <div>
+            <label class="text-[11px] text-white/40 block mb-0.5">Telefon</label>
+            <input v-model="editPhone" type="tel"
+              class="w-full bg-white/5 border border-white/15 rounded-md px-3 py-2 text-sm text-white outline-none focus:border-accent" />
+          </div>
+          <button @click="saveContact" :disabled="saving"
+            class="flex items-center gap-1.5 bg-accent text-white text-xs font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer hover:bg-accent-hover transition-colors disabled:opacity-50">
+            <Save :size="13" /> Spara
           </button>
         </div>
       </div>

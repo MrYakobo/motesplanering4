@@ -566,11 +566,15 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify(stripForViewer(data)));
         return;
       }
-      // Members get full data minus settings and tokens
+      // Members get full data minus settings and tokens, PII stripped from other contacts
       if (isMember) {
         const copy = JSON.parse(JSON.stringify(data));
         delete copy.settings;
-        copy.contacts = copy.contacts.map(c => { const { token, ...rest } = c; return rest; });
+        copy.contacts = copy.contacts.map(c => {
+          const { token, ...rest } = c;
+          if (c.id === memberContact.id) return rest; // own contact: full details
+          return { id: c.id, name: c.name }; // others: name only
+        });
         res.writeHead(200, {'Content-Type':'application/json'});
         res.end(JSON.stringify(copy));
         return;

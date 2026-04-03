@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, nextTick, onMounted } from 'vue'
+import { computed, ref, nextTick, onMounted, onUnmounted } from 'vue'
 import { useToday } from '../composables/useToday'
 import { useCategories } from '../composables/useCategories'
 import { ArrowRight, Ellipsis } from 'lucide-vue-next'
-import ScrollTodayButton from './ScrollTodayButton.vue'
 import type { Event } from '../types'
 
 const props = defineProps<{
@@ -20,6 +19,7 @@ const { catStyle } = useCategories()
 
 const scrollRef = ref<HTMLElement | null>(null)
 const hasScrolled = ref(false)
+const todayVisible = ref(true)
 
 const hasTodayEvent = computed(() => props.events.some(e => e.date === todayStr.value))
 
@@ -35,12 +35,47 @@ const todaySepIndex = computed(() => {
 function isPast(ev: Event) { return ev.date < todayStr.value }
 function isToday(ev: Event) { return ev.date === todayStr.value }
 
+function checkTodayVisible() {
+  const container = scrollRef.value
+  if (!container) { todayVisible.value = false; return }
+  const el = (container.querySelector('.today-row') || container.querySelector('.today-sep')) as HTMLElement
+  if (!el) { todayVisible.value = false; return }
+  const cRect = container.getBoundingClientRect()
+  const tRect = el.getBoundingClientRect()
+  todayVisible.value = tRect.bottom >= cRect.top && tRect.top <= cRect.bottom
+}
+
 function scrollToToday() {
   const container = scrollRef.value
   if (!container) return
   const el = (container.querySelector('.today-row') || container.querySelector('.today-sep')) as HTMLElement
   if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
 }
+
+function navDown() {
+  const idx = props.events.findIndex(e => e.id === props.selectedId)
+  const next = Math.min(props.events.length - 1, idx + 1)
+  if (props.events[next]) {
+    emit('select', props.events[next].id)
+    nextTick(() => {
+      const rows = scrollRef.value?.querySelectorAll('.skeu-row')
+      if (rows?.[next]) (rows[next] as HTMLElement).scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    })
+  }
+}
+function navUp() {
+  const idx = props.events.findIndex(e => e.id === props.selectedId)
+  const prev = Math.max(0, idx <= 0 ? 0 : idx - 1)
+  if (props.events[prev]) {
+    emit('select', props.events[prev].id)
+    nextTick(() => {
+      const rows = scrollRef.value?.querySelectorAll('.skeu-row')
+      if (rows?.[prev]) (rows[prev] as HTMLElement).scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    })
+  }
+}
+
+defineExpose({ goToday: scrollToToday, todayVisible, navUp, navDown })
 
 onMounted(() => {
   nextTick(() => {
@@ -50,7 +85,12 @@ onMounted(() => {
     if (!container) return
     const el = (container.querySelector('.today-row') || container.querySelector('.today-sep')) as HTMLElement
     if (el) el.scrollIntoView({ block: 'center', behavior: 'instant' })
+    container.addEventListener('scroll', checkTodayVisible, { passive: true })
+    checkTodayVisible()
   })
+})
+onUnmounted(() => {
+  scrollRef.value?.removeEventListener('scroll', checkTodayVisible)
 })
 </script>
 
@@ -80,7 +120,7 @@ onMounted(() => {
               class="skeu-row group"
               :class="{
                 'skeu-row-selected': selectedId === ev.id,
-                'skeu-row-today': isToday(ev),
+                'skeu-row-today today-row': isToday(ev),
                 'opacity-50': isPast(ev) && !isToday(ev),
               }"
               :style="isToday(ev) ? 'scroll-margin-top: 40px' : ''"
@@ -113,7 +153,6 @@ onMounted(() => {
         </tbody>
       </table>
     </div>
-    <ScrollTodayButton :scroll-container="scrollRef" target-selector=".today-row, .today-sep" @click="scrollToToday" />
   </div>
 </template>
 

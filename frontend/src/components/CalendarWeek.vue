@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, nextTick } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useCategories } from '../composables/useCategories'
 import { useToday, localDateStr } from '../composables/useToday'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import type { Event } from '../types'
 
-const props = defineProps<{ events: Event[]; initialDate?: string }>()
+const props = defineProps<{ events: Event[]; initialDate?: string; flashInitial?: boolean }>()
 const emit = defineEmits<{
   select: [id: number]
   create: [date: string, time?: string]
@@ -21,7 +21,22 @@ const monthNames = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep
 const HOURS = Array.from({ length: 15 }, (_, i) => i + 7)
 
 const selectedDate = ref(props.initialDate || todayStr.value)
-watch(() => props.initialDate, (d) => { if (d) selectedDate.value = d })
+const flashDate = ref('')
+
+function triggerFlash(d: string) {
+  flashDate.value = d
+  setTimeout(() => { flashDate.value = '' }, 2000)
+}
+
+watch(() => props.initialDate, (d) => {
+  if (d) {
+    selectedDate.value = d
+    if (props.flashInitial) triggerFlash(d)
+  }
+})
+if (props.initialDate && props.flashInitial) {
+  triggerFlash(props.initialDate)
+}
 
 function parseDate(s: string) {
   const [y, m, d] = s.split('-').map(Number)
@@ -46,8 +61,14 @@ const days = computed(() =>
 const selIdx = computed(() => days.value.findIndex(d => ds(d) === selectedDate.value))
 
 const headerLabel = computed(() => {
-  const d = selectedDayObj.value
-  return `${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear()}`
+  const m1 = monday.value
+  const sun = new Date(m1)
+  sun.setDate(m1.getDate() + 6)
+  const sameMonth = m1.getMonth() === sun.getMonth()
+  if (sameMonth) {
+    return `${m1.getDate()}–${sun.getDate()} ${monthNames[m1.getMonth()]} ${m1.getFullYear()}`
+  }
+  return `${m1.getDate()} ${monthNames[m1.getMonth()]}–${sun.getDate()} ${monthNames[sun.getMonth()]} ${sun.getFullYear()}`
 })
 
 function weekNumber(d: Date) {
@@ -81,6 +102,7 @@ function prevWeek() { const d = new Date(monday.value); d.setDate(d.getDate() - 
 function nextWeek() { const d = new Date(monday.value); d.setDate(d.getDate() + 7); setDay(ds(d)) }
 
 const EVENT_HEIGHT = 60
+const GRID_HEIGHT = HOURS.length * 60 + 30 // extra padding at bottom
 
 function eventTop(ev: Event) {
   if (!ev.time) return 0
@@ -138,7 +160,7 @@ const ghostDateStr = ref('')
 
 function onDesktopGridClick(e: MouseEvent, dateStr: string) {
   if ((e.target as HTMLElement).closest('.week-ev')) return
-  const col = (e.currentTarget as HTMLElement).querySelector('.week-desk-col-inner') as HTMLElement
+  const col = (e.currentTarget as HTMLElement).querySelector('.desk-col-inner') as HTMLElement
   if (!col) return
   const relY = e.clientY - col.getBoundingClientRect().top
   const minutes = Math.max(0, Math.floor(relY / 30) * 30)
@@ -180,7 +202,7 @@ function onGridClick(e: MouseEvent) {
   if ((e.target as HTMLElement).closest('.week-ev')) return
   const grid = mobileGridRef.value
   if (!grid) return
-  const inner = grid.querySelector('.week-grid-inner') as HTMLElement
+  const inner = grid.querySelector('.grid-inner') as HTMLElement
   if (!inner) return
   const relY = e.clientY - inner.getBoundingClientRect().top
   const minutes = Math.max(0, Math.floor(relY / 30) * 30)
@@ -228,11 +250,8 @@ function onTouchEnd() {
   const committed = Math.abs(swipeDx.value) > 60
   const dir = swipeDx.value > 0 ? 1 : -1
   swipeDir.value = 'none'
-
   if (committed) {
-    // Switch day immediately, then animate new content in from the edge
     if (dir > 0) prev(); else next()
-    // Start off-screen on the incoming side
     swipeDx.value = -dir * window.innerWidth * 0.4
     settling.value = false
     requestAnimationFrame(() => {
@@ -241,25 +260,22 @@ function onTouchEnd() {
       setTimeout(() => { settling.value = false }, 300)
     })
   } else {
-    // Snap back
     settling.value = true
     swipeDx.value = 0
     setTimeout(() => { settling.value = false }, 300)
   }
 }
 
-// Pill: follows finger during swipe, springs on settle
 const pillStyle = computed(() => {
   const base = selIdx.value >= 0 ? selIdx.value : 0
   const swipeShift = swipeDir.value === 'h' && !settling.value ? -swipeDx.value / (window.innerWidth || 400) : 0
   const frac = (base + swipeShift) / 7
   return {
-    left: `calc(${frac * 100}% + (100% / 7 - 30px) / 2)`,
+    left: `calc(24px + (100% - 48px) * ${frac} + ((100% - 48px) / 7 - 30px) / 2)`,
     transition: settling.value || swipeDir.value !== 'h' ? 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
   }
 })
 
-// Grid content transform
 const gridTransform = computed(() => ({
   transform: `translateX(${swipeDx.value}px)`,
   transition: settling.value ? 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
@@ -285,7 +301,7 @@ function onDragOver(e: DragEvent) { if (dragEventId.value) e.preventDefault() }
 function onDesktopDragOver(e: DragEvent, dateStr: string) {
   if (!dragEventId.value) return
   e.preventDefault()
-  const col = (e.currentTarget as HTMLElement).querySelector('.week-desk-col-inner') as HTMLElement
+  const col = (e.currentTarget as HTMLElement).querySelector('.desk-col-inner') as HTMLElement
   if (!col) return
   const relY = e.clientY - col.getBoundingClientRect().top
   const minutes = Math.max(0, Math.floor(relY / 30) * 30)
@@ -296,7 +312,7 @@ function onDrop(e: DragEvent) {
   e.preventDefault()
   if (!dragEventId.value) return
   const grid = gridRef.value
-  const inner = grid?.querySelector('.week-grid-inner') as HTMLElement
+  const inner = grid?.querySelector('.grid-inner') as HTMLElement
   if (inner) {
     const relY = e.clientY - inner.getBoundingClientRect().top
     const minutes = Math.max(0, Math.floor(relY / 30) * 30)
@@ -313,378 +329,278 @@ function onDrop(e: DragEvent) {
   dragEventId.value = null
 }
 
-const showTodayBtn = computed(() => selectedDate.value !== todayStr.value)
-
 const gridRef = ref<HTMLElement | null>(null)
 const mobileGridRef = ref<HTMLElement | null>(null)
+
+// ── Off-screen event indicators ──────────────────────────────────────────────
+const scrollTop = ref(0)
+const scrollViewH = ref(400)
+
+function onScrollGrid(e: globalThis.Event) {
+  const el = e.target as HTMLElement
+  scrollTop.value = el.scrollTop
+  scrollViewH.value = el.clientHeight
+}
+
+const mobileAbove = computed(() => layoutEvents.value.filter(le => le.top + EVENT_HEIGHT < scrollTop.value).length)
+const mobileBelow = computed(() => layoutEvents.value.filter(le => le.top > scrollTop.value + scrollViewH.value).length)
+
+const desktopAbove = computed(() => {
+  const st = scrollTop.value
+  let count = 0
+  for (const dl of weekLayouts.value) for (const le of dl.events) if (le.top + EVENT_HEIGHT < st) count++
+  return count
+})
+const desktopBelow = computed(() => {
+  const bottom = scrollTop.value + scrollViewH.value
+  let count = 0
+  for (const dl of weekLayouts.value) for (const le of dl.events) if (le.top > bottom) count++
+  return count
+})
+
+function scrollToNearest(direction: 'up' | 'down', el: HTMLElement | null) {
+  if (!el) return
+  const st = el.scrollTop
+  const vh = el.clientHeight
+  const tops = [...layoutEvents.value.map(le => le.top)]
+  for (const dl of weekLayouts.value) for (const le of dl.events) tops.push(le.top)
+  if (direction === 'up') {
+    const above = tops.filter(t => t + EVENT_HEIGHT < st).sort((a, b) => b - a)
+    if (above.length) el.scrollTo({ top: above[0] - 10, behavior: 'smooth' })
+  } else {
+    const below = tops.filter(t => t > st + vh).sort((a, b) => a - b)
+    if (below.length) el.scrollTo({ top: below[0] - 10, behavior: 'smooth' })
+  }
+}
+
+function nowTop() {
+  return (new Date().getHours() - 7) * 60 + new Date().getMinutes()
+}
+
 onMounted(() => {
   nextTick(() => {
     const h = Math.max(7, Math.min(new Date().getHours(), 20))
     const scrollTo = (h - 7) * 60 - 30
-    if (mobileGridRef.value) mobileGridRef.value.scrollTop = scrollTo
-    if (gridRef.value) gridRef.value.scrollTop = scrollTo
+    if (mobileGridRef.value) {
+      mobileGridRef.value.scrollTop = scrollTo
+      mobileGridRef.value.addEventListener('scroll', onScrollGrid, { passive: true })
+    }
+    if (gridRef.value) {
+      gridRef.value.scrollTop = scrollTo
+      gridRef.value.addEventListener('scroll', onScrollGrid, { passive: true })
+    }
+    scrollTop.value = scrollTo
   })
 })
+onUnmounted(() => {
+  mobileGridRef.value?.removeEventListener('scroll', onScrollGrid)
+  gridRef.value?.removeEventListener('scroll', onScrollGrid)
+})
+
+const todayVisible = computed(() => days.value.some(d => ds(d) === todayStr.value))
+
+const weekNum = computed(() => weekNumber(monday.value))
+
+function navDown() { nextWeek() }
+function navUp() { prevWeek() }
+
+defineExpose({ goToday, todayVisible, prevWeek, nextWeek, weekNum, headerLabel, navUp, navDown })
 </script>
 
 <template>
-  <div class="week-root"
+  <div class="flex-1 flex flex-col overflow-hidden"
     @touchstart.passive="onTouchStart"
     @touchmove="onTouchMove"
     @touchend="onTouchEnd"
   >
-    <!-- Header (desktop only: week nav) -->
-    <div class="week-header hidden sm:flex">
-      <button @click="prevWeek" class="week-nav-btn"><ChevronLeft :size="16" /></button>
-      <div class="week-header-center">
-        <span class="week-header-label">Vecka {{ weekNumber(monday) }}</span>
-        <span class="week-header-wk">{{ headerLabel }}</span>
+    <!-- Desktop day labels -->
+    <div class="hidden sm:flex shrink-0 border-b border-[#ccc] bg-gradient-to-b from-[#f0f0f0] to-[#e4e4e4]">
+      <div class="w-10 shrink-0" />
+      <div v-for="(day, i) in days" :key="'dh'+i" class="flex-1 min-w-0 text-center py-1 border-l border-[#ddd]">
+        <div class="text-[10px] font-semibold uppercase text-[#888]">{{ dayLabels[i] }}</div>
+        <div class="text-[15px] font-bold" :class="isToday(day) ? 'text-accent' : 'text-[#444]'">{{ day.getDate() }}</div>
       </div>
-      <button @click="nextWeek" class="week-nav-btn"><ChevronRight :size="16" /></button>
-      <button @click="goToday" class="week-today-btn" :class="{ 'week-today-btn-disabled': !showTodayBtn }">Idag</button>
     </div>
 
-    <!-- Day strip (mobile only) -->
-    <div class="week-days-bar sm:hidden">
-      <button @click="prev" class="week-strip-nav"><ChevronLeft :size="14" /></button>
-      <div class="week-sel-pill" :style="pillStyle" />
+    <!-- Mobile day strip -->
+    <div class="flex sm:hidden shrink-0 relative border-b border-[#bbb] bg-gradient-to-b from-[#eee] to-[#ddd] shadow-[inset_0_1px_0_rgba(255,255,255,.4)]">
+      <button @click="prev" class="flex items-center justify-center w-6 shrink-0 bg-transparent border-none text-[#888] cursor-pointer z-[1] active:text-accent">
+        <ChevronLeft :size="14" />
+      </button>
+      <div class="absolute w-[30px] h-[30px] rounded-full top-[17px] z-0 bg-gradient-to-b from-accent to-[#4a3cc9] shadow-[inset_0_1px_0_rgba(255,255,255,.2),0_2px_8px_rgba(59,47,186,.4)] will-change-[left]" :style="pillStyle" />
       <div
         v-for="(day, i) in days" :key="ds(day)"
-        class="week-day-col"
+        class="flex-1 flex flex-col items-center py-1 pb-0.5 cursor-pointer min-w-0 relative z-[1]"
         @click="selectDayIdx(i)"
       >
-        <span class="week-day-label" :class="{ 'week-day-label-sel': ds(day) === selectedDate }">{{ dayLabels[i] }}</span>
-        <span class="week-day-num" :class="{
-          'week-day-num-on': ds(day) === selectedDate,
-          'week-day-num-today-idle': isToday(day) && ds(day) !== selectedDate,
+        <span class="text-[10px] font-semibold uppercase transition-colors duration-200" :class="ds(day) === selectedDate ? 'text-accent' : 'text-[#888]'">{{ dayLabels[i] }}</span>
+        <span class="text-[16px] font-bold w-7 h-7 flex items-center justify-center rounded-full transition-colors duration-200" :class="{
+          'text-white': ds(day) === selectedDate,
+          'text-accent font-extrabold': isToday(day) && ds(day) !== selectedDate,
+          'text-[#444]': ds(day) !== selectedDate && !isToday(day),
+          'flash-day': ds(day) === flashDate,
         }">{{ day.getDate() }}</span>
-        <span class="week-day-dot" :class="{ 'week-day-dot-vis': hasEvents(day) }" />
+        <span class="w-[5px] h-[5px] rounded-full mt-px shrink-0 transition-colors duration-200" :class="hasEvents(day) ? 'bg-accent shadow-[0_0_2px_rgba(106,90,237,.5)]' : 'bg-transparent'" />
       </div>
-      <button @click="next" class="week-strip-nav"><ChevronRight :size="14" /></button>
+      <button @click="next" class="flex items-center justify-center w-6 shrink-0 bg-transparent border-none text-[#888] cursor-pointer z-[1] active:text-accent">
+        <ChevronRight :size="14" />
+      </button>
     </div>
 
-    <!-- All-day (mobile) -->
-    <div v-if="allDayEvents.length > 0" class="week-allday sm:hidden">
-      <div class="week-allday-label">heldag</div>
-      <div class="week-allday-list">
-        <div v-for="ev in allDayEvents" :key="ev.id" class="week-allday-ev" :style="catStyle(ev.category)" @click.stop="emit('select', ev.id)">{{ ev.title }}</div>
+    <!-- Mobile all-day -->
+    <div v-if="allDayEvents.length > 0" class="flex sm:hidden items-start gap-2 shrink-0 px-2 py-1 border-b border-[#ccc] bg-gradient-to-b from-[#f4f4f4] to-[#eaeaea]">
+      <div class="text-[9px] text-[#999] pt-0.5 shrink-0 w-9 text-center">heldag</div>
+      <div class="flex flex-wrap gap-0.5 flex-1 min-w-0">
+        <div v-for="ev in allDayEvents" :key="ev.id"
+          class="text-[11px] font-medium px-2 py-0.5 rounded cursor-pointer border border-black/5 truncate max-w-[200px]"
+          :style="catStyle(ev.category)" @click.stop="emit('select', ev.id)">{{ ev.title }}</div>
       </div>
     </div>
 
-    <!-- Mobile: single day grid -->
-    <div ref="mobileGridRef" class="week-grid sm:hidden" @click="onGridClick" @dragover="onDragOver" @drop="onDrop">
-      <div class="week-grid-content" :style="gridTransform">
-        <div class="week-grid-inner" :style="{ height: HOURS.length * 60 + 'px' }">
-          <div v-for="h in HOURS" :key="h" class="week-hour-row" :style="{ top: (h - 7) * 60 + 'px' }">
-            <div class="week-gutter-time">{{ String(h).padStart(2, '0') }}:00</div>
-            <div class="week-hour-line" />
-            <div class="week-half-line" />
-          </div>
-
-          <div class="week-ev-area">
-            <div v-if="ghostTop >= 0" class="week-ghost" :style="{ top: ghostTop + 'px', height: EVENT_HEIGHT + 'px' }">
-              <span class="week-ghost-time">{{ ghostTime }}</span>
-              <span class="week-ghost-label">Ny händelse</span>
+    <!-- ═══ MOBILE: single day grid ═══ -->
+    <div class="flex-1 relative overflow-hidden flex flex-col sm:hidden">
+      <div ref="mobileGridRef" class="flex-1 overflow-y-auto overflow-x-hidden relative cursor-pointer bg-[#f9f9f9]" @click="onGridClick" @dragover="onDragOver" @drop="onDrop">
+        <div class="relative min-h-full will-change-transform" :style="gridTransform">
+          <div class="grid-inner relative" :style="{ height: GRID_HEIGHT + 'px' }">
+            <!-- Hour rows -->
+            <div v-for="h in HOURS" :key="h" class="absolute left-0 right-0 h-[60px]" :style="{ top: (h - 7) * 60 + 'px' }">
+              <div class="absolute -top-[7px] left-0 w-10 text-[10px] text-[#999] text-center">{{ String(h).padStart(2, '0') }}:00</div>
+              <div class="absolute top-0 left-[44px] right-0 h-px bg-[#d0d0d0]" />
+              <div class="absolute top-[30px] left-[44px] right-0 h-px bg-[#e8e8e8]" />
             </div>
+            <!-- Event area -->
+            <div class="absolute top-0 bottom-0 left-[48px] right-2">
+              <!-- Ghost -->
+              <div v-if="ghostTop >= 0 && ghostDateStr === selectedDate" class="absolute left-0 right-0 rounded-md px-2 py-1 bg-accent/10 border-2 border-dashed border-accent/50 pointer-events-none z-[3] animate-ghost-pulse" :style="{ top: ghostTop + 'px', height: EVENT_HEIGHT + 'px' }">
+                <span class="text-[11px] text-accent font-semibold mr-1.5">{{ ghostTime }}</span>
+                <span class="text-[11px] text-accent opacity-70">Ny händelse</span>
+              </div>
+              <!-- Events -->
+              <div
+                v-for="le in layoutEvents" :key="le.ev.id"
+                class="week-ev absolute p-1 px-1.5 rounded-md text-xs leading-snug overflow-hidden cursor-grab z-[1] border border-black/[.08] shadow-[inset_0_1px_0_rgba(255,255,255,.4),0_1px_3px_rgba(0,0,0,.08)] box-border hover:opacity-85"
+                :style="{ ...catStyle(le.ev.category), top: le.top + 'px', height: EVENT_HEIGHT + 'px', left: (le.col / le.totalCols * 100) + '%', width: (1 / le.totalCols * 100) + '%' }"
+                draggable="true"
+                @dragstart="onDragStart($event, le.ev.id)"
+                @dragend="onDragEnd"
+                @click.stop="emit('select', le.ev.id)"
+              >
+                <span class="text-[11px] opacity-70 mr-1">{{ le.ev.time }}</span>
+                <span class="font-semibold">{{ le.ev.title }}</span>
+              </div>
+            </div>
+            <!-- Now line -->
+            <div v-if="selectedDate === todayStr" class="absolute left-10 right-0 h-0.5 bg-red-500 z-[2] pointer-events-none" :style="{ top: nowTop() + 'px' }">
+              <div class="absolute left-0 -top-1 w-2.5 h-2.5 rounded-full bg-red-500" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Off-screen indicators -->
+      <button v-if="mobileAbove > 0" class="offscreen-pill top-1" @click="scrollToNearest('up', mobileGridRef)">↑ {{ mobileAbove }} ovan</button>
+      <button v-if="mobileBelow > 0" class="offscreen-pill bottom-1" @click="scrollToNearest('down', mobileGridRef)">↓ {{ mobileBelow }} nedan</button>
+    </div>
 
+    <!-- ═══ DESKTOP: 7-column grid ═══ -->
+    <div class="hidden sm:flex flex-1 relative overflow-hidden flex-col">
+      <div ref="gridRef" class="flex-1 overflow-y-auto overflow-x-hidden flex flex-row bg-[#f9f9f9]">
+        <!-- Time gutter -->
+        <div class="w-10 shrink-0 relative sticky left-0 z-[2]" :style="{ height: GRID_HEIGHT + 'px' }">
+          <div v-for="h in HOURS" :key="h" class="absolute left-0 w-10 text-[10px] text-[#999] text-center -mt-[7px]" :style="{ top: (h - 7) * 60 + 'px' }">
+            {{ String(h).padStart(2, '0') }}:00
+          </div>
+        </div>
+        <!-- Day columns -->
+        <div
+          v-for="dl in weekLayouts" :key="dl.date"
+          class="flex-1 min-w-0 relative border-l border-[#ddd] cursor-pointer"
+          :class="{ 'bg-accent/[.03]': dl.date === todayStr, 'flash-col': dl.date === flashDate }"
+          :style="{ height: GRID_HEIGHT + 'px' }"
+          @click="onDesktopGridClick($event, dl.date)"
+          @dragover="onDesktopDragOver($event, dl.date)"
+          @drop="onDesktopDrop($event, dl.date)"
+          @dragleave="dragGhostDate = ''; dragGhostTop = -1"
+        >
+          <div class="desk-col-inner relative" :style="{ height: GRID_HEIGHT + 'px' }">
+            <!-- Hour / half-hour lines -->
+            <div v-for="h in HOURS" :key="h" class="absolute left-0 right-0 h-px bg-[#d0d0d0]" :style="{ top: (h - 7) * 60 + 'px' }" />
+            <div v-for="h in HOURS" :key="'hf'+h" class="absolute left-0 right-0 h-px bg-[#e8e8e8]" :style="{ top: (h - 7) * 60 + 30 + 'px' }" />
+            <!-- Events -->
             <div
-              v-for="le in layoutEvents" :key="le.ev.id"
-              class="week-ev"
-              :style="{
-                ...catStyle(le.ev.category),
-                top: le.top + 'px',
-                height: EVENT_HEIGHT + 'px',
-                left: (le.col / le.totalCols * 100) + '%',
-                width: (1 / le.totalCols * 100) + '%',
-              }"
+              v-for="le in dl.events" :key="le.ev.id"
+              class="week-ev absolute p-1 px-1.5 rounded-md text-xs leading-snug overflow-hidden cursor-grab z-[1] border border-black/[.08] shadow-[inset_0_1px_0_rgba(255,255,255,.4),0_1px_3px_rgba(0,0,0,.08)] box-border hover:opacity-85"
+              :style="{ ...catStyle(le.ev.category), top: le.top + 'px', height: EVENT_HEIGHT + 'px', left: (le.col / le.totalCols * 100) + '%', width: (1 / le.totalCols * 100) + '%' }"
               draggable="true"
               @dragstart="onDragStart($event, le.ev.id)"
               @dragend="onDragEnd"
               @click.stop="emit('select', le.ev.id)"
             >
-              <span class="week-ev-time">{{ le.ev.time }}</span>
-              <span class="week-ev-title">{{ le.ev.title }}</span>
+              <span class="text-[11px] opacity-70 mr-1">{{ le.ev.time }}</span>
+              <span class="font-semibold">{{ le.ev.title }}</span>
+            </div>
+            <!-- Ghost (tap) -->
+            <div v-if="ghostTop >= 0 && ghostDateStr === dl.date" class="absolute left-0 right-0 rounded-md px-2 py-1 bg-accent/10 border-2 border-dashed border-accent/50 pointer-events-none z-[3] animate-ghost-pulse" :style="{ top: ghostTop + 'px', height: EVENT_HEIGHT + 'px' }">
+              <span class="text-[11px] text-accent font-semibold mr-1.5">{{ ghostTime }}</span>
+              <span class="text-[11px] text-accent opacity-70">Ny händelse</span>
+            </div>
+            <!-- Ghost (drag) -->
+            <div v-if="dragEventId && dragGhostDate === dl.date && dragGhostTop >= 0" class="absolute left-0.5 right-0.5 rounded-md px-1.5 py-1 bg-accent/15 border-2 border-accent/40 pointer-events-none z-[3]" :style="{ top: dragGhostTop + 'px', height: EVENT_HEIGHT + 'px' }">
+              <span class="text-[11px] text-accent font-semibold">{{ String(Math.floor(dragGhostTop / 60) + 7).padStart(2, '0') }}:{{ String(dragGhostTop % 60).padStart(2, '0') }}</span>
+            </div>
+            <!-- Now line -->
+            <div v-if="dl.date === todayStr" class="absolute left-0 right-0 h-0.5 bg-red-500 z-[2] pointer-events-none" :style="{ top: nowTop() + 'px' }">
+              <div class="absolute -left-1 -top-[3px] w-2 h-2 rounded-full bg-red-500" />
             </div>
           </div>
-
-          <div v-if="selectedDate === todayStr" class="week-now" :style="{ top: ((new Date().getHours() - 7) * 60 + new Date().getMinutes()) + 'px' }" />
         </div>
       </div>
-    </div>
-
-    <!-- Desktop: 7-column grid -->
-    <div ref="gridRef" class="week-desk hidden sm:flex">
-      <!-- Time gutter -->
-      <div class="week-desk-gutter" :style="{ height: HOURS.length * 60 + 'px' }">
-        <div v-for="h in HOURS" :key="h" class="week-desk-gutter-time" :style="{ top: (h - 7) * 60 + 'px' }">
-          {{ String(h).padStart(2, '0') }}:00
-        </div>
-      </div>
-      <!-- Day columns -->
-      <div
-        v-for="dl in weekLayouts" :key="dl.date"
-        class="week-desk-col"
-        :class="{ 'week-desk-col-today': dl.date === todayStr }"
-        @click="onDesktopGridClick($event, dl.date)"
-        @dragover="onDesktopDragOver($event, dl.date)"
-        @drop="onDesktopDrop($event, dl.date)"
-        @dragleave="dragGhostDate = ''; dragGhostTop = -1"
-      >
-        <div class="week-desk-col-inner" :style="{ height: HOURS.length * 60 + 'px' }">
-          <!-- Hour lines -->
-          <div v-for="h in HOURS" :key="h" class="week-desk-hour" :style="{ top: (h - 7) * 60 + 'px' }" />
-          <div v-for="h in HOURS" :key="'hf'+h" class="week-desk-half" :style="{ top: (h - 7) * 60 + 30 + 'px' }" />
-          <!-- Events -->
-          <div
-            v-for="le in dl.events" :key="le.ev.id"
-            class="week-ev"
-            :style="{
-              ...catStyle(le.ev.category),
-              top: le.top + 'px',
-              height: EVENT_HEIGHT + 'px',
-              left: (le.col / le.totalCols * 100) + '%',
-              width: (1 / le.totalCols * 100) + '%',
-            }"
-            draggable="true"
-            @dragstart="onDragStart($event, le.ev.id)"
-            @dragend="onDragEnd"
-            @click.stop="emit('select', le.ev.id)"
-          >
-            <span class="week-ev-time">{{ le.ev.time }}</span>
-            <span class="week-ev-title">{{ le.ev.title }}</span>
-          </div>
-          <!-- Ghost preview (tap) -->
-          <div v-if="ghostTop >= 0 && ghostDateStr === dl.date" class="week-ghost" :style="{ top: ghostTop + 'px', height: EVENT_HEIGHT + 'px' }">
-            <span class="week-ghost-time">{{ ghostTime }}</span>
-            <span class="week-ghost-label">Ny händelse</span>
-          </div>
-          <!-- Ghost preview (drag) -->
-          <div v-if="dragEventId && dragGhostDate === dl.date && dragGhostTop >= 0" class="week-drag-ghost" :style="{ top: dragGhostTop + 'px', height: EVENT_HEIGHT + 'px' }">
-            <span class="week-ghost-time">{{ String(Math.floor(dragGhostTop / 60) + 7).padStart(2, '0') }}:{{ String(dragGhostTop % 60).padStart(2, '0') }}</span>
-          </div>
-          <!-- Now line -->
-          <div v-if="dl.date === todayStr" class="week-now-desk" :style="{ top: ((new Date().getHours() - 7) * 60 + new Date().getMinutes()) + 'px' }" />
-        </div>
-      </div>
+      <!-- Off-screen indicators -->
+      <button v-if="desktopAbove > 0" class="offscreen-pill top-1" @click="scrollToNearest('up', gridRef)">↑ {{ desktopAbove }} ovan</button>
+      <button v-if="desktopBelow > 0" class="offscreen-pill bottom-1" @click="scrollToNearest('down', gridRef)">↓ {{ desktopBelow }} nedan</button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.week-root { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-
-.week-header {
-  display: flex; align-items: center; gap: 4px; padding: 6px 8px; flex-shrink: 0;
-  background: linear-gradient(180deg, #e8e8e8 0%, #d4d4d4 100%);
-  border-bottom: 1px solid #bbb;
-  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
-}
-.week-nav-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 5px;
-  border: 1px solid transparent; background: transparent; color: #555; cursor: pointer;
-  transition: all 0.1s ease;
-}
-.week-nav-btn:hover {
-  background: linear-gradient(180deg, #fff 0%, #e8e8e8 100%);
-  border-color: #aaa; box-shadow: 0 1px 0 rgba(255,255,255,.7) inset;
-}
-.week-header-center { flex: 1; text-align: center; }
-.week-header-label { font-size: 13px; font-weight: 600; color: #333; text-shadow: 0 1px 0 rgba(255,255,255,.7); }
-.week-header-wk { font-size: 11px; color: #888; margin-left: 6px; text-shadow: 0 1px 0 rgba(255,255,255,.5); }
-.week-today-btn {
-  padding: 3px 10px; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer;
-  color: #fff; border: 1px solid rgba(0,0,0,.2);
-  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
-  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset; text-shadow: 0 -1px 0 rgba(0,0,0,.15);
-}
-.week-today-btn:hover { background: linear-gradient(180deg, #7b6cf5 0%, #5544d4 100%); }
-.week-today-btn-disabled {
-  opacity: 0.35;
-  pointer-events: none;
-}
-
-/* Day strip */
-.week-days-bar {
-  display: flex; flex-shrink: 0; position: relative;
-  background: linear-gradient(180deg, #eee 0%, #ddd 100%);
-  border-bottom: 1px solid #bbb;
-  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
-}
-.week-sel-pill {
-  position: absolute; width: 30px; height: 30px; border-radius: 50%;
-  top: 18px; z-index: 0;
-  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
-  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 2px 8px rgba(59,47,186,.4);
-  will-change: left;
-}
-.week-day-col {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
-  padding: 4px 0 3px; cursor: pointer; min-width: 0; position: relative; z-index: 1;
-}
-.week-strip-nav {
-  display: flex; align-items: center; justify-content: center;
-  width: 24px; flex-shrink: 0; background: none; border: none;
-  color: #888; cursor: pointer; z-index: 1;
-}
-.week-strip-nav:active { color: #6a5aed; }
-.week-day-label {
-  font-size: 10px; font-weight: 600; text-transform: uppercase; color: #888;
-  text-shadow: 0 1px 0 rgba(255,255,255,.7); transition: color 0.2s ease;
-}
-.week-day-label-sel { color: #6a5aed; }
-.week-day-num {
-  font-size: 16px; font-weight: 700; color: #444;
-  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-  border-radius: 50%; text-shadow: 0 1px 0 rgba(255,255,255,.5); transition: color 0.2s ease;
-}
-.week-day-num-on { color: #fff; text-shadow: none; }
-.week-day-num-today-idle { color: #6a5aed; font-weight: 800; }
-.week-day-dot { width: 5px; height: 5px; border-radius: 50%; margin-top: 2px; background: transparent; transition: background 0.2s ease; }
-.week-day-dot-vis { background: #6a5aed; box-shadow: 0 0 2px rgba(106,90,237,.5); }
-
-/* All-day */
-.week-allday {
-  display: flex; align-items: flex-start; gap: 8px; flex-shrink: 0; padding: 4px 8px;
-  border-bottom: 1px solid #ccc; background: linear-gradient(180deg, #f4f4f4 0%, #eaeaea 100%);
-}
-.week-allday-label { font-size: 9px; color: #999; padding-top: 2px; flex-shrink: 0; width: 36px; text-align: center; text-shadow: 0 1px 0 rgba(255,255,255,.5); }
-.week-allday-list { display: flex; flex-wrap: wrap; gap: 3px; flex: 1; min-width: 0; }
-.week-allday-ev {
-  font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; cursor: pointer;
-  border: 1px solid rgba(0,0,0,.06); box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;
-}
-
-/* Time grid */
-.week-grid { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; cursor: pointer; }
-.week-grid-content { position: relative; min-height: 100%; will-change: transform; }
-.week-grid-inner { position: relative; min-height: 100%; }
-.week-hour-row { position: absolute; left: 0; right: 0; height: 60px; }
-.week-gutter-time { position: absolute; top: -7px; left: 0; width: 40px; font-size: 10px; color: #999; text-align: center; text-shadow: 0 1px 0 rgba(255,255,255,.5); }
-.week-hour-line { position: absolute; top: 0; left: 44px; right: 0; height: 1px; background: #d0d0d0; }
-.week-half-line { position: absolute; top: 30px; left: 44px; right: 0; height: 1px; background: #e8e8e8; }
-
-.week-ev-area { position: absolute; top: 0; left: 48px; right: 8px; bottom: 0; }
-
-/* Ghost preview */
-.week-ghost {
-  position: absolute; left: 0; right: 0;
-  border-radius: 6px; padding: 4px 8px;
-  background: rgba(106, 90, 237, 0.12);
-  border: 2px dashed rgba(106, 90, 237, 0.5);
-  box-sizing: border-box;
-  animation: ghostPulse 0.4s ease;
-  pointer-events: none;
-  z-index: 3;
-}
-.week-ghost-time { font-size: 11px; color: #6a5aed; font-weight: 600; margin-right: 6px; }
-.week-ghost-label { font-size: 11px; color: #6a5aed; opacity: 0.7; }
-
-.week-drag-ghost {
-  position: absolute; left: 2px; right: 2px;
-  border-radius: 6px; padding: 4px 6px;
-  background: rgba(106, 90, 237, 0.15);
-  border: 2px solid rgba(106, 90, 237, 0.4);
-  box-sizing: border-box;
-  pointer-events: none;
-  z-index: 3;
-}
-@keyframes ghostPulse {
+@keyframes ghost-pulse {
   0% { transform: scaleY(0.3); opacity: 0; }
   50% { transform: scaleY(1.05); opacity: 1; }
   100% { transform: scaleY(1); opacity: 1; }
 }
+.animate-ghost-pulse { animation: ghost-pulse 0.4s ease; }
 
-.week-ev {
-  position: absolute; padding: 4px 6px; border-radius: 6px; font-size: 12px; line-height: 1.4;
-  overflow: hidden; cursor: grab; z-index: 1;
-  border: 1px solid rgba(0,0,0,.08);
-  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 1px 3px rgba(0,0,0,.08);
-  box-sizing: border-box;
+@keyframes col-flash {
+  0%, 20% { background: rgba(79, 70, 229, 0.25); }
+  50% { background: rgba(79, 70, 229, 0.10); }
+  70% { background: rgba(79, 70, 229, 0.18); }
+  100% { background: transparent; }
 }
-.week-ev:hover { opacity: 0.85; }
-.week-ev-time { font-size: 11px; opacity: 0.7; margin-right: 4px; }
-.week-ev-title { font-weight: 600; }
+.flash-col { animation: col-flash 2s ease-out; }
 
-.week-now {
-  position: absolute; left: 40px; right: 0; height: 2px; background: #e74c3c;
-  z-index: 2; pointer-events: none;
+@keyframes day-flash {
+  0%, 20% { box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.5); background: rgba(79, 70, 229, 0.15); }
+  50% { box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3); background: rgba(79, 70, 229, 0.08); }
+  70% { box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.4); background: rgba(79, 70, 229, 0.12); }
+  100% { box-shadow: 0 0 0 0 transparent; background: transparent; }
 }
-.week-now::before {
-  content: ''; position: absolute; left: 0; top: -4px;
-  width: 10px; height: 10px; border-radius: 50%; background: #e74c3c;
-}
+.flash-day { animation: day-flash 2s ease-out; }
 
-/* Desktop 7-column grid */
-.week-desk {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  flex-direction: row;
-}
-.week-desk-gutter {
-  width: 40px;
-  flex-shrink: 0;
-  position: relative;
-  position: sticky;
-  left: 0;
-  z-index: 2;
-}
-.week-desk-gutter-time {
+.offscreen-pill {
   position: absolute;
-  left: 0;
-  width: 40px;
-  font-size: 10px;
-  color: #999;
-  text-align: center;
-  margin-top: -7px;
-  text-shadow: 0 1px 0 rgba(255,255,255,.5);
-}
-.week-desk-col {
-  flex: 1;
-  min-width: 0;
-  position: relative;
-  border-left: 1px solid #ddd;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 3px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
   cursor: pointer;
+  border: 1px solid rgba(106, 90, 237, 0.3);
+  background: rgba(255, 255, 255, 0.95);
+  color: #4f46e5;
+  box-shadow: 0 2px 8px rgba(106, 90, 237, 0.2);
+  backdrop-filter: blur(4px);
+  white-space: nowrap;
 }
-.week-desk-col-today {
-  background: rgba(106, 90, 237, 0.03);
-}
-.week-desk-col-inner {
-  position: relative;
-}
-.week-desk-hour {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: #d0d0d0;
-}
-.week-desk-half {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: #e8e8e8;
-}
-.week-now-desk {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: #e74c3c;
-  z-index: 2;
-  pointer-events: none;
-}
-.week-now-desk::before {
-  content: '';
-  position: absolute;
-  left: -4px;
-  top: -3px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #e74c3c;
-}
+.offscreen-pill:hover { background: #ede9fe; }
 </style>

@@ -1,19 +1,27 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useStore } from '../composables/useStore'
 import { useToast } from '../composables/useToast'
+import { useRoute } from 'vue-router'
 import RecordModal from '../components/RecordModal.vue'
-import { PlusCircle, X, Search } from 'lucide-vue-next'
+import { PlusCircle, X } from 'lucide-vue-next'
 
 const { db, persist } = useStore()
 const { show: toast } = useToast()
+const route = useRoute()
 
 const activeTaskId = ref<number | null>(null)
-const poolSearch = ref('')
 const pickerTeamId = ref<number | null>(null)
 const pickerSearch = ref('')
+const pickerIdx = ref(0)
 
 const teamTasks = computed(() => db.tasks.filter(t => t.teamTask))
+
+// Sync from route param
+watch(() => route.params.taskId, (id) => {
+  if (id) activeTaskId.value = Number(id)
+  else if (teamTasks.value.length > 0) activeTaskId.value = teamTasks.value[0].id
+}, { immediate: true })
 
 if (!activeTaskId.value && teamTasks.value.length > 0) {
   activeTaskId.value = teamTasks.value[0].id
@@ -29,13 +37,6 @@ const allInTeams = computed(() => {
   return s
 })
 
-const poolContacts = computed(() => {
-  const q = poolSearch.value.toLowerCase()
-  return db.contacts
-    .filter(c => !q || c.name.toLowerCase().includes(q))
-    .sort((a, b) => a.name.localeCompare(b.name))
-})
-
 const pickerContacts = computed(() => {
   if (!pickerTeamId.value) return []
   const team = db.teams.find(t => t.id === pickerTeamId.value)
@@ -47,7 +48,17 @@ const pickerContacts = computed(() => {
     .sort((a, b) => a.name.localeCompare(b.name))
 })
 
-function selectTask(id: number) { activeTaskId.value = id }
+watch(pickerSearch, () => { pickerIdx.value = 0 })
+
+function pickerKeydown(e: KeyboardEvent) {
+  if (e.key === 'ArrowDown') { e.preventDefault(); pickerIdx.value = Math.min(pickerIdx.value + 1, pickerContacts.value.length - 1) }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); pickerIdx.value = Math.max(pickerIdx.value - 1, 0) }
+  else if (e.key === 'Enter') {
+    e.preventDefault()
+    const c = pickerContacts.value[pickerIdx.value]
+    if (c) addMember(pickerTeamId.value!, c.id)
+  }
+}
 
 async function createTeam() {
   if (!activeTaskId.value) return
@@ -57,8 +68,13 @@ async function createTeam() {
   await persist('teams')
 }
 
-async function deleteTeam(id: number) {
-  db.teams = db.teams.filter(t => t.id !== id)
+const confirmDeleteId = ref<number | null>(null)
+const confirmDeleteTeam = computed(() => confirmDeleteId.value ? db.teams.find(t => t.id === confirmDeleteId.value) : null)
+
+async function doDeleteTeam() {
+  if (!confirmDeleteId.value) return
+  db.teams = db.teams.filter(t => t.id !== confirmDeleteId.value)
+  confirmDeleteId.value = null
   await persist('teams')
   toast('Team borttaget')
 }
@@ -124,25 +140,33 @@ async function onDrop(toTeamId: string) {
 
 <template>
   <div class="flex flex-col flex-1 overflow-hidden">
-    <!-- Task tabs -->
+    <!-- Header -->
     <div class="skeu-toolbar">
-      <div class="skeu-segmented">
-        <button
-          v-for="task in teamTasks" :key="task.id"
-          @click="selectTask(task.id)"
-          class="skeu-seg-btn"
-          :class="{ 'skeu-seg-active': task.id === activeTaskId }"
-        >
+      <span class="text-[18px] font-extrabold text-[#333]" style="text-shadow: 0 1px 0 rgba(255,255,255,.7)">
+        {{ teamTasks.find(t => t.id === activeTaskId)?.name || 'Team' }}
+      </span>
+      <span class="text-[11px] text-[#888] ml-2">{{ teams.length }} team · {{ allInTeams.size }} personer</span>
+      <span class="flex-1" />
+      <button @click="createTeam" class="skeu-create-btn">
+        <PlusCircle :size="13" /> Nytt team
+      </button>
+      <!-- Task switcher for when sidebar sub-items aren't visible (mobile) -->
+      <div class="flex sm:hidden gap-1">
+        <button v-for="task in teamTasks" :key="task.id"
+          @click="activeTaskId = task.id"
+          class="px-2 py-0.5 text-[11px] rounded border cursor-pointer transition-all"
+          :class="task.id === activeTaskId
+            ? 'bg-accent text-white border-accent/30'
+            : 'bg-transparent text-[#666] border-[#bbb] hover:bg-white/50'">
           {{ task.name }}
         </button>
       </div>
-      <span class="flex-1" />
-      <span class="skeu-toolbar-label">{{ teams.length }} team · {{ allInTeams.size }} personer</span>
     </div>
 
     <!-- Board -->
     <div class="flex flex-1 overflow-x-auto gap-px sm:flex-row flex-col sm:overflow-y-hidden overflow-y-auto" style="background: linear-gradient(180deg, #d0d0d0 0%, #c0c0c0 100%)">
-      <!-- Pool (desktop only) -->
+      <!-- Pool (hidden for now) -->
+      <!--
       <div class="skeu-pool hidden sm:flex">
         <div class="skeu-pool-header">
           Alla personer <span>{{ db.contacts.length }}</span>
@@ -169,6 +193,7 @@ async function onDrop(toTeamId: string) {
           </div>
         </div>
       </div>
+      -->
 
       <!-- Team columns -->
       <div
@@ -177,7 +202,7 @@ async function onDrop(toTeamId: string) {
       >
         <div class="skeu-team-header">
           Team {{ team.number }}
-          <button @click="deleteTeam(team.id)" class="skeu-team-del">
+          <button @click="confirmDeleteId = team.id" class="skeu-team-del">
             <X :size="14" />
           </button>
         </div>
@@ -200,20 +225,14 @@ async function onDrop(toTeamId: string) {
               <X :size="12" />
             </button>
           </div>
-        </div>
-        <button
-          @click="pickerTeamId = team.id; pickerSearch = ''"
-          class="skeu-team-add"
-        >
-          <PlusCircle :size="12" /> Lägg till
-        </button>
-      </div>
-
-      <!-- New team column -->
-      <div @click="createTeam" class="skeu-new-team">
-        <div class="text-center">
-          <PlusCircle :size="24" class="mx-auto mb-1" />
-          Nytt team
+          <!-- Ghost "add" card -->
+          <button
+            @click="pickerTeamId = team.id; pickerSearch = ''"
+            class="skeu-member-ghost"
+          >
+            <PlusCircle :size="14" class="opacity-50" />
+            <span>Lägg till person</span>
+          </button>
         </div>
       </div>
     </div>
@@ -229,15 +248,42 @@ async function onDrop(toTeamId: string) {
         type="text"
         placeholder="Sök person…"
         class="w-full border border-gray-300 rounded-md px-2.5 py-2 text-sm outline-none focus:border-accent mb-3"
+        @keydown="pickerKeydown"
       />
       <div class="max-h-96 overflow-y-auto">
         <button
-          v-for="c in pickerContacts" :key="c.id"
+          v-for="(c, i) in pickerContacts" :key="c.id"
           @click="addMember(pickerTeamId!, c.id)"
-          class="flex items-center gap-2 w-full bg-transparent border-none py-2.5 px-2 text-sm text-gray-700 cursor-pointer rounded-md hover:bg-gray-50 transition-colors text-left"
+          @mouseenter="pickerIdx = i"
+          class="flex items-center gap-2 w-full bg-transparent border-none py-2.5 px-2 text-sm text-gray-700 cursor-pointer rounded-md transition-colors text-left"
+          :class="i === pickerIdx ? 'bg-accent/10 text-accent' : 'hover:bg-gray-50'"
         >
           <div class="skeu-member-avatar">{{ initials(c.name) }}</div>
           {{ c.name }}
+        </button>
+      </div>
+    </RecordModal>
+
+    <!-- Delete confirmation -->
+    <RecordModal
+      :open="confirmDeleteId !== null"
+      title="Ta bort team"
+      @close="confirmDeleteId = null"
+    >
+      <p class="text-sm text-[#555] mb-2">
+        Är du säker på att du vill ta bort <strong>Team {{ confirmDeleteTeam?.number }}</strong>?
+      </p>
+      <p class="text-xs text-red-500 mb-4">
+        Alla medlemmar i teamet kommer att tas bort. Denna åtgärd kan inte ångras.
+      </p>
+      <div class="flex gap-2 justify-end">
+        <button @click="confirmDeleteId = null"
+          class="px-3 py-1.5 text-xs rounded-md border border-[#aaa] text-[#555] cursor-pointer hover:bg-white/50 bg-gradient-to-b from-[#f4f4f4] to-[#ddd]">
+          Avbryt
+        </button>
+        <button @click="doDeleteTeam"
+          class="px-3 py-1.5 text-xs rounded-md border border-red-400 text-white font-semibold cursor-pointer bg-gradient-to-b from-red-500 to-red-600 hover:from-red-600 hover:to-red-700">
+          Ta bort
         </button>
       </div>
     </RecordModal>
@@ -262,6 +308,23 @@ async function onDrop(toTeamId: string) {
   text-shadow: 0 1px 0 rgba(255,255,255,.7);
   white-space: nowrap;
 }
+.skeu-create-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  border: 1px solid rgba(0,0,0,.2);
+  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.15);
+  transition: background 0.1s ease;
+}
+.skeu-create-btn:hover { background: linear-gradient(180deg, #7b6cf5 0%, #5544d4 100%); }
 .skeu-segmented {
   display: flex;
   align-items: center;
@@ -411,22 +474,26 @@ async function onDrop(toTeamId: string) {
   box-shadow: 0 1px 0 rgba(255,255,255,.2) inset;
 }
 
-.skeu-team-add {
+.skeu-member-ghost {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 12px;
+  gap: 6px;
+  padding: 6px 8px;
+  margin-bottom: 2px;
+  border-radius: 6px;
   font-size: 12px;
+  color: #aaa;
   cursor: pointer;
-  color: #6a5aed;
-  background: none;
-  border: none;
-  border-top: 1px solid #ccc;
-  text-shadow: 0 1px 0 rgba(255,255,255,.5);
-  transition: background 0.1s ease;
+  border: 2px dashed #ccc;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  transition: all 0.12s ease;
 }
-.skeu-team-add:hover {
-  background: linear-gradient(180deg, #f0ecff 0%, #e8e0ff 100%);
+.skeu-member-ghost:hover {
+  border-color: #6a5aed;
+  color: #6a5aed;
+  background: rgba(106, 90, 237, 0.05);
 }
 
 .skeu-new-team {
