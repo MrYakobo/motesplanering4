@@ -370,6 +370,17 @@ function buildIcalForCategory(category, db) {
   return cal;
 }
 
+// ── PRESENCE TRACKING ─────────────────────────────────────────────────────────
+const presenceMap = new Map(); // key: sessionId, value: { name, role, lastSeen }
+const PRESENCE_TTL = 60000; // 60s
+
+function cleanPresence() {
+  const now = Date.now();
+  for (const [k, v] of presenceMap) {
+    if (now - v.lastSeen > PRESENCE_TTL) presenceMap.delete(k);
+  }
+}
+
 // ── HTTP SERVER ───────────────────────────────────────────────────────────────
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
@@ -469,6 +480,23 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, {'Content-Type':'application/json'});
       res.end(JSON.stringify({ ok: true, version: dbVersion }));
     } catch { res.writeHead(400); res.end('{"error":"invalid json"}'); }
+    return;
+  }
+
+  // ── Presence: POST /api/presence ────────────────────────────
+  if (req.method === 'POST' && url.pathname === '/api/presence') {
+    const body = await readBody(req);
+    try {
+      const { sessionId } = JSON.parse(body);
+      if (!sessionId) { res.writeHead(400); res.end('{}'); return; }
+      const name = isAdmin ? 'Admin' : (memberContact ? memberContact.name : 'Besökare');
+      const role = isAdmin ? 'admin' : (isMember ? 'member' : 'viewer');
+      presenceMap.set(sessionId, { name, role, lastSeen: Date.now() });
+      cleanPresence();
+      const online = [...presenceMap.values()].map(v => ({ name: v.name, role: v.role }));
+      res.writeHead(200, {'Content-Type':'application/json'});
+      res.end(JSON.stringify({ count: online.length, online }));
+    } catch { res.writeHead(400); res.end('{}'); }
     return;
   }
 

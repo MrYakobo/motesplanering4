@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useStore } from '../composables/useStore'
 import { useToday } from '../composables/useToday'
+import { usePresence } from '../composables/usePresence'
 import UserMenu from './UserMenu.vue'
 import LoginModal from './LoginModal.vue'
 import GenerateEventsModal from './GenerateEventsModal.vue'
@@ -19,6 +20,8 @@ const router = useRouter()
 const route = useRoute()
 const { isViewer, isMember, isAdmin, db, memberContactId } = useStore()
 const { todayStr, isSimulated, simDate, setSimDate, clearSimDate } = useToday()
+
+const { onlineCount, onlineUsers } = usePresence()
 
 const showLogin = ref(false)
 const generateOpen = ref(false)
@@ -187,6 +190,12 @@ function onLoginSuccess() { showLogin.value = false; location.reload() }
 
     <div class="flex-1" />
 
+    <!-- Online indicator -->
+    <div class="sb-presence" :title="onlineUsers.map(u => u.name).join(', ')">
+      <span class="sb-presence-dot" />
+      {{ onlineCount }} online
+    </div>
+
     <button v-if="isViewer" @click="showLogin = true" class="sb-btn" title="Logga in">
       <User :size="15" /><span class="sb-label">Logga in</span>
     </button>
@@ -351,6 +360,23 @@ function onLoginSuccess() { showLogin.value = false; location.reload() }
 .sb-divider {
   height: 1px; margin: 6px 4px;
   background: linear-gradient(90deg, transparent, #aaa, transparent);
+}
+
+.sb-presence {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  font-size: 10px;
+  color: #888;
+  cursor: default;
+}
+.sb-presence-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
 }
 
 /* ── Mobile ───────────────────────────────────────────────────────────────── */

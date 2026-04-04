@@ -33,7 +33,7 @@ const router = useRouter()
 onMounted(async () => {
   await loadApp()
   applyTheme(db.settings?.accentColor || 'indigo')
-  if (isViewer.value && router.currentRoute.value.path === '/events') {
+  if (isViewer.value && router.currentRoute.value.path.startsWith('/events')) {
     router.replace('/home')
   }
 })

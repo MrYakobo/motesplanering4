@@ -3,7 +3,7 @@ import { computed, ref, nextTick, onMounted, watch } from 'vue'
 import { useStore } from '../composables/useStore'
 import { useToday, localDateStr } from '../composables/useToday'
 import { useToast } from '../composables/useToast'
-import { Shuffle, Users, User } from 'lucide-vue-next'
+import { Shuffle, Users, User, Table2 } from 'lucide-vue-next'
 import RecordModal from '../components/RecordModal.vue'
 import SchemaMobile from '../components/SchemaMobile.vue'
 import type { Event, Task } from '../types'
@@ -12,6 +12,7 @@ const { db, assignments, persist, searchQuery, isAdmin } = useStore()
 const { show: toast } = useToast()
 const { todayStr } = useToday()
 const gridRef = ref<HTMLElement | null>(null)
+const schemaTableMode = ref(false)
 
 // ── Active popup state ───────────────────────────────────────────────────────
 const activePop = ref<{ eid: number; tid: number } | null>(null)
@@ -309,13 +310,24 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col flex-1 overflow-hidden">
-    <!-- Mobile: task-first card view -->
-    <SchemaMobile class="flex-1 sm:hidden" @pick="(eid, tid) => togglePop(eid, tid)" @distribute="(tid) => { const t = db.tasks.find(x => x.id === tid); t?.teamTask ? autoDistributeTeams(tid) : autoDistributePersons(tid) }" />
+    <!-- Card view (was mobile-only, now default) -->
+    <div v-if="!schemaTableMode" class="flex flex-col flex-1 overflow-hidden">
+      <div class="skeu-toolbar hidden sm:flex">
+        <span class="flex-1" />
+        <button @click="schemaTableMode = true" class="skeu-icon-btn" title="Tabellvy">
+          <Table2 :size="13" />
+        </button>
+      </div>
+      <SchemaMobile class="flex-1" @pick="(eid, tid) => togglePop(eid, tid)" @distribute="(tid) => { const t = db.tasks.find(x => x.id === tid); t?.teamTask ? autoDistributeTeams(tid) : autoDistributePersons(tid) }" />
+    </div>
 
-    <!-- Desktop: table view -->
-    <div class="hidden sm:flex flex-col flex-1 overflow-hidden">
+    <!-- Table view (desktop option) -->
+    <div :class="schemaTableMode ? 'flex flex-col flex-1 overflow-hidden' : 'hidden'">
     <!-- Stats bar -->
     <div class="skeu-toolbar">
+      <button @click="schemaTableMode = false" class="skeu-icon-btn" title="Kortvy">
+        <User :size="13" />
+      </button>
       <span class="skeu-toolbar-label">
         Totalt: <strong>{{ visibleEvents.length }}</strong>
       </span>
