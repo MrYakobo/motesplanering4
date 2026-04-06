@@ -1,0 +1,15 @@
+RewriteEngine On
+
+# API requests → PHP router
+RewriteRule ^api/(.*)$ api/index.php [QSA,L]
+
+# Uploaded files — serve directly
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^uploads/ - [L]
+
+# Static assets — serve directly if file exists
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# SPA fallback — everything else → index.html
+RewriteRule ^ index.html [L]

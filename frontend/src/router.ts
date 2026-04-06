@@ -10,6 +10,7 @@ const routes = [
   { path: '/events/year', component: () => import('./views/EventsView.vue'), meta: { view: 'year' } },
   { path: '/contacts', component: () => import('./views/ContactsView.vue') },
   { path: '/tasks', component: () => import('./views/TasksView.vue') },
+  { path: '/platsbank', component: () => import('./views/PlatsbankView.vue') },
   { path: '/teams', component: () => import('./views/TeamsView.vue') },
   { path: '/teams/:taskId', component: () => import('./views/TeamsView.vue') },
   { path: '/schema', component: () => import('./views/SchemaView.vue') },
@@ -24,6 +25,8 @@ const routes = [
   { path: '/sunday', component: () => import('./views/SundayView.vue') },
   { path: '/sunday/fullscreen', component: () => import('./views/SundayView.vue') },
   { path: '/my', component: () => import('./views/MyScheduleView.vue') },
+  { path: '/my/teams', component: () => import('./views/MyTeamsView.vue') },
+  { path: '/dashboard', component: () => import('./views/DashboardView.vue') },
 ]
 
 export const router = createRouter({

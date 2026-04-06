@@ -7,30 +7,132 @@
   --color-accent-mid: #a78bfa;
 }
 
-/* Prevent double-tap and pinch zoom on mobile */
-html {
-  touch-action: manipulation;
+/* ── Skeuomorphic design tokens ───────────────────────────────────────────── */
+:root {
+  --skeu-gradient-chrome: linear-gradient(180deg, #e8e8e8 0%, #d4d4d4 100%);
+  --skeu-gradient-chrome-hover: linear-gradient(180deg, #fff 0%, #e8e8e8 100%);
+  --skeu-gradient-primary: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
+  --skeu-gradient-primary-hover: linear-gradient(180deg, #7b6cf5 0%, #5544d4 100%);
+  --skeu-gradient-primary-active: linear-gradient(180deg, #4a3cc9 0%, #3b2fba 100%);
+  --skeu-gradient-danger: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
+  --skeu-gradient-danger-hover: linear-gradient(180deg, #f05545 0%, #d44332 100%);
+  --skeu-gradient-danger-active: linear-gradient(180deg, #c0392b 0%, #a93226 100%);
+  --skeu-gradient-seg: linear-gradient(180deg, #f4f4f4 0%, #ddd 100%);
+  --skeu-gradient-input: linear-gradient(180deg, #e0e0e0 0%, #fff 3px);
+  --skeu-gradient-warn: linear-gradient(180deg, #fff4cc 0%, #ffe699 100%);
+  --skeu-shadow-inset: 0 1px 0 rgba(255,255,255,.4) inset;
+  --skeu-shadow-primary: 0 1px 0 rgba(255,255,255,.2) inset, 0 1px 3px rgba(59,47,186,.3);
+  --skeu-text-shadow: 0 1px 0 rgba(255,255,255,.7);
 }
 
-/* Lock body from scrolling */
-html, body {
-  overflow: hidden;
-  height: 100%;
-}
-
-/* Prevent text selection globally (app feel), allow in inputs */
-* {
-  -webkit-user-select: none;
-  user-select: none;
-}
-input, textarea, [contenteditable] {
-  -webkit-user-select: text;
-  user-select: text;
-}
+/* ── Global resets ────────────────────────────────────────────────────────── */
+html { touch-action: manipulation; }
+html, body { @apply overflow-hidden h-full; }
+* { -webkit-user-select: none; user-select: none; }
+input, textarea, [contenteditable] { -webkit-user-select: text; user-select: text; }
 
 @media (max-width: 480px) {
-  /* Shrink the app container to leave room for the fixed bottom nav */
-  #app > div {
+  #app.authenticated > div {
     height: calc(100dvh - 44px - env(safe-area-inset-bottom, 0px)) !important;
   }
+}
+
+/* ── Shared skeuomorphic UI classes ───────────────────────────────────────── */
+
+.skeu-toolbar {
+  @apply flex items-center gap-2 px-3 py-1.5 shrink-0 border-b border-[#bbb];
+  background: var(--skeu-gradient-chrome);
+  box-shadow: var(--skeu-shadow-inset);
+}
+
+.skeu-toolbar-label {
+  @apply text-[11px] text-[#666];
+  text-shadow: var(--skeu-text-shadow);
+}
+.skeu-toolbar-label strong { @apply text-[#333]; }
+
+.skeu-toolbar-btn {
+  @apply flex items-center gap-1 px-2.5 py-0.5 rounded-[5px] text-xs cursor-pointer text-white border border-black/20 transition-all;
+  background: var(--skeu-gradient-primary);
+  box-shadow: var(--skeu-shadow-primary);
+  text-shadow: 0 -1px 0 rgba(0,0,0,.15);
+}
+.skeu-toolbar-btn:hover { background: var(--skeu-gradient-primary-hover); }
+
+.skeu-search {
+  @apply w-[180px] text-xs px-2 py-1 rounded outline-none text-[#333] border border-[#aaa];
+  background: var(--skeu-gradient-input);
+  box-shadow: 0 1px 2px rgba(0,0,0,.06) inset;
+}
+.skeu-search:focus {
+  @apply border-accent;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06) inset, 0 0 0 2px rgba(106,90,237,.15);
+}
+
+.skeu-segmented {
+  @apply flex items-center rounded-[5px] overflow-hidden border border-[#aaa] shrink-0;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06) inset;
+}
+.skeu-seg-btn {
+  @apply flex items-center gap-0.5 px-2 py-0.5 text-[11px] cursor-pointer border-none border-r border-[#aaa] text-[#555] whitespace-nowrap transition-all;
+  background: var(--skeu-gradient-seg);
+  text-shadow: var(--skeu-text-shadow);
+}
+.skeu-seg-btn:last-child { @apply border-r-0; }
+.skeu-seg-btn:hover { background: var(--skeu-gradient-chrome-hover); }
+.skeu-seg-active {
+  color: #fff !important;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.2) !important;
+  background: var(--skeu-gradient-primary) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,.15) inset;
+}
+
+.skeu-icon-btn {
+  @apply flex items-center justify-center gap-0.5 min-w-6 h-6 px-1 rounded border border-transparent bg-transparent text-[#777] cursor-pointer transition-all;
+}
+.skeu-icon-btn:hover {
+  @apply border-[#aaa] text-[#444];
+  background: var(--skeu-gradient-chrome-hover);
+  box-shadow: 0 1px 0 rgba(255,255,255,.7) inset;
+}
+
+.skeu-today-btn {
+  @apply flex items-center gap-0.5 px-2 py-0.5 rounded-[5px] text-[11px] font-semibold cursor-pointer text-white border border-black/20 transition-all;
+  background: var(--skeu-gradient-primary);
+  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.15);
+}
+.skeu-today-btn:hover { background: var(--skeu-gradient-primary-hover); }
+.skeu-today-btn-disabled { @apply opacity-35 pointer-events-none; }
+
+.skeu-btn-primary {
+  @apply px-4 py-1.5 rounded-[5px] text-xs font-semibold cursor-pointer text-white border border-black/20 transition-all;
+  background: var(--skeu-gradient-primary);
+  box-shadow: var(--skeu-shadow-primary);
+  text-shadow: 0 -1px 0 rgba(0,0,0,.15);
+}
+.skeu-btn-primary:hover { background: var(--skeu-gradient-primary-hover); }
+.skeu-btn-primary:active {
+  background: var(--skeu-gradient-primary-active);
+  box-shadow: 0 1px 2px rgba(0,0,0,.15) inset;
+}
+
+.skeu-btn-danger {
+  @apply px-4 py-1.5 rounded-[5px] text-xs font-semibold cursor-pointer text-white border border-black/20 transition-all;
+  background: var(--skeu-gradient-danger);
+  box-shadow: 0 1px 0 rgba(255,255,255,.15) inset, 0 1px 3px rgba(192,57,43,.3);
+  text-shadow: 0 -1px 0 rgba(0,0,0,.15);
+}
+.skeu-btn-danger:hover { background: var(--skeu-gradient-danger-hover); }
+.skeu-btn-danger:active {
+  background: var(--skeu-gradient-danger-active);
+  box-shadow: 0 1px 2px rgba(0,0,0,.15) inset;
+}
+
+.skeu-badge-warn {
+  @apply text-[11px] font-semibold px-2 py-px rounded border border-[#d4a800];
+  color: #7c5a00;
+  background: var(--skeu-gradient-warn);
+  box-shadow: 0 1px 0 rgba(255,255,255,.5) inset;
+  text-shadow: 0 1px 0 rgba(255,255,255,.4);
 }

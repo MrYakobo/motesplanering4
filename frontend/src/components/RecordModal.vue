@@ -2,10 +2,11 @@
 import { watch, ref, nextTick, onUnmounted } from 'vue'
 import { X } from 'lucide-vue-next'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   open: boolean
   title: string
-}>()
+  minHeight?: string
+}>(), { minHeight: '300px' })
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -48,7 +49,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
               <X :size="14" />
             </button>
           </div>
-          <div ref="bodyRef" class="skeu-modal-body">
+          <div ref="bodyRef" class="skeu-modal-body" :style="{ minHeight: props.minHeight }">
             <slot />
           </div>
           <div v-if="$slots.footer" class="skeu-modal-footer">
@@ -129,7 +130,6 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  min-height: 300px;
 }
 
 .skeu-modal-footer {

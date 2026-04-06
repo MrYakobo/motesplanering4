@@ -5,7 +5,7 @@ import { useToday } from '../composables/useToday'
 import { AlertTriangle } from 'lucide-vue-next'
 import type { Event } from '../types'
 
-const { db, assignments } = useStore()
+const { db, assignments, effectiveTasks } = useStore()
 const { todayStr } = useToday()
 
 const emit = defineEmits<{ pick: [eid: number, tid: number]; distribute: [tid: number] }>()
@@ -16,7 +16,7 @@ const selectedTask = computed(() => db.tasks.find(t => t.id === selectedTaskId.v
 
 const events = computed(() =>
   [...db.events]
-    .filter(ev => (ev.expectedTasks || []).includes(selectedTaskId.value!))
+    .filter(ev => effectiveTasks(ev).includes(selectedTaskId.value!))
     .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')))
 )
 
@@ -38,7 +38,7 @@ function assignmentLabel(ev: Event): string {
 
 function unassignedCount(taskId: number): number {
   return db.events
-    .filter(ev => ev.date >= todayStr.value && (ev.expectedTasks || []).includes(taskId) && !assignments[ev.id]?.[taskId])
+    .filter(ev => ev.date >= todayStr.value && effectiveTasks(ev).includes(taskId) && !assignments[ev.id]?.[taskId])
     .length
 }
 </script>

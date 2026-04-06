@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from '../composables/useStore'
 import { useApi } from '../composables/useApi'
 import { useToday } from '../composables/useToday'
 import RecordModal from './RecordModal.vue'
 import SubscribeModal from './SubscribeModal.vue'
-import { Settings, LogOut, RefreshCw, UserRoundCog, CalendarClock, CalendarPlus, ListChecks } from 'lucide-vue-next'
+import PersonPicker from './PersonPicker.vue'
+import { Settings, LogOut, RefreshCw, UserRoundCog, CalendarClock, CalendarPlus, ListChecks, UserPen, Save } from 'lucide-vue-next'
 
 const { role, isAdmin, db, memberContactId } = useStore()
-const { logout } = useApi()
+const { logout, updateMyContact } = useApi()
 const { todayStr, isSimulated, simDate, setSimDate, clearSimDate } = useToday()
 const router = useRouter()
 
 const open = ref(false)
 const switchOpen = ref(false)
 const subscribeOpen = ref(false)
-const switchSearch = ref('')
-const switchIdx = ref(0)
+const accountOpen = ref(false)
 const btnRef = ref<HTMLElement | null>(null)
 const dropRef = ref<HTMLElement | null>(null)
 const dropStyle = ref<Record<string, string>>({})
@@ -40,23 +40,10 @@ const initials = computed(() => {
 const roleLabel = computed(() => isAdmin.value ? 'Administratör' : 'Medlem')
 
 const filteredContacts = computed(() => {
-  const q = switchSearch.value.toLowerCase()
   return db.contacts
-    .filter((c: any) => c.token && (!q || c.name.toLowerCase().includes(q)))
+    .filter((c: any) => c.token)
     .sort((a, b) => a.name.localeCompare(b.name))
 })
-
-watch(switchSearch, () => { switchIdx.value = 0 })
-
-function switchKeydown(e: KeyboardEvent) {
-  if (e.key === 'ArrowDown') { e.preventDefault(); switchIdx.value = Math.min(switchIdx.value + 1, filteredContacts.value.length - 1) }
-  else if (e.key === 'ArrowUp') { e.preventDefault(); switchIdx.value = Math.max(switchIdx.value - 1, 0) }
-  else if (e.key === 'Enter') {
-    e.preventDefault()
-    const c = filteredContacts.value[switchIdx.value]
-    if (c) switchToUser(c.id)
-  }
-}
 
 function switchToUser(contactId: number) {
   const contact = db.contacts.find(c => c.id === contactId) as any
@@ -64,6 +51,37 @@ function switchToUser(contactId: number) {
   localStorage.removeItem('authHeader')
   localStorage.setItem('memberToken', contact.token)
   location.reload()
+}
+
+// Account editing
+const me = computed(() => memberContactId.value ? db.contacts.find(c => c.id === memberContactId.value) : null)
+const editName = ref('')
+const editEmail = ref('')
+const editPhone = ref('')
+const saving = ref(false)
+
+function openAccount() {
+  if (me.value) {
+    editName.value = me.value.name || ''
+    editEmail.value = me.value.email || ''
+    editPhone.value = me.value.phone || ''
+  }
+  accountOpen.value = true
+  open.value = false
+}
+
+async function saveContact() {
+  saving.value = true
+  try {
+    await updateMyContact({ name: editName.value, email: editEmail.value, phone: editPhone.value })
+    if (me.value) {
+      me.value.name = editName.value
+      me.value.email = editEmail.value
+      me.value.phone = editPhone.value
+    }
+    accountOpen.value = false
+  } catch {}
+  saving.value = false
 }
 
 function positionDrop() {
@@ -120,10 +138,13 @@ const emit = defineEmits<{ openGenerate: [] }>()
             <button @click="subscribeOpen = true; open = false" class="skeu-menu-btn">
               <CalendarPlus :size="15" /> Prenumerera
             </button>
+            <button v-if="me" @click="openAccount" class="skeu-menu-btn">
+              <UserPen :size="15" /> Mitt konto
+            </button>
             <button v-if="isAdmin" @click="router.push('/tasks'); open = false" class="skeu-menu-btn">
               <ListChecks :size="15" /> Uppgifter
             </button>
-            <button v-if="isAdmin" @click="switchOpen = true; switchSearch = ''; open = false" class="skeu-menu-btn">
+            <button v-if="isAdmin" @click="switchOpen = true; open = false" class="skeu-menu-btn">
               <UserRoundCog :size="15" /> Byt användare
             </button>
             <button v-if="isAdmin" @click="router.push('/settings'); open = false" class="skeu-menu-btn">
@@ -152,24 +173,31 @@ const emit = defineEmits<{ openGenerate: [] }>()
 
   <RecordModal :open="switchOpen" title="Byt användare" @close="switchOpen = false">
     <p class="text-xs text-gray-500 mb-3">Välj en person att logga in som.</p>
-    <input v-model="switchSearch" type="text" placeholder="Sök person…"
-      class="w-full border border-gray-300 rounded-md px-2.5 py-2 text-sm outline-none focus:border-accent mb-3"
-      @keydown="switchKeydown" />
-    <div class="max-h-[50vh] overflow-y-auto space-y-0.5">
-      <button v-for="(c, i) in filteredContacts" :key="c.id" @click="switchToUser(c.id)"
-        @mouseenter="switchIdx = i"
-        class="flex items-center gap-2 w-full bg-transparent border-none py-2.5 px-2 text-sm text-gray-700 cursor-pointer rounded-md transition-colors text-left"
-        :class="i === switchIdx ? 'bg-accent/10 text-accent' : 'hover:bg-gray-50'"
-      >
-        <div class="skeu-avatar-sm">
-          {{ c.name.split(' ').filter(Boolean).map((p: string) => p[0]).slice(0, 2).join('').toUpperCase() }}
-        </div>
-        {{ c.name }}
-      </button>
-    </div>
+    <PersonPicker :contacts="filteredContacts" @pick="switchToUser" />
   </RecordModal>
 
   <SubscribeModal :open="subscribeOpen" @close="subscribeOpen = false" />
+
+  <RecordModal :open="accountOpen" title="Mitt konto" @close="accountOpen = false">
+    <div class="space-y-3">
+      <div>
+        <label class="text-[10px] text-gray-500 block mb-0.5">Namn</label>
+        <input v-model="editName" type="text" class="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-sm outline-none focus:border-accent bg-white" />
+      </div>
+      <div>
+        <label class="text-[10px] text-gray-500 block mb-0.5">E-post</label>
+        <input v-model="editEmail" type="email" class="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-sm outline-none focus:border-accent bg-white" />
+      </div>
+      <div>
+        <label class="text-[10px] text-gray-500 block mb-0.5">Telefon</label>
+        <input v-model="editPhone" type="tel" class="w-full border border-gray-300 rounded-md px-2.5 py-1.5 text-sm outline-none focus:border-accent bg-white" />
+      </div>
+      <button @click="saveContact" :disabled="saving"
+        class="flex items-center gap-1.5 bg-accent text-white text-[11px] font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer hover:bg-accent-hover transition-colors disabled:opacity-50">
+        <Save :size="12" /> Spara
+      </button>
+    </div>
+  </RecordModal>
 </template>
 
 <style scoped>

@@ -8,7 +8,7 @@ import RecordModal from '../components/RecordModal.vue'
 import SchemaMobile from '../components/SchemaMobile.vue'
 import type { Event, Task } from '../types'
 
-const { db, assignments, persist, searchQuery, isAdmin } = useStore()
+const { db, assignments, persist, searchQuery, isAdmin, effectiveTasks } = useStore()
 const { show: toast } = useToast()
 const { todayStr } = useToday()
 const gridRef = ref<HTMLElement | null>(null)
@@ -51,7 +51,7 @@ watch(activePop, (v) => {
 const visibleEvents = computed(() => {
   const q = searchQuery.value.toLowerCase()
   return [...db.events]
-    .filter(ev => (ev.expectedTasks || []).length > 0)
+    .filter(ev => effectiveTasks(ev).length > 0)
     .filter(ev => !q || ev.title.toLowerCase().includes(q) || ev.date.includes(q) || (ev.category || '').toLowerCase().includes(q))
     .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')))
 })
@@ -60,7 +60,7 @@ const visibleEvents = computed(() => {
 const warnCount = computed(() =>
   visibleEvents.value.reduce((n, ev) => {
     if (ev.date < todayStr.value) return n
-    return n + (ev.expectedTasks || []).filter(tid => !assignments[ev.id]?.[tid]).length
+    return n + effectiveTasks(ev).filter(tid => !assignments[ev.id]?.[tid]).length
   }, 0)
 )
 
@@ -82,18 +82,18 @@ function isUnset(ev: Event, task: Task): boolean {
 
 function isCellWarn(ev: Event, task: Task): boolean {
   if (ev.date < todayStr.value) return false
-  return (ev.expectedTasks || []).includes(task.id) && !assignments[ev.id]?.[task.id]
+  return effectiveTasks(ev).includes(task.id) && !assignments[ev.id]?.[task.id]
 }
 
 function missingNames(ev: Event): string {
   if (ev.date < todayStr.value) return ''
-  const missing = (ev.expectedTasks || []).filter(tid => !assignments[ev.id]?.[tid])
+  const missing = effectiveTasks(ev).filter(tid => !assignments[ev.id]?.[tid])
   return missing.map(tid => db.tasks.find(t => t.id === tid)?.name).filter(Boolean).join(', ')
 }
 
 function missingCount(ev: Event): number {
   if (ev.date < todayStr.value) return 0
-  return (ev.expectedTasks || []).filter(tid => !assignments[ev.id]?.[tid]).length
+  return effectiveTasks(ev).filter(tid => !assignments[ev.id]?.[tid]).length
 }
 
 function teamMembers(ev: Event, task: Task): string {
@@ -249,7 +249,7 @@ const distTeams = computed(() => db.teams.filter(t => t.taskId === distTaskId.va
 
 const distCandidates = computed(() =>
   visibleEvents.value
-    .filter(ev => ev.date >= todayStr.value && (ev.expectedTasks || []).includes(distTaskId.value!) && !assignments[ev.id]?.[distTaskId.value!])
+    .filter(ev => ev.date >= todayStr.value && effectiveTasks(ev).includes(distTaskId.value!) && !assignments[ev.id]?.[distTaskId.value!])
     .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')))
 )
 
@@ -591,121 +591,50 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.skeu-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 12px;
-  flex-shrink: 0;
-  background: linear-gradient(180deg, #e8e8e8 0%, #d4d4d4 100%);
-  border-bottom: 1px solid #bbb;
-  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
-}
-.skeu-toolbar-label {
-  font-size: 11px;
-  color: #666;
-  text-shadow: 0 1px 0 rgba(255,255,255,.7);
-}
-.skeu-toolbar-label strong { color: #333; }
-.skeu-badge-warn {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 1px 8px;
-  border-radius: 4px;
-  color: #7c5a00;
-  background: linear-gradient(180deg, #fff4cc 0%, #ffe699 100%);
-  border: 1px solid #d4a800;
-  box-shadow: 0 1px 0 rgba(255,255,255,.5) inset;
-  text-shadow: 0 1px 0 rgba(255,255,255,.4);
-}
-.skeu-search {
-  width: 180px;
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  outline: none;
-  color: #333;
-  background: linear-gradient(180deg, #e0e0e0 0%, #fff 3px);
-  border: 1px solid #aaa;
-  box-shadow: 0 1px 2px rgba(0,0,0,.06) inset;
-}
-.skeu-search:focus {
-  border-color: #6a5aed;
-  box-shadow: 0 1px 2px rgba(0,0,0,.06) inset, 0 0 0 2px rgba(106,90,237,.15);
-}
+@reference "../style.css";
+
 .skeu-th {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  padding: 7px 6px;
-  text-align: left;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #555;
+  @apply sticky top-0 z-[3] px-1.5 py-[7px] text-left text-[10px] font-semibold uppercase tracking-wide text-[#555] border-b border-[#bbb];
   background: linear-gradient(180deg, #eee 0%, #ddd 100%);
-  border-bottom: 1px solid #bbb;
   box-shadow: 0 1px 0 rgba(255,255,255,.5) inset;
-  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+  text-shadow: var(--skeu-text-shadow);
 }
 .skeu-dist-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 1px 5px;
-  border-radius: 3px;
-  cursor: pointer;
-  color: #fff;
-  border: 1px solid rgba(0,0,0,.15);
-  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
+  @apply inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-px rounded-sm cursor-pointer text-white border border-black/15 normal-case tracking-normal;
+  background: var(--skeu-gradient-primary);
   box-shadow: 0 1px 0 rgba(255,255,255,.15) inset;
   text-shadow: 0 -1px 0 rgba(0,0,0,.15);
-  text-transform: none;
-  letter-spacing: 0;
 }
-.skeu-dist-btn:hover { background: linear-gradient(180deg, #7b6cf5 0%, #5544d4 100%); }
+.skeu-dist-btn:hover { background: var(--skeu-gradient-primary-hover); }
+
 .skeu-grid-row {
-  border-bottom: 1px solid #d8d8d8;
+  @apply border-b border-[#d8d8d8];
   background: linear-gradient(180deg, #f8f8f8 0%, #f0f0f0 100%);
 }
 .skeu-grid-sticky {
+  @apply border-b border-[#d0d0d0] border-r border-r-[#ccc];
   background: linear-gradient(180deg, #f0f0f0 0%, #e8e8e8 100%);
-  border-bottom: 1px solid #d0d0d0;
-  border-right: 1px solid #ccc;
 }
 .skeu-cell {
-  padding: 4px 6px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 140px;
-  transition: all 0.1s ease;
+  @apply px-1.5 py-1 rounded text-xs cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px] transition-all;
 }
 .skeu-cell-set {
-  color: #333;
+  @apply text-[#333] border border-[#c0c0c0];
   background: linear-gradient(180deg, #fff 0%, #f0f0f0 100%);
-  border: 1px solid #c0c0c0;
   box-shadow: 0 1px 0 rgba(255,255,255,.5) inset;
 }
-.skeu-cell-set:hover { border-color: #6a5aed; }
+.skeu-cell-set:hover { @apply border-accent; }
 .skeu-cell-empty {
-  color: #aaa;
+  @apply text-[#aaa] border border-[#ccc];
   background: linear-gradient(180deg, #f0f0f0 0%, #e8e8e8 100%);
-  border: 1px solid #ccc;
   box-shadow: 0 1px 2px rgba(0,0,0,.04) inset;
 }
-.skeu-cell-empty:hover { border-color: #6a5aed; }
+.skeu-cell-empty:hover { @apply border-accent; }
 .skeu-cell-warn {
+  @apply border border-[#d4a800];
   color: #7c5a00;
   background: linear-gradient(180deg, #fff8e0 0%, #ffefb0 100%);
-  border: 1px solid #d4a800;
   box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
 }
-.skeu-cell-warn:hover { border-color: #b08900; }
+.skeu-cell-warn:hover { @apply border-[#b08900]; }
 </style>

@@ -12,7 +12,7 @@ import {
   Calendar, Table, Users, UsersRound,
   Home, Monitor, IdCard, ClipboardList, User,
   FileText, Mail, List, CalendarDays, CalendarRange, Grid3x3,
-  Menu, Tags, Settings, LogOut, CalendarClock, UserRoundCog,
+  Menu, Tags, Settings, LogOut, CalendarClock, UserRoundCog, LayoutDashboard,
 } from 'lucide-vue-next'
 import RecordModal from './RecordModal.vue'
 
@@ -56,6 +56,7 @@ const eventSubs = [
 const teamTasks = computed(() => db.tasks.filter((t: any) => t.teamTask))
 
 const outputTabs = [
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/slides', label: 'Slides', icon: Monitor },
   { path: '/export', label: 'Månadsblad', icon: FileText },
   { path: '/mailbot', label: 'Påminnelser', icon: Mail },
@@ -71,11 +72,12 @@ const viewerTabs = [
 ]
 
 const memberTabs = [
-  // { path: '/home', label: 'Hem', icon: Home },
   { path: '/my', label: 'Mitt schema', icon: User },
-  // { path: '/slides', label: 'Slides', icon: Monitor },
-  // { path: '/namnskyltar', label: 'Skyltar', icon: IdCard },
-  // { path: '/sunday', label: 'Söndag', icon: ClipboardList },
+]
+
+const mySubs = [
+  { path: '/my', label: 'Schema', exact: true },
+  { path: '/my/teams', label: 'Mina team' },
 ]
 
 const moreItems = [
@@ -117,12 +119,25 @@ function onLoginSuccess() { showLogin.value = false; location.reload() }
       <span class="sb-brand">Mötes&shy;planering</span>
     </button>
 
-    <template v-if="isViewer || isMember">
-      <button v-for="tab in (isMember ? memberTabs : viewerTabs)" :key="tab.path"
+    <template v-if="isViewer">
+      <button v-for="tab in viewerTabs" :key="tab.path"
         @click="go(tab.path)" class="sb-btn" :class="{ active: isActive(tab.path) }" :title="tab.label">
         <component :is="tab.icon" :size="15" />
         <span class="sb-label">{{ tab.label }}</span>
       </button>
+    </template>
+
+    <template v-else-if="isMember">
+      <button @click="go('/my')" class="sb-btn" :class="{ active: isActive('/my') }">
+        <User :size="15" /><span class="sb-label">Mitt schema</span>
+      </button>
+      <div v-if="isActive('/my')" class="sb-sub">
+        <button v-for="sub in mySubs" :key="sub.path"
+          @click="go(sub.path)" class="sb-sub-btn"
+          :class="{ active: sub.exact ? isExact(sub.path) : isActive(sub.path) }">
+          <span class="sb-label">{{ sub.label }}</span>
+        </button>
+      </div>
     </template>
 
     <template v-else>
@@ -158,6 +173,14 @@ function onLoginSuccess() { showLogin.value = false; location.reload() }
           <span class="sb-label">{{ task.name }}</span>
         </button>
       </div>
+
+      <!-- Platsbank (experimental, hidden for now) -->
+      <!--
+      <button @click="go('/platsbank')" class="sb-btn" :class="{ active: isActive('/platsbank') }">
+        <HandHelping :size="15" /><span class="sb-label">Platsbank</span>
+        <span v-if="notificationCount > 0" class="sb-badge">{{ notificationCount }}</span>
+      </button>
+      -->
 
       <div class="sb-divider" />
 
@@ -377,6 +400,21 @@ function onLoginSuccess() { showLogin.value = false; location.reload() }
   border-radius: 50%;
   background: #22c55e;
   box-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
+}
+
+.sb-badge {
+  margin-left: auto;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  color: #fff;
+  background: #e74c3c;
+  flex-shrink: 0;
 }
 
 /* ── Mobile ───────────────────────────────────────────────────────────────── */

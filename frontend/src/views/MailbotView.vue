@@ -6,7 +6,7 @@ import { useToast } from '../composables/useToast'
 import { useApi } from '../composables/useApi'
 import { Mail, AlertTriangle, CheckCircle, Zap, Send, X } from 'lucide-vue-next'
 
-const { db, assignments } = useStore()
+const { db, assignments, effectiveTasks } = useStore()
 const { show: toast } = useToast()
 const { today: todayDate, todayStr } = useToday()
 const api = useApi()
@@ -16,7 +16,7 @@ const cronRunning = ref(false)
 
 const upcomingEvents = computed(() =>
   db.events
-    .filter(e => e.date >= todayStr.value && e.date <= futureDate(30) && (e.expectedTasks || []).length > 0)
+    .filter(e => e.date >= todayStr.value && e.date <= futureDate(30) && effectiveTasks(e).length > 0)
     .sort((a, b) => a.date.localeCompare(b.date))
 )
 

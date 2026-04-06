@@ -1,0 +1,16 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: php/Dockerfile
+    ports:
+      - "1999:80"
+    volumes:
+      - ./php/api/index.php:/var/www/html/api/index.php
+      - php-data:/var/www/html/data
+      - ./uploads:/var/www/html/uploads
+      - ./backups:/var/www/html/backups
+    restart: unless-stopped
+
+volumes:
+  php-data:

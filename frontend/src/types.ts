@@ -24,6 +24,10 @@ export interface Task {
   teamTask: boolean
   mailbot: boolean
   phrase: string
+  description?: string
+  manual?: string
+  responsibleId?: number | null
+  locked?: boolean
 }
 
 export interface Team {
@@ -37,6 +41,7 @@ export interface Category {
   name: string
   color: string
   hidden?: boolean
+  defaultTasks?: number[]
 }
 
 export interface Assignment {
@@ -102,6 +107,13 @@ export interface SlideBackground {
   image: string
 }
 
+export interface LateWithdrawal {
+  eventId: number
+  taskId: number
+  contactId: number
+  timestamp: string
+}
+
 export interface Database {
   events: Event[]
   contacts: Contact[]
@@ -114,6 +126,7 @@ export interface Database {
   slideLogo: string
   slideBackground: SlideBackground
   settings: AppSettings
+  lateWithdrawals?: LateWithdrawal[]
   _version: number
 }
 

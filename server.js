@@ -483,6 +483,26 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ── Member API: PUT /api/task/:id/manual (responsibleId can edit) ──
+  if (req.method === 'PUT' && url.pathname.match(/^\/api\/task\/\d+\/manual$/) && (isAdmin || isMember)) {
+    const taskId = parseInt(url.pathname.split('/')[3]);
+    const body = await readBody(req);
+    try {
+      const { manual } = JSON.parse(body);
+      const db = loadDb();
+      const task = (db.tasks || []).find(t => t.id === taskId);
+      if (!task) { res.writeHead(404); res.end('{"error":"task not found"}'); return; }
+      if (!isAdmin && (!memberContact || task.responsibleId !== memberContact.id)) {
+        res.writeHead(403); res.end('{"error":"not responsible"}'); return;
+      }
+      task.manual = String(manual || '');
+      saveDb(db);
+      res.writeHead(200, {'Content-Type':'application/json'});
+      res.end(JSON.stringify({ ok: true, version: dbVersion }));
+    } catch { res.writeHead(400); res.end('{"error":"invalid json"}'); }
+    return;
+  }
+
   // ── Presence: POST /api/presence ────────────────────────────
   if (req.method === 'POST' && url.pathname === '/api/presence') {
     const body = await readBody(req);
@@ -596,6 +616,43 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/api/auth-check') {
     res.writeHead(200, {'Content-Type':'application/json'});
     res.end(JSON.stringify({ ok: isAdmin }));
+    return;
+  }
+
+  // ── Magic link login: POST /api/request-login ─────────────────
+  if (req.method === 'POST' && url.pathname === '/api/request-login') {
+    const body = await readBody(req);
+    try {
+      const { email } = JSON.parse(body);
+      if (!email) { res.writeHead(400); res.end('{"error":"email required"}'); return; }
+      const db = loadDb();
+      const contact = (db.contacts || []).find(c => c.email && c.email.toLowerCase() === email.toLowerCase());
+      if (!contact) {
+        // Don't reveal whether email exists — always say "sent"
+        res.writeHead(200, {'Content-Type':'application/json'});
+        res.end(JSON.stringify({ ok: true }));
+        return;
+      }
+      // Ensure token exists
+      if (!contact.token) { contact.token = generateToken(); saveDb(db); }
+      // Build login URL
+      const proto = req.headers['x-forwarded-proto'] || 'http';
+      const host = req.headers['x-forwarded-host'] || req.headers['host'] || 'localhost:' + PORT;
+      const loginUrl = proto + '://' + host + '/?token=' + contact.token;
+      const firstName = contact.name.split(' ')[0];
+      const orgName = (db.settings && db.settings.orgName) || 'Mötesplanering';
+      await sendEmail({
+        to: contact.email,
+        subject: 'Logga in — ' + orgName,
+        html: `<p>Hej ${firstName}!</p><p>Klicka på länken nedan för att logga in:</p><p><a href="${loginUrl}" style="display:inline-block;padding:10px 24px;background:#4f46e5;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">Logga in</a></p><p style="color:#999;font-size:12px;">Eller kopiera: ${loginUrl}</p><p style="color:#999;font-size:12px;">Länken är personlig — dela den inte.</p>`,
+      });
+      res.writeHead(200, {'Content-Type':'application/json'});
+      res.end(JSON.stringify({ ok: true }));
+    } catch (err) {
+      console.error('[request-login]', err);
+      res.writeHead(500, {'Content-Type':'application/json'});
+      res.end(JSON.stringify({ ok: false, error: 'server error' }));
+    }
     return;
   }
 

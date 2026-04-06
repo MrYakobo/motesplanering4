@@ -3,15 +3,20 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useStore } from '../composables/useStore'
 import { useToday } from '../composables/useToday'
 import { useCategories } from '../composables/useCategories'
+import { useNotifications } from '../composables/useNotifications'
 import LoginModal from '../components/LoginModal.vue'
-import { LogIn, Calendar, Users, ClipboardList, Clock } from 'lucide-vue-next'
+import { LogIn, Calendar, Users, ClipboardList, Clock, AlertTriangle } from 'lucide-vue-next'
 
 const { db, isViewer } = useStore()
 const { todayStr } = useToday()
 const { catStyle } = useCategories()
+const { allNotifications } = useNotifications()
 const orgName = () => db.settings?.orgName || 'Mötesplanering'
 
 const showLogin = ref(false)
+const loginEmail = ref('')
+const loginSent = ref(false)
+const loginSending = ref(false)
 const now = ref(new Date())
 let timer: ReturnType<typeof setInterval> | undefined
 
@@ -21,6 +26,27 @@ onUnmounted(() => { clearInterval(timer) })
 function onLoginSuccess() {
   showLogin.value = false
   location.reload()
+}
+
+function checkForAdmin() {
+  if (loginEmail.value == "admin") {
+    showLogin.value = true
+  }
+}
+
+async function requestMagicLink() {
+  if (!loginEmail.value.trim()) return
+
+  loginSending.value = true
+  try {
+    await fetch('/api/request-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: loginEmail.value.trim() }),
+    })
+    loginSent.value = true
+  } catch {}
+  loginSending.value = false
 }
 
 // Events happening today
@@ -74,6 +100,7 @@ function fmtTime(t: string) {
       <h1>{{ orgName() }}</h1>
       <p class="subtitle">Schemaläggning &amp; volontärhantering</p>
 
+      <template v-if="false">
       <!-- Happening today -->
       <div v-if="todayEvents.length" class="section">
         <div class="section-header">
@@ -95,6 +122,7 @@ function fmtTime(t: string) {
         </div>
         <p class="empty-msg">Inga händelser idag</p>
       </div>
+      </template>
 
       <!-- Countdown to next event -->
       <div v-if="nextEvent && countdown" class="section">
@@ -130,7 +158,20 @@ function fmtTime(t: string) {
         </div>
       </div>
 
-      <div class="features">
+      <!-- Notifications -->
+      <div v-if="allNotifications.length > 0" class="section">
+        <div class="section-header" style="color: #e74c3c;">
+          <AlertTriangle :size="14" />
+          <span>Saknas denna vecka</span>
+        </div>
+        <div class="notif-list">
+          <div v-for="(n, i) in allNotifications" :key="i" class="notif-item" :class="{ 'notif-late': n.type === 'late-withdrawal' }">
+            <span class="notif-msg">{{ n.message }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="features" v-if="allNotifications.length != 0">
         <div class="feature">
           <Calendar :size="18" />
           <span>Händelser &amp; kalender</span>
@@ -145,10 +186,25 @@ function fmtTime(t: string) {
         </div>
       </div>
 
-      <button v-if="isViewer" @click="showLogin = true" class="login-btn">
-        <LogIn :size="16" />
-        Logga in
-      </button>
+      <!-- Login section for viewers -->
+      <div v-if="isViewer" class="section">
+        <div v-if="!loginSent" class="login-card">
+          <p class="login-desc text-black">Ange din e-post för att logga in och se ditt schema</p>
+          <form @submit.prevent="requestMagicLink" class="login-form">
+            <input @input="checkForAdmin" v-model="loginEmail" type="email" placeholder="din@email.se" class="login-input" required />
+            <button type="submit" :disabled="loginSending" class="login-btn">
+              <LogIn :size="14" />
+              {{ loginSending ? 'Skickar...' : 'Skicka inloggningslänk' }}
+            </button>
+          </form>
+          <button @click="showLogin = true" class="login-admin-link">Admin-inloggning</button>
+        </div>
+        <div v-else class="login-card login-sent">
+          <p class="login-sent-msg">Kolla din inkorg!</p>
+          <p class="login-sent-sub">Vi har skickat en inloggningslänk till <strong>{{ loginEmail }}</strong>.<br><br>Klicka på länken i mailet för att logga in.</p>
+          <button @click="loginSent = false; loginEmail = ''" class="login-admin-link">Försök igen</button>
+        </div>
+      </div>
     </div>
 
     <LoginModal :open="showLogin" @close="showLogin = false" @success="onLoginSuccess" />
@@ -325,6 +381,8 @@ h1 {
 .feature svg { color: #5b4fc7; flex-shrink: 0; }
 
 .login-btn {
+  text-align: center;
+  justify-content: center;
   display: flex; align-items: center; gap: 8px;
   padding: 10px 28px; border-radius: 8px;
   font-size: 14px; font-weight: 600; color: #fff;
@@ -345,4 +403,108 @@ h1 {
   background: linear-gradient(180deg, #4a3cc9 0%, #3b2fba 100%);
   box-shadow: 0 1px 3px rgba(0,0,0,.2) inset, 0 1px 2px rgba(0,0,0,.1);
 }
+
+.notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.notif-item {
+  font-size: 12px;
+  color: rgba(255,255,255,.7);
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.2);
+}
+.notif-late {
+  background: rgba(243, 156, 18, 0.1);
+  border-color: rgba(243, 156, 18, 0.2);
+}
+
+.login-card {
+  padding: 16px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.login-desc {
+  font-size: 13px;
+  color: #222;
+  margin-bottom: 12px;
+}
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.login-input {
+width: 100%;
+  font-size: 13px;
+  padding: 6px 8px;
+    padding-top: 6px;
+    padding-right: 8px;
+    padding-bottom: 6px;
+    padding-left: 8px;
+  border-radius: 5px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+  color: #333;
+  outline: none;
+  background: linear-gradient(180deg, #e8e8e8 0%, #fff 3px);
+  border: 1px solid #bbb;
+    border-top-width: 1px;
+    border-top-style: solid;
+    border-top-color: rgb(187, 187, 187);
+    border-right-width: 1px;
+    border-right-style: solid;
+    border-right-color: rgb(187, 187, 187);
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+    border-bottom-color: rgb(187, 187, 187);
+    border-left-width: 1px;
+    border-left-style: solid;
+    border-left-color: rgb(187, 187, 187);
+    border-image-outset: 0;
+    border-image-repeat: stretch;
+    border-image-slice: 100%;
+    border-image-source: none;
+    border-image-width: 1;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04) inset;
+}
+.login-input:focus { border-color: var(--color-accent); }
+.login-input::placeholder { color: rgba(255,255,255,0.25); }
+.login-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  background: var(--color-accent);
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+.login-btn:hover { background: var(--color-accent-hover); }
+.login-btn:disabled { opacity: 0.5; cursor: default; }
+.login-admin-link {
+  display: block;
+  margin-top: 10px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.login-admin-link:hover { color: rgba(255,255,255,0.5); }
+.login-sent { text-align: center; }
+.login-sent-msg { font-size: 18px; margin-bottom: 6px; }
+.login-sent-sub { font-size: 12px; }
 </style>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useStore } from './composables/useStore'
 import { fullscreenState } from './composables/useFullscreen'
 import AppNav from './components/AppNav.vue'
@@ -29,19 +29,29 @@ function applyTheme(id: string) {
 
 const { loading, loadApp, isViewer, db } = useStore()
 const router = useRouter()
+const route = useRoute()
+const isDashboard = computed(() => route.path === '/dashboard')
+
+const publicPaths = ['/home', '/slides', '/namnskyltar', '/sunday', '/dashboard']
 
 onMounted(async () => {
   await loadApp()
   applyTheme(db.settings?.accentColor || 'indigo')
-  if (isViewer.value && router.currentRoute.value.path.startsWith('/events')) {
-    router.replace('/home')
+  if (isViewer.value) {
+    const path = router.currentRoute.value.path
+    if (!publicPaths.some(p => path.startsWith(p))) {
+      router.replace('/home')
+    }
+    document.getElementById("app")?.classList.add("viewer")
+  } else {
+    document.getElementById("app")?.classList.add("authenticated")
   }
 })
 </script>
 
 <template>
   <div class="flex flex-col sm:flex-row h-dvh overflow-hidden bg-[#e0e0e0] text-gray-900">
-    <AppNav v-if="!loading && !fullscreenState && !isViewer" />
+    <AppNav v-if="!loading && !fullscreenState && !isViewer && !isDashboard" />
     <div v-if="loading" class="flex-1 flex items-center justify-center">
       <p class="text-gray-400 text-sm">Laddar...</p>
     </div>

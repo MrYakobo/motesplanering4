@@ -4,6 +4,8 @@ import { useStore } from '../composables/useStore'
 import { useToast } from '../composables/useToast'
 import { useRoute } from 'vue-router'
 import RecordModal from '../components/RecordModal.vue'
+import PersonPicker from '../components/PersonPicker.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import { PlusCircle, X } from 'lucide-vue-next'
 
 const { db, persist } = useStore()
@@ -12,8 +14,6 @@ const route = useRoute()
 
 const activeTaskId = ref<number | null>(null)
 const pickerTeamId = ref<number | null>(null)
-const pickerSearch = ref('')
-const pickerIdx = ref(0)
 
 const teamTasks = computed(() => db.tasks.filter(t => t.teamTask))
 
@@ -42,23 +42,10 @@ const pickerContacts = computed(() => {
   const team = db.teams.find(t => t.id === pickerTeamId.value)
   if (!team) return []
   const existing = new Set(team.members)
-  const q = pickerSearch.value.toLowerCase()
   return db.contacts
-    .filter(c => !existing.has(c.id) && (!q || c.name.toLowerCase().includes(q)))
+    .filter(c => !existing.has(c.id))
     .sort((a, b) => a.name.localeCompare(b.name))
 })
-
-watch(pickerSearch, () => { pickerIdx.value = 0 })
-
-function pickerKeydown(e: KeyboardEvent) {
-  if (e.key === 'ArrowDown') { e.preventDefault(); pickerIdx.value = Math.min(pickerIdx.value + 1, pickerContacts.value.length - 1) }
-  else if (e.key === 'ArrowUp') { e.preventDefault(); pickerIdx.value = Math.max(pickerIdx.value - 1, 0) }
-  else if (e.key === 'Enter') {
-    e.preventDefault()
-    const c = pickerContacts.value[pickerIdx.value]
-    if (c) addMember(pickerTeamId.value!, c.id)
-  }
-}
 
 async function createTeam() {
   if (!activeTaskId.value) return
@@ -92,7 +79,6 @@ async function addMember(teamId: number, contactId: number) {
   if (!team.members.includes(contactId)) team.members.push(contactId)
   await persist('teams')
   pickerTeamId.value = null
-  pickerSearch.value = ''
 }
 
 function contactName(id: number) {
@@ -227,7 +213,7 @@ async function onDrop(toTeamId: string) {
           </div>
           <!-- Ghost "add" card -->
           <button
-            @click="pickerTeamId = team.id; pickerSearch = ''"
+            @click="pickerTeamId = team.id"
             class="skeu-member-ghost"
           >
             <PlusCircle :size="14" class="opacity-50" />
@@ -243,278 +229,85 @@ async function onDrop(toTeamId: string) {
       :title="pickerTeamId ? `Lägg till medlem i ${teamTasks.find(t => t.id === activeTaskId)?.name || ''} team ${db.teams.find(t => t.id === pickerTeamId)?.number || ''}` : ''"
       @close="pickerTeamId = null"
     >
-      <input
-        v-model="pickerSearch"
-        type="text"
-        placeholder="Sök person…"
-        class="w-full border border-gray-300 rounded-md px-2.5 py-2 text-sm outline-none focus:border-accent mb-3"
-        @keydown="pickerKeydown"
-      />
-      <div class="max-h-96 overflow-y-auto">
-        <button
-          v-for="(c, i) in pickerContacts" :key="c.id"
-          @click="addMember(pickerTeamId!, c.id)"
-          @mouseenter="pickerIdx = i"
-          class="flex items-center gap-2 w-full bg-transparent border-none py-2.5 px-2 text-sm text-gray-700 cursor-pointer rounded-md transition-colors text-left"
-          :class="i === pickerIdx ? 'bg-accent/10 text-accent' : 'hover:bg-gray-50'"
-        >
-          <div class="skeu-member-avatar">{{ initials(c.name) }}</div>
-          {{ c.name }}
-        </button>
-      </div>
+      <PersonPicker :contacts="pickerContacts" @pick="(id) => addMember(pickerTeamId!, id)" />
     </RecordModal>
 
     <!-- Delete confirmation -->
-    <RecordModal
+    <ConfirmDialog
       :open="confirmDeleteId !== null"
       title="Ta bort team"
-      @close="confirmDeleteId = null"
-    >
-      <p class="text-sm text-[#555] mb-2">
-        Är du säker på att du vill ta bort <strong>Team {{ confirmDeleteTeam?.number }}</strong>?
-      </p>
-      <p class="text-xs text-red-500 mb-4">
-        Alla medlemmar i teamet kommer att tas bort. Denna åtgärd kan inte ångras.
-      </p>
-      <div class="flex gap-2 justify-end">
-        <button @click="confirmDeleteId = null"
-          class="px-3 py-1.5 text-xs rounded-md border border-[#aaa] text-[#555] cursor-pointer hover:bg-white/50 bg-gradient-to-b from-[#f4f4f4] to-[#ddd]">
-          Avbryt
-        </button>
-        <button @click="doDeleteTeam"
-          class="px-3 py-1.5 text-xs rounded-md border border-red-400 text-white font-semibold cursor-pointer bg-gradient-to-b from-red-500 to-red-600 hover:from-red-600 hover:to-red-700">
-          Ta bort
-        </button>
-      </div>
-    </RecordModal>
+      :message="`Är du säker på att du vill ta bort Team ${confirmDeleteTeam?.number}?`"
+      warning="Denna åtgärd kan inte ångras"
+      confirm-label="Ta bort"
+      :danger="true"
+      @confirm="doDeleteTeam"
+      @cancel="confirmDeleteId = null"
+    />
   </div>
 </template>
 
 <style scoped>
-.skeu-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  flex-shrink: 0;
-  background: linear-gradient(180deg, #e8e8e8 0%, #d4d4d4 100%);
-  border-bottom: 1px solid #bbb;
-  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
-  overflow-x: auto;
-}
-.skeu-toolbar-label {
-  font-size: 11px;
-  color: #888;
-  text-shadow: 0 1px 0 rgba(255,255,255,.7);
-  white-space: nowrap;
-}
+@reference "../style.css";
+
 .skeu-create-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  color: #fff;
-  border: 1px solid rgba(0,0,0,.2);
-  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
+  @apply flex items-center gap-1 px-2.5 py-1 rounded-[5px] text-xs font-semibold cursor-pointer text-white border border-black/20 transition-all;
+  background: var(--skeu-gradient-primary);
   box-shadow: 0 1px 0 rgba(255,255,255,.2) inset;
   text-shadow: 0 -1px 0 rgba(0,0,0,.15);
-  transition: background 0.1s ease;
 }
-.skeu-create-btn:hover { background: linear-gradient(180deg, #7b6cf5 0%, #5544d4 100%); }
-.skeu-segmented {
-  display: flex;
-  align-items: center;
-  border-radius: 5px;
-  overflow: hidden;
-  border: 1px solid #aaa;
-  box-shadow: 0 1px 2px rgba(0,0,0,.06) inset;
-  flex-shrink: 0;
-}
-.skeu-seg-btn {
-  padding: 4px 12px;
-  font-size: 12px;
-  cursor: pointer;
-  border: none;
-  border-right: 1px solid #aaa;
-  color: #555;
-  background: linear-gradient(180deg, #f4f4f4 0%, #ddd 100%);
-  text-shadow: 0 1px 0 rgba(255,255,255,.7);
-  transition: all 0.1s ease;
-  white-space: nowrap;
-}
-.skeu-seg-btn:last-child { border-right: none; }
-.skeu-seg-btn:hover { background: linear-gradient(180deg, #fff 0%, #e8e8e8 100%); }
-.skeu-seg-active {
-  color: #fff !important;
-  text-shadow: 0 -1px 0 rgba(0,0,0,.2) !important;
-  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%) !important;
-  box-shadow: 0 1px 2px rgba(0,0,0,.15) inset;
-}
+.skeu-create-btn:hover { background: var(--skeu-gradient-primary-hover); }
 
-/* Pool panel */
-.skeu-pool {
-  min-width: 240px;
-  max-width: 280px;
-  flex-direction: column;
-  flex-shrink: 0;
-  background: linear-gradient(180deg, #f0f0f0 0%, #e4e4e4 100%);
-  border-right: 1px solid #bbb;
-}
+.skeu-pool { @apply min-w-60 max-w-70 flex-col shrink-0 border-r border-[#bbb]; background: linear-gradient(180deg, #f0f0f0 0%, #e4e4e4 100%); }
 .skeu-pool-header {
-  padding: 8px 12px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #444;
-  border-bottom: 1px solid #ccc;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
-  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
-  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+  @apply px-3 py-2 text-[13px] font-bold text-[#444] border-b border-[#ccc] flex items-center justify-between;
+  background: var(--skeu-gradient-chrome);
+  box-shadow: var(--skeu-shadow-inset);
+  text-shadow: var(--skeu-text-shadow);
 }
-.skeu-pool-header span {
-  font-size: 11px;
-  font-weight: 400;
-  color: #999;
-}
+.skeu-pool-header span { @apply text-[11px] font-normal text-[#999]; }
 .skeu-pool-search {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 6px 6px 0;
-  padding: 4px 8px;
-  border-radius: 4px;
-  background: linear-gradient(180deg, #ddd 0%, #fff 3px);
-  border: 1px solid #aaa;
+  @apply flex items-center gap-1.5 mx-1.5 mt-1.5 px-2 py-1 rounded border border-[#aaa];
+  background: var(--skeu-gradient-input);
   box-shadow: 0 1px 2px rgba(0,0,0,.06) inset;
 }
 .skeu-pool-item {
-  padding: 4px 8px;
-  margin-bottom: 2px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: grab;
-  color: #555;
+  @apply px-2 py-1 mb-0.5 rounded text-xs cursor-grab text-[#555] border border-[#ccc] transition-colors;
   background: linear-gradient(180deg, #fff 0%, #f0f0f0 100%);
-  border: 1px solid #ccc;
   box-shadow: 0 1px 0 rgba(255,255,255,.5) inset, 0 1px 2px rgba(0,0,0,.04);
-  transition: border-color 0.1s ease;
 }
-.skeu-pool-item:hover { border-color: #6a5aed; }
+.skeu-pool-item:hover { @apply border-accent; }
 
-/* Team columns */
 .skeu-team-col {
-  min-width: 200px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  @apply min-w-50 flex-1 flex flex-col;
   background: linear-gradient(180deg, #eaeaea 0%, #e0e0e0 100%);
 }
 .skeu-team-header {
-  padding: 8px 12px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #444;
-  border-bottom: 1px solid #ccc;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(180deg, #e8e8e8 0%, #d8d8d8 100%);
-  box-shadow: 0 1px 0 rgba(255,255,255,.4) inset;
-  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+  @apply px-3 py-2 text-[13px] font-bold text-[#444] border-b border-[#ccc] flex items-center justify-between;
+  background: var(--skeu-gradient-chrome);
+  box-shadow: var(--skeu-shadow-inset);
+  text-shadow: var(--skeu-text-shadow);
 }
-.skeu-team-del {
-  color: #bbb;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 2px;
-  transition: color 0.1s ease;
-}
-.skeu-team-del:hover { color: #e74c3c; }
+.skeu-team-del { @apply text-[#bbb] bg-transparent border-none cursor-pointer p-0.5 transition-colors; }
+.skeu-team-del:hover { @apply text-red-500; }
 
 .skeu-member-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  margin-bottom: 4px;
-  border-radius: 6px;
-  font-size: 13px;
-  cursor: grab;
-  color: #444;
+  @apply flex items-center gap-2 px-2 py-1.5 mb-1 rounded-md text-[13px] cursor-grab text-[#444] border border-[#c0c0c0] transition-all;
   background: linear-gradient(180deg, #fff 0%, #f0f0f0 100%);
-  border: 1px solid #c0c0c0;
   box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 1px 3px rgba(0,0,0,.06);
-  transition: all 0.1s ease;
 }
-.skeu-member-card:hover {
-  border-color: #6a5aed;
-  background: linear-gradient(180deg, #f0ecff 0%, #e8e0ff 100%);
-}
+.skeu-member-card:hover { @apply border-accent; background: linear-gradient(180deg, #f0ecff 0%, #e8e0ff 100%); }
 
 .skeu-member-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  font-weight: 700;
-  color: #fff;
-  flex-shrink: 0;
-  background: linear-gradient(180deg, #6a5aed 0%, #3b2fba 100%);
+  @apply w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0;
+  background: var(--skeu-gradient-primary);
   border: 1px solid rgba(0,0,0,.1);
   box-shadow: 0 1px 0 rgba(255,255,255,.2) inset;
 }
 
 .skeu-member-ghost {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
-  margin-bottom: 2px;
-  border-radius: 6px;
-  font-size: 12px;
-  color: #aaa;
-  cursor: pointer;
-  border: 2px dashed #ccc;
-  background: transparent;
-  width: 100%;
-  text-align: left;
-  transition: all 0.12s ease;
+  @apply flex items-center gap-1.5 px-2 py-1.5 mb-0.5 rounded-md text-xs text-[#aaa] cursor-pointer border-2 border-dashed border-[#ccc] bg-transparent w-full text-left transition-all;
 }
-.skeu-member-ghost:hover {
-  border-color: #6a5aed;
-  color: #6a5aed;
-  background: rgba(106, 90, 237, 0.05);
-}
+.skeu-member-ghost:hover { @apply border-accent text-accent bg-accent/5; }
 
-.skeu-new-team {
-  min-width: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #999;
-  font-size: 13px;
-  cursor: pointer;
-  flex-shrink: 0;
-  padding: 0 24px;
-  text-shadow: 0 1px 0 rgba(255,255,255,.5);
-  transition: all 0.1s ease;
-}
-.skeu-new-team:hover {
-  color: #6a5aed;
-  background: rgba(106,90,237,.05);
-}
-
-.skeu-drop-target {
-  background: linear-gradient(180deg, #ede9fe 0%, #e0d8f8 100%) !important;
-}
+.skeu-drop-target { background: linear-gradient(180deg, #ede9fe 0%, #e0d8f8 100%) !important; }
 </style>

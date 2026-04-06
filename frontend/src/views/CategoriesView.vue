@@ -27,6 +27,7 @@ const editing = ref<Category | null>(null)
 const editName = ref('')
 const editColor = ref('gray')
 const editHidden = ref(false)
+const editDefaultTasks = ref<number[]>([])
 
 const uncategorized = computed(() => {
   const catNames = new Set(db.categories.map(c => c.name))
@@ -38,6 +39,7 @@ function openEdit(cat: Category) {
   editName.value = cat.name
   editColor.value = cat.color || 'gray'
   editHidden.value = !!cat.hidden
+  editDefaultTasks.value = [...(cat.defaultTasks || [])]
 }
 
 function openNew() {
@@ -45,13 +47,14 @@ function openNew() {
   editName.value = ''
   editColor.value = 'gray'
   editHidden.value = false
+  editDefaultTasks.value = []
 }
 
 async function save() {
   if (!editName.value.trim()) return
   const isNew = !editing.value?.name
   if (isNew) {
-    db.categories.push({ name: editName.value.trim(), color: editColor.value, hidden: editHidden.value || undefined })
+    db.categories.push({ name: editName.value.trim(), color: editColor.value, hidden: editHidden.value || undefined, defaultTasks: editDefaultTasks.value })
   } else {
     const cat = db.categories.find(c => c.name === editing.value!.name)
     if (cat) {
@@ -62,6 +65,7 @@ async function save() {
       cat.name = editName.value.trim()
       cat.color = editColor.value
       cat.hidden = editHidden.value || undefined
+      cat.defaultTasks = editDefaultTasks.value
     }
   }
   await persist('categories')
@@ -145,6 +149,22 @@ const subscribeOpen = ref(false)
             <input type="checkbox" v-model="editHidden" class="accent-[#6a5aed]" />
             Dölj i utdata (slides, månadsblad, söndag)
           </label>
+        </div>
+        <div>
+          <label class="skeu-label">Standarduppgifter</label>
+          <p class="text-[10px] text-gray-400 mb-1.5">Uppgifter som ärvs av alla händelser i denna kategori (om inte event har egna)</p>
+          <div class="flex flex-wrap gap-1.5">
+            <button
+              v-for="task in db.tasks" :key="task.id"
+              @click="editDefaultTasks.includes(task.id) ? editDefaultTasks = editDefaultTasks.filter(id => id !== task.id) : editDefaultTasks.push(task.id)"
+              class="px-2 py-0.5 text-[11px] rounded-full border cursor-pointer transition-all"
+              :class="editDefaultTasks.includes(task.id)
+                ? 'bg-accent text-white border-accent'
+                : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-accent/40'"
+            >
+              {{ task.name }}
+            </button>
+          </div>
         </div>
       </div>
       <div class="flex gap-2 mt-6 pt-4 border-t border-[#ccc]">
@@ -292,41 +312,5 @@ const subscribeOpen = ref(false)
   cursor: pointer;
   transition: transform 0.1s ease;
   box-shadow: 0 1px 2px rgba(0,0,0,.1), 0 1px 0 rgba(255,255,255,.3) inset;
-}
-.skeu-btn-primary {
-  padding: 6px 16px;
-  border-radius: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  color: #fff;
-  border: 1px solid rgba(0,0,0,.2);
-  background: linear-gradient(180deg, #6a5aed 0%, #4a3cc9 100%);
-  box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 1px 3px rgba(59,47,186,.3);
-  text-shadow: 0 -1px 0 rgba(0,0,0,.15);
-  transition: all 0.12s ease;
-}
-.skeu-btn-primary:hover { background: linear-gradient(180deg, #7b6cf5 0%, #5544d4 100%); }
-.skeu-btn-primary:active {
-  background: linear-gradient(180deg, #4a3cc9 0%, #3b2fba 100%);
-  box-shadow: 0 1px 2px rgba(0,0,0,.15) inset;
-}
-.skeu-btn-danger {
-  padding: 6px 16px;
-  border-radius: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  color: #fff;
-  border: 1px solid rgba(0,0,0,.2);
-  background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
-  box-shadow: 0 1px 0 rgba(255,255,255,.15) inset, 0 1px 3px rgba(192,57,43,.3);
-  text-shadow: 0 -1px 0 rgba(0,0,0,.15);
-  transition: all 0.12s ease;
-}
-.skeu-btn-danger:hover { background: linear-gradient(180deg, #f05545 0%, #d44332 100%); }
-.skeu-btn-danger:active {
-  background: linear-gradient(180deg, #c0392b 0%, #a93226 100%);
-  box-shadow: 0 1px 2px rgba(0,0,0,.15) inset;
 }
 </style>

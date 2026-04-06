@@ -1,83 +1,15 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useStore } from '../composables/useStore'
 import { useToday } from '../composables/useToday'
-import { useApi } from '../composables/useApi'
-import { useToast } from '../composables/useToast'
-import { CalendarDays, Save } from 'lucide-vue-next'
+import { CalendarDays } from 'lucide-vue-next'
 
 const { db, assignments, memberContactId } = useStore()
 const { todayStr } = useToday()
-const { updateMyContact, joinTeam, leaveTeam } = useApi()
-const { show: toast } = useToast()
 
 const me = computed(() =>
   memberContactId.value ? db.contacts.find(c => c.id === memberContactId.value) : null
 )
-
-// Editable contact fields
-const editName = ref('')
-const editEmail = ref('')
-const editPhone = ref('')
-const saving = ref(false)
-const teamsOpen = ref(false)
-
-function initEditFields() {
-  if (me.value) {
-    editName.value = me.value.name || ''
-    editEmail.value = me.value.email || ''
-    editPhone.value = me.value.phone || ''
-  }
-}
-initEditFields()
-
-async function saveContact() {
-  saving.value = true
-  try {
-    await updateMyContact({ name: editName.value, email: editEmail.value, phone: editPhone.value })
-    if (me.value) {
-      me.value.name = editName.value
-      me.value.email = editEmail.value
-      me.value.phone = editPhone.value
-    }
-    toast('Uppgifter sparade')
-  } catch (e: any) { toast(e.message) }
-  saving.value = false
-}
-
-// Team self-service
-const teamTasks = computed(() => db.tasks.filter((t: any) => t.teamTask))
-
-function myTeamsForTask(taskId: number) {
-  return db.teams.filter(t => t.taskId === taskId && t.members.includes(memberContactId.value!))
-}
-function teamMemberNames(team: { members: number[] }) {
-  return team.members
-    .filter(id => id !== memberContactId.value)
-    .map(id => db.contacts.find(c => c.id === id)?.name)
-    .filter(Boolean) as string[]
-}
-function availableTeamsForTask(taskId: number) {
-  return db.teams.filter(t => t.taskId === taskId && !t.members.includes(memberContactId.value!))
-}
-
-async function doJoinTeam(teamId: number) {
-  try {
-    await joinTeam(teamId)
-    const team = db.teams.find(t => t.id === teamId)
-    if (team && !team.members.includes(memberContactId.value!)) team.members.push(memberContactId.value!)
-    toast('Gick med i teamet')
-  } catch (e: any) { toast(e.message) }
-}
-
-async function doLeaveTeam(teamId: number) {
-  try {
-    await leaveTeam(teamId)
-    const team = db.teams.find(t => t.id === teamId)
-    if (team) team.members = team.members.filter(id => id !== memberContactId.value)
-    toast('Lämnade teamet')
-  } catch (e: any) { toast(e.message) }
-}
 
 const myEvents = computed(() => {
   const cid = memberContactId.value
@@ -159,54 +91,37 @@ function copyIcal() {
 </script>
 
 <template>
-  <div class="flex-1 overflow-y-auto bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] text-white">
-    <div class="max-w-2xl mx-auto px-4 py-8">
+  <div class="flex-1 overflow-y-auto">
+    <div class="max-w-2xl mx-auto px-4 py-6">
       <!-- Header -->
-      <div class="mb-8">
-        <h1 class="text-2xl font-extrabold mb-1">
+      <div class="mb-6">
+        <h1 class="text-lg font-extrabold text-[#333]" style="text-shadow: 0 1px 0 rgba(255,255,255,.7)">
           {{ me ? `Hej ${me.name.split(' ')[0]}` : 'Mitt schema' }}
         </h1>
-        <p class="text-sm text-white/40">Dina kommande tilldelningar</p>
+        <p class="text-xs text-[#999]">Dina kommande tilldelningar</p>
       </div>
 
-      <!-- No assignments -->
-      <div v-if="!memberContactId" class="text-white/30 text-sm text-center py-12">
-        Logga in för att se ditt schema
-      </div>
-
-      <div v-else-if="myEvents.length === 0" class="text-white/30 text-sm text-center py-12">
-        Inga kommande tilldelningar
-      </div>
+      <div v-if="!memberContactId" class="text-[#aaa] text-sm text-center py-12">Logga in för att se ditt schema</div>
+      <div v-else-if="myEvents.length === 0" class="text-[#aaa] text-sm text-center py-12">Inga kommande tilldelningar</div>
 
       <!-- Events grouped by month -->
-      <div v-else class="space-y-8">
+      <div v-else class="space-y-6">
         <div v-for="[month, events] in byMonth" :key="month">
-          <h2 class="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3 capitalize">
-            {{ monthLabel(month) }}
-          </h2>
-          <div class="space-y-2">
-            <div
-              v-for="ev in events" :key="ev.id"
-              class="bg-white/5 border border-white/10 rounded-lg px-4 py-3 flex items-start gap-4"
-            >
-              <!-- Date block -->
-              <div class="text-center min-w-[48px] shrink-0">
-                <div class="text-[10px] text-white/40 uppercase">{{ dayLabel(ev.date) }}</div>
-                <div class="text-2xl font-bold text-white leading-none">{{ dayNum(ev.date) }}</div>
+          <h2 class="text-[11px] font-semibold text-[#999] uppercase tracking-wider mb-2 capitalize">{{ monthLabel(month) }}</h2>
+          <div class="space-y-1">
+            <div v-for="ev in events" :key="ev.id"
+              class="flex items-start gap-3 px-3 py-2.5 rounded-lg border border-[#d8d8d8] bg-gradient-to-b from-[#f8f8f8] to-[#f0f0f0]">
+              <div class="text-center min-w-[40px] shrink-0">
+                <div class="text-[9px] text-[#999] uppercase">{{ dayLabel(ev.date) }}</div>
+                <div class="text-xl font-bold text-[#333] leading-none">{{ dayNum(ev.date) }}</div>
               </div>
-              <!-- Event info -->
               <div class="flex-1 min-w-0">
-                <div class="text-sm font-semibold text-white/90 leading-tight">{{ ev.title }}</div>
-                <div class="text-xs text-white/40 mt-0.5">
-                  <span v-if="ev.time" class="text-white/50 font-mono">{{ ev.time }}</span>
-                </div>
+                <div class="text-sm font-semibold text-[#333] leading-tight">{{ ev.title }}</div>
+                <div v-if="ev.time" class="text-[11px] text-[#999] font-mono mt-0.5">{{ ev.time }}</div>
               </div>
-              <!-- My tasks -->
               <div class="flex flex-wrap gap-1 shrink-0">
-                <span
-                  v-for="task in getMyTasks(ev.id)" :key="task"
-                  class="text-[10px] px-2 py-0.5 rounded-full bg-accent/20 text-accent-light font-medium"
-                >
+                <span v-for="task in getMyTasks(ev.id)" :key="task"
+                  class="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent font-semibold border border-accent/20">
                   {{ task }}
                 </span>
               </div>
@@ -215,105 +130,25 @@ function copyIcal() {
         </div>
       </div>
 
-      <!-- Subscribe to calendar -->
-      <div v-if="icalUrl && memberContactId" class="mt-8 bg-white/5 border border-white/10 rounded-lg p-4">
-        <div class="flex items-center gap-2 mb-2">
-          <CalendarDays :size="16" class="text-accent shrink-0" />
-          <span class="text-sm font-semibold text-white/80">Prenumerera på ditt schema</span>
+      <!-- Subscribe -->
+      <div v-if="icalUrl && memberContactId" class="mt-6 p-3 rounded-lg border border-[#d8d8d8] bg-gradient-to-b from-[#f8f8f8] to-[#f0f0f0]">
+        <div class="flex items-center gap-2 mb-1.5">
+          <CalendarDays :size="14" class="text-accent shrink-0" />
+          <span class="text-xs font-semibold text-[#555]">Prenumerera på ditt schema</span>
         </div>
-        <p class="text-xs text-white/40 mb-3">Lägg till dina tilldelningar i din kalenderapp (Google, Apple, Outlook).</p>
+        <p class="text-[10px] text-[#999] mb-2">Lägg till i din kalenderapp (Google, Apple, Outlook).</p>
         <div class="flex items-center gap-2">
-          <a
-            :href="webcalUrl"
-            class="inline-flex items-center gap-1.5 bg-accent text-white text-xs font-semibold px-3 py-1.5 rounded-md no-underline hover:bg-accent-hover transition-colors"
-          >
-            <CalendarDays :size="13" /> Öppna i kalenderapp
+          <a :href="webcalUrl"
+            class="inline-flex items-center gap-1.5 bg-accent text-white text-[11px] font-semibold px-3 py-1.5 rounded-md no-underline hover:bg-accent-hover transition-colors">
+            <CalendarDays :size="12" /> Öppna i kalenderapp
           </a>
-          <button
-            @click="copyIcal"
-            class="text-[11px] text-white/40 bg-transparent border border-white/15 rounded-md px-2.5 py-1.5 cursor-pointer hover:text-white/70 transition-colors"
-          >
+          <button @click="copyIcal"
+            class="text-[11px] text-[#888] bg-transparent border border-[#ccc] rounded-md px-2.5 py-1.5 cursor-pointer hover:bg-white transition-colors">
             Kopiera länk
           </button>
         </div>
       </div>
 
-      <!-- ═══ Mina team ═══ -->
-      <div v-if="memberContactId && teamTasks.length > 0" class="mt-8">
-        <button @click="teamsOpen = !teamsOpen"
-          class="flex items-center gap-2 w-full bg-transparent border-none cursor-pointer text-left p-0 mb-1">
-          <span class="text-[10px] text-white/30 transition-transform" :class="teamsOpen ? 'rotate-90' : ''">▶</span>
-          <h2 class="text-sm font-semibold text-white/50 uppercase tracking-wider">Mina team</h2>
-          <span class="text-[11px] text-white/20">{{ myTeamsForTask(teamTasks[0]?.id).length ? 'Medlem' : 'Inget team' }}</span>
-        </button>
-        <div v-if="teamsOpen">
-        <p class="text-xs text-white/30 mb-4 ml-4">Du kan vara med i ett team per uppgift. Teamet avgör vilka händelser du tilldelas.</p>
-
-        <div v-for="task in teamTasks" :key="task.id" class="mb-6">
-          <div class="text-xs font-semibold text-white/50 mb-2">{{ task.name }}</div>
-
-          <!-- Teams I'm in -->
-          <div v-for="team in myTeamsForTask(task.id)" :key="team.id"
-            class="bg-accent/10 border border-accent/20 rounded-lg px-4 py-3 mb-2">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-sm font-semibold text-white/90">Team {{ team.number }}</span>
-              <button @click="doLeaveTeam(team.id)"
-                class="text-[11px] text-white/30 bg-transparent border border-white/10 rounded px-2 py-0.5 cursor-pointer hover:text-red-400 hover:border-red-400/30 transition-colors">
-                Lämna team
-              </button>
-            </div>
-            <div v-if="teamMemberNames(team).length" class="text-[11px] text-white/40">
-              Övriga: {{ teamMemberNames(team).join(', ') }}
-            </div>
-            <div v-else class="text-[11px] text-white/25">Du är ensam i detta team</div>
-          </div>
-
-          <!-- Not in any team for this task -->
-          <div v-if="myTeamsForTask(task.id).length === 0">
-            <p class="text-xs text-white/30 mb-2">Du är inte med i något team för {{ task.name }}. Välj ett team att gå med i:</p>
-            <div class="space-y-1.5">
-              <button v-for="team in availableTeamsForTask(task.id)" :key="team.id"
-                @click="doJoinTeam(team.id)"
-                class="w-full text-left bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 cursor-pointer hover:border-accent/40 hover:bg-accent/5 transition-colors">
-                <div class="text-sm text-white/70">Team {{ team.number }}
-                  <span class="text-[11px] text-white/30 ml-1">{{ team.members.length }} {{ team.members.length === 1 ? 'person' : 'personer' }}</span>
-                </div>
-                <div v-if="teamMemberNames(team).length" class="text-[11px] text-white/30 mt-0.5">
-                  {{ teamMemberNames(team).join(', ') }}
-                </div>
-              </button>
-            </div>
-            <div v-if="availableTeamsForTask(task.id).length === 0" class="text-xs text-white/20">Inga team tillgängliga</div>
-          </div>
-        </div>
-        </div>
-      </div>
-
-      <!-- ═══ Mitt konto ═══ -->
-      <div v-if="memberContactId && me" class="mt-8 bg-white/5 border border-white/10 rounded-lg p-4">
-        <h2 class="text-sm font-semibold text-white/80 mb-3">Mitt konto</h2>
-        <div class="space-y-3">
-          <div>
-            <label class="text-[11px] text-white/40 block mb-0.5">Namn</label>
-            <input v-model="editName" type="text"
-              class="w-full bg-white/5 border border-white/15 rounded-md px-3 py-2 text-sm text-white outline-none focus:border-accent" />
-          </div>
-          <div>
-            <label class="text-[11px] text-white/40 block mb-0.5">E-post</label>
-            <input v-model="editEmail" type="email"
-              class="w-full bg-white/5 border border-white/15 rounded-md px-3 py-2 text-sm text-white outline-none focus:border-accent" />
-          </div>
-          <div>
-            <label class="text-[11px] text-white/40 block mb-0.5">Telefon</label>
-            <input v-model="editPhone" type="tel"
-              class="w-full bg-white/5 border border-white/15 rounded-md px-3 py-2 text-sm text-white outline-none focus:border-accent" />
-          </div>
-          <button @click="saveContact" :disabled="saving"
-            class="flex items-center gap-1.5 bg-accent text-white text-xs font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer hover:bg-accent-hover transition-colors disabled:opacity-50">
-            <Save :size="13" /> Spara
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
