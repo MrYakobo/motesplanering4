@@ -9,6 +9,7 @@ const adminPass = ref('')
 const adminPass2 = ref('')
 const error = ref('')
 const saving = ref(false)
+const pass2Ref = ref<HTMLInputElement | null>(null)
 
 async function submit() {
   error.value = ''
@@ -81,11 +82,11 @@ async function submit() {
         </label>
         <label>
           <span class="label-text">Lösenord</span>
-          <input v-model="adminPass" type="password" @keyup.enter="$event.target.nextElementSibling?.focus()" />
+          <input v-model="adminPass" type="password" @keyup.enter="pass2Ref?.focus()" />
         </label>
         <label>
           <span class="label-text">Upprepa lösenord</span>
-          <input v-model="adminPass2" type="password" @keyup.enter="submit" />
+          <input ref="pass2Ref" v-model="adminPass2" type="password" @keyup.enter="submit" />
         </label>
         <p v-if="error" class="error-msg">{{ error }}</p>
         <div class="btn-row">
