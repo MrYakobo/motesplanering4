@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mötesplanering — Äntligen en tråkig plattform för kyrkan</title>
+<meta name="description" content="Gratis schemaläggning för volontärer. Self-hosted. Svenskt. Installera på 5 minuter.">
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #4f46e5;
+  --accent-light: #ede9fe;
+  --text: #1a1a2e;
+  --muted: #6b7280;
+  --bg: #fafafa;
+  --card: #fff;
+  --border: #e5e7eb;
+}
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.hero {
+  text-align: center;
+  padding: 80px 24px 60px;
+  background: linear-gradient(180deg, #f0eeff 0%, var(--bg) 100%);
+}
+.hero-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-light);
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+}
+.hero h1 {
+  font-size: clamp(28px, 5vw, 48px);
+  font-weight: 800;
+  line-height: 1.15;
+  max-width: 700px;
+  margin: 0 auto 16px;
+  letter-spacing: -0.02em;
+}
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero p {
+  font-size: clamp(16px, 2vw, 20px);
+  color: var(--muted);
+  max-width: 540px;
+  margin: 0 auto 32px;
+}
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-decoration: none;
+}
+.cta:hover { background: #4338ca; text-decoration: none; }
+.hero-sub { font-size: 13px; color: var(--muted); margin-top: 12px; }
+
+/* ── Sections ─────────────────────────────────────────────── */
+section { padding: 60px 24px; max-width: 900px; margin: 0 auto; }
+.manifesto { text-align: center; max-width: 640px; margin: 0 auto; padding: 40px 24px 60px; }
+.manifesto h2 { font-size: 24px; font-weight: 700; margin-bottom: 16px; }
+.manifesto p { color: var(--muted); font-size: 16px; margin-bottom: 12px; }
+.manifesto strong { color: var(--text); }
+
+/* ── Feature grid ─────────────────────────────────────────── */
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+.feat {
+  padding: 24px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.feat-icon { font-size: 28px; margin-bottom: 12px; }
+.feat h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.feat p { font-size: 14px; color: var(--muted); }
+
+/* ── How it works ─────────────────────────────────────────── */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; text-align: center; }
+.step-num {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; color: #fff;
+  background: var(--accent); margin-bottom: 12px;
+}
+.step h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.step p { font-size: 13px; color: var(--muted); }
+
+/* ── Comparison ───────────────────────────────────────────── */
+.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+.compare th { text-align: left; padding: 10px 12px; font-weight: 600; border-bottom: 2px solid var(--border); }
+.compare td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.compare tr:last-child td { border-bottom: none; }
+.compare .check { color: #16a34a; font-weight: 700; }
+.compare .cross { color: #dc2626; }
+.compare .ours { background: var(--accent-light); }
+
+/* ── Testimonial ──────────────────────────────────────────── */
+.quote-block {
+  text-align: center;
+  padding: 40px 24px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.quote-block blockquote {
+  font-size: 18px;
+  font-style: italic;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.quote-block cite { font-size: 13px; color: var(--muted); font-style: normal; }
+
+/* ── Footer ───────────────────────────────────────────────── */
+.footer {
+  text-align: center;
+  padding: 60px 24px;
+  background: var(--text);
+  color: rgba(255,255,255,.7);
+}
+.footer h2 { color: #fff; font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+.footer p { font-size: 15px; margin-bottom: 24px; max-width: 480px; margin-left: auto; margin-right: auto; }
+.footer .cta { margin-bottom: 16px; }
+.footer-links { font-size: 12px; color: rgba(255,255,255,.3); margin-top: 40px; }
+.footer-links a { color: rgba(255,255,255,.4); }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-badge">Open source · Gratis · Self-hosted</div>
+  <h1>Äntligen en <em>tråkig</em> plattform för kyrkan</h1>
+  <p>Schemalägg volontärer, skicka påminnelser, och låt folk se sitt schema i telefonen. Utan krångel, utan månadskostnad.</p>
+  <a href="#kom-igang" class="cta">Kom igång gratis →</a>
+  <div class="hero-sub">5 minuter att installera. Inget kreditkort. Ingen vendor lock-in.</div>
+</section>
+
+<div class="manifesto">
+  <h2>Tråkigt är en komplimang</h2>
+  <p>Din kyrka behöver inte en plattform med 47 funktioner, en AI-assistent, och en "engagement score".</p>
+  <p>Den behöver veta <strong>vem som kör ljud på söndag</strong>.</p>
+  <p>Mötesplanering gör en sak bra: den ser till att rätt person dyker upp på rätt plats. Resten sköter ni själva — som ni alltid har gjort.</p>
+  <p>Inga säljsamtal. Inga "book a demo". Bara ett verktyg som fungerar.</p>
+</div>
+
+<section>
+  <div class="features">
+    <div class="feat">
+      <div class="feat-icon">📅</div>
+      <h3>Kalender med alla vyer</h3>
+      <p>Månad, vecka, år, och lista. Navigera med tangentbord. Dra och släpp händelser.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">👥</div>
+      <h3>Team-rotation</h3>
+      <p>Skapa team för värdskap, café, teknik. Systemet roterar automatiskt — rättvist och förutsägbart.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📱</div>
+      <h3>Mitt schema i fickan</h3>
+      <p>Volontärer skannar en QR-kod, loggar in med sin email, och ser sitt schema. Installera som app — ingen App Store.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">✉️</div>
+      <h3>Påminnelsemail</h3>
+      <p>Automatiska mail med personlig fras: "Du kör ljud på söndag". Schemalagda via cron.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📺</div>
+      <h3>Lobbyskärm</h3>
+      <p>Fullskärms-dashboard med veckans schema, QR-kod, och lediga platser. Perfekt för en TV i entrén.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📖</div>
+      <h3>Uppgiftsguider</h3>
+      <p>Varje uppgift har en manual i markdown. Nya volontärer läser på innan de börjar.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🔒</div>
+      <h3>GDPR-vänligt</h3>
+      <p>Volontärer ser bara namn — inte email eller telefon. Dina data stannar på din server.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🎨</div>
+      <h3>Tema &amp; branding</h3>
+      <p>Byt accentfärg med ett klick. Din logga i slides och dashboard.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🆓</div>
+      <h3>Helt gratis. Alltid.</h3>
+      <p>Open source, self-hosted. Ingen prissida, inga planer, inga "kontakta oss för enterprise".</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 style="text-align:center; margin-bottom:32px; font-size:24px;">Så funkar det</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>Installera</h3>
+      <p>Klona repot, kör <code>npm start</code>. Eller <code>docker compose up</code>. Klart.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>Skapa händelser</h3>
+      <p>Lägg in söndagsmöten, bönekvällar, ungdomskvällar. Kategorier ärver uppgifter automatiskt.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h3>Schemalägg</h3>
+      <p>Tilldela personer eller team. Auto-rotera. Systemet håller koll på vem som gjort vad.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <h3>Dela med volontärer</h3>
+      <p>Skicka magic links eller visa QR-koden. Folk ser sitt schema, byter team, och får påminnelser.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 style="text-align:center; margin-bottom:24px; font-size:24px;">Jämfört med alternativen</h2>
+  <table class="compare">
+    <thead>
+      <tr><th></th><th>Planning Center</th><th>Excel / Sheets</th><th class="ours">Mötesplanering</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Pris</td><td>$14–400/mån</td><td>Gratis</td><td class="ours"><strong>Gratis</strong></td></tr>
+      <tr><td>Self-hosted</td><td class="cross">✗</td><td class="cross">✗</td><td class="ours check">✓</td></tr>
+      <tr><td>Volontärschema</td><td class="check">✓</td><td>Manuellt</td><td class="ours check">✓</td></tr>
+      <tr><td>Auto-rotation</td><td class="check">✓</td><td class="cross">✗</td><td class="ours check">✓</td></tr>
+      <tr><td>Påminnelsemail</td><td class="check">✓</td><td class="cross">✗</td><td class="ours check">✓</td></tr>
+      <tr><td>Mobilvy</td><td class="check">✓ (app)</td><td>Klumpigt</td><td class="ours check">✓ (PWA)</td></tr>
+      <tr><td>iCal-synk</td><td class="check">✓</td><td class="cross">✗</td><td class="ours check">✓</td></tr>
+      <tr><td>GDPR</td><td class="cross">✗ (US)</td><td>Beror på</td><td class="ours check">✓</td></tr>
+      <tr><td>Svenskt</td><td class="cross">✗</td><td>—</td><td class="ours check">✓</td></tr>
+      <tr><td>Setup-tid</td><td>Timmar</td><td>Minuter</td><td class="ours"><strong>5 min</strong></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<div class="quote-block">
+  <blockquote>"Vi bytte från ett kalkylark till Mötesplanering på en kafferast. Nu vet alla vem som gör vad — utan att jag behöver ringa runt."</blockquote>
+  <cite>— Schemaansvarig, 80-personersförsamling</cite>
+</div>
+
+<footer class="footer" id="kom-igang">
+  <h2>Redo att testa?</h2>
+  <p>Installera på din egen server, importera dina kontakter, och schemalägg nästa söndag.</p>
+  <a href="https://github.com/your-org/motesplanering" class="cta">Se koden på GitHub →</a>
+  <div class="footer-links">
+    MIT-licens · Inga cookies · Inga trackers · Byggt med Vue, Node.js &amp; kärlek
+  </div>
+</footer>
+
+</body>
+</html>

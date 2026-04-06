@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 
 const routes = [
   { path: '/', redirect: '/events/calendar' },
+  { path: '/setup', component: () => import('./views/SetupView.vue') },
   { path: '/home', component: () => import('./views/HomeView.vue') },
   { path: '/settings', component: () => import('./views/SettingsView.vue') },
   { path: '/events', component: () => import('./views/EventsView.vue'), meta: { view: 'list' } },

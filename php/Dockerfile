@@ -9,7 +9,8 @@ RUN npm run build
 # Stage 2: PHP + Apache
 FROM php:8.2-apache
 
-RUN a2enmod rewrite && docker-php-ext-install zip
+RUN apt-get update && apt-get install -y libzip-dev && rm -rf /var/lib/apt/lists/* \
+    && a2enmod rewrite && docker-php-ext-install zip
 
 # Allow .htaccess overrides in /var/www/html
 RUN sed -i '/<Directory \/var\/www\/html>/,/<\/Directory>/s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf

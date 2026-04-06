@@ -34,6 +34,7 @@ export function useStore() {
     role: authStore.role,
     memberContactId: authStore.memberContactId,
     loading: authStore.loading,
+    needsSetup: authStore.needsSetup,
     isAdmin: authStore.isAdmin,
     isMember: authStore.isMember,
     isViewer: authStore.isViewer,

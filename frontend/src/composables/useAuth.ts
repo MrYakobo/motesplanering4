@@ -7,6 +7,7 @@ import { useDb } from './useDb'
 const role = ref<UserRole>('viewer')
 const memberContactId = ref<number | null>(null)
 const loading = ref(true)
+const needsSetup = ref(false)
 
 // ── Derived state ────────────────────────────────────────────────────────────
 const isAdmin = computed(() => role.value === 'admin')
@@ -20,7 +21,12 @@ async function loadApp() {
   const { db, loadAssignments } = useDb()
   loading.value = true
   try {
-    const me = await api.checkRole()
+    const me = await api.checkRole() as any
+    if (me.setup) {
+      needsSetup.value = true
+      loading.value = false
+      return
+    }
     role.value = me.role
     if (me.contactId) memberContactId.value = me.contactId
     const data = await api.fetchDb()
@@ -35,7 +41,7 @@ async function loadApp() {
 
 export function useAuth() {
   return {
-    role, memberContactId, loading,
+    role, memberContactId, loading, needsSetup,
     isAdmin, isMember, isViewer,
     loadApp,
   }

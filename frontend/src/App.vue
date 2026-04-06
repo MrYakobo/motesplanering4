@@ -36,6 +36,11 @@ const publicPaths = ['/home', '/slides', '/namnskyltar', '/sunday', '/dashboard'
 
 onMounted(async () => {
   await loadApp()
+  const { needsSetup } = useStore()
+  if (needsSetup.value) {
+    router.replace('/setup')
+    return
+  }
   applyTheme(db.settings?.accentColor || 'indigo')
   if (isViewer.value) {
     const path = router.currentRoute.value.path
@@ -51,7 +56,7 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col sm:flex-row h-dvh overflow-hidden bg-[#e0e0e0] text-gray-900">
-    <AppNav v-if="!loading && !fullscreenState && !isViewer && !isDashboard" />
+    <AppNav v-if="!loading && !fullscreenState && !isViewer && !isDashboard && route.path !== '/setup'" />
     <div v-if="loading" class="flex-1 flex items-center justify-center">
       <p class="text-gray-400 text-sm">Laddar...</p>
     </div>

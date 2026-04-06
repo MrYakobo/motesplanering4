@@ -101,6 +101,27 @@ function copyIcal() {
         <p class="text-xs text-[#999]">Dina kommande tilldelningar</p>
       </div>
 
+      <!-- Subscribe -->
+      <div v-if="icalUrl && memberContactId" class="mt-6 p-3 rounded-lg border border-[#d8d8d8] bg-gradient-to-b from-[#f8f8f8] to-[#f0f0f0]">
+        <div class="flex items-center gap-2 mb-1.5">
+          <CalendarDays :size="14" class="text-accent shrink-0" />
+          <span class="text-xs font-semibold text-[#555]">Prenumerera på ditt schema</span>
+        </div>
+        <p class="text-[10px] text-[#999] mb-2">Lägg till i din kalenderapp (Google, Apple, Outlook).</p>
+        <div class="flex items-center gap-2">
+          <a :href="webcalUrl"
+            class="inline-flex items-center gap-1.5 bg-accent text-white text-[11px] font-semibold px-3 py-1.5 rounded-md no-underline hover:bg-accent-hover transition-colors">
+            <CalendarDays :size="12" /> Öppna i kalenderapp
+          </a>
+          <button @click="copyIcal"
+            class="text-[11px] text-[#888] bg-transparent border border-[#ccc] rounded-md px-2.5 py-1.5 cursor-pointer hover:bg-white transition-colors">
+            Kopiera länk
+          </button>
+        </div>
+      </div>
+
+      <br>
+
       <div v-if="!memberContactId" class="text-[#aaa] text-sm text-center py-12">Logga in för att se ditt schema</div>
       <div v-else-if="myEvents.length === 0" class="text-[#aaa] text-sm text-center py-12">Inga kommande tilldelningar</div>
 
@@ -127,25 +148,6 @@ function copyIcal() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Subscribe -->
-      <div v-if="icalUrl && memberContactId" class="mt-6 p-3 rounded-lg border border-[#d8d8d8] bg-gradient-to-b from-[#f8f8f8] to-[#f0f0f0]">
-        <div class="flex items-center gap-2 mb-1.5">
-          <CalendarDays :size="14" class="text-accent shrink-0" />
-          <span class="text-xs font-semibold text-[#555]">Prenumerera på ditt schema</span>
-        </div>
-        <p class="text-[10px] text-[#999] mb-2">Lägg till i din kalenderapp (Google, Apple, Outlook).</p>
-        <div class="flex items-center gap-2">
-          <a :href="webcalUrl"
-            class="inline-flex items-center gap-1.5 bg-accent text-white text-[11px] font-semibold px-3 py-1.5 rounded-md no-underline hover:bg-accent-hover transition-colors">
-            <CalendarDays :size="12" /> Öppna i kalenderapp
-          </a>
-          <button @click="copyIcal"
-            class="text-[11px] text-[#888] bg-transparent border border-[#ccc] rounded-md px-2.5 py-1.5 cursor-pointer hover:bg-white transition-colors">
-            Kopiera länk
-          </button>
         </div>
       </div>
 
