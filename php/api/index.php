@@ -312,11 +312,14 @@ function runBackup(): void {
 
 // ── Setup wizard (first run) ─────────────────────────────────────────────────
 if (!file_exists(DB_FILE)) {
-    if ($method === 'GET' && $path === '/api/') {
+    if ($method === 'GET' && ($path === '/api/' || $path === '/api')) {
         jsonResponse(['setup' => true]);
     }
     if ($method === 'GET' && $path === '/api/me') {
         jsonResponse(['setup' => true]);
+    }
+    if ($method === 'GET' && $path === '/api/auth-check') {
+        jsonResponse(['ok' => false, 'setup' => true]);
     }
     if ($method === 'POST' && $path === '/api/setup') {
         $body = readJsonBody();
@@ -353,8 +356,8 @@ if (!file_exists(DB_FILE)) {
         ]);
         jsonResponse(['ok' => true]);
     }
-    // Not set up yet — block everything else
-    jsonResponse(['error' => 'not configured', 'setup' => true], 503);
+    // Not set up yet — return setup flag for any other API call
+    jsonResponse(['error' => 'not configured', 'setup' => true]);
 }
 
 // ── iCal feeds (no auth required) ────────────────────────────────────────────
